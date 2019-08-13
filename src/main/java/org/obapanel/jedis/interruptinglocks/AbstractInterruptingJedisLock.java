@@ -61,6 +61,15 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
 
 
 
+    @Override
+    public Long getLeaseTime() {
+        return jedisLock.getLeaseTime();
+    }
+
+    @Override
+    public TimeUnit getTimeUnit() {
+        return jedisLock.getTimeUnit();
+    }
 
     @Override
     public String getName() {

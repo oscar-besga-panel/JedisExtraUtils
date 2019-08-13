@@ -50,7 +50,7 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
      * @param name Unique name of the lock, shared with all distributed lock
      */
     public JedisLock(Jedis jedis, String name){
-        this(jedis, name, -1, null);
+        this(jedis, name, null, null);
     }
 
 
@@ -59,35 +59,27 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
      * @param jedis Jedis is Java Redis connection and operartions
      * @param name Unique name of the lock, shared with all distributed lock
      * @param leaseTime Amount of time in unit that the lock should live
+     * @param timeUnit Unit of leaseTime
      */
-    public JedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit){
+    public JedisLock(Jedis jedis, String name, Long leaseTime, TimeUnit timeUnit){
         this.jedis = jedis;
         this.name = name;
         this.value = name + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt(1_000_000);
-        this.leaseTime = leaseTime > 0 ? leaseTime : null;
+        this.leaseTime = leaseTime;
         this.timeUnit = timeUnit;
     }
 
-    /**
-     * Lease time setted in constructor, -1 if none
-     * @return leaseTime
-     */
-    public long getLeaseTime() {
+    @Override
+    public Long getLeaseTime() {
         return leaseTime;
     }
 
-    /**
-     * Timeunit of leased time, null if none
-     * @return timeUnit
-     */
+    @Override
     public TimeUnit getTimeUnit() {
         return timeUnit;
     }
 
-    /**
-     * Name of the lock
-     * @return name
-     */
+
     @Override
     public String getName() {
         return name;
@@ -134,21 +126,20 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         String currentValueRedis = jedis.get(name);
         boolean itWorked = CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && value.equals(currentValueRedis);
         if (itWorked) {
-            leaseMoment = System.currentTimeMillis();
-            isLocked.set(true);
-            if (leaseTime != null){
-                this.timeLimit = System.currentTimeMillis() +  timeUnit.toMillis(leaseTime);
-            }
+            setLockState();
         }
         return isLocked.get();
     }
 
+    private void setLockState() {
+        isLocked.set(true);
+        leaseMoment = System.currentTimeMillis();
+        if (leaseTime != null){
+            this.timeLimit = System.currentTimeMillis() +  timeUnit.toMillis(leaseTime);
+        }
+    }
 
-    /**
-     * Alias for redisLock
-     * Attempts to get the lock, It will try one time and return
-     * @return true if lock obtained, false otherwise
-     */
+
     @Override
     public boolean tryLock() {
         return redisLock();
@@ -167,10 +158,7 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         return isLocked();
     }
 
-    /**
-     * Try to lock, sleeping while it tries
-     * Can NOT be interrupted
-     */
+
     @Override
     public void lock() {
         while (!isLocked.get()){
@@ -182,10 +170,7 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         }
     }
 
-    /**
-     * Try to lock, sleeping while it tries
-     * @throws InterruptedException can be interrupted
-     */
+
     @Override
     public void lockInterruptibly() throws InterruptedException {
         redisLock();
@@ -211,9 +196,6 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         return !isLocked.get();
     }
 
-    /**
-     * Alias for redisUnlock
-     */
     @Override
     public void unlock() {
         redisUnlock();
@@ -230,17 +212,16 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         }
     }
 
+    /**
+     * Set the internal flags to unlock state
+     */
     private void setUnlockState() {
         leaseMoment = -1L;
         timeLimit = -1L;
         isLocked.set(false);
     }
 
-    /**
-     * Returns true if the lock is retained with this object
-     * If lock is retained, and the time has expired, a unlock will be performed
-     * @return true if lock is retained here
-     */
+
     @Override
     public boolean isLocked(){
         checkTimeoutAndUnlock();
@@ -262,7 +243,7 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
      * @return Lock of JedisLock
      */
     public Lock asConcurrentLock(){
-        if (leaseTime != null) throw new IllegalStateException("A JedisLock with leaseTinme can not be a concurrent lock");
+        if (leaseTime != null) throw new IllegalStateException("A JedisLock with leaseTime can not be a concurrent lock");
         return new Lock(this);
     }
 
