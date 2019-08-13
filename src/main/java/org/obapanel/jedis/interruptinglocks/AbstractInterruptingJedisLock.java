@@ -33,6 +33,14 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         return isLocked();
     }
 
+    public boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
+        jedisLock.tryLockForAWhile(time, unit);
+        if (isLocked()) {
+            afterLock();
+        }
+        return isLocked();
+    }
+
 
     public void lock() {
         jedisLock.lock();

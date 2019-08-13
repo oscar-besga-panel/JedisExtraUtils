@@ -123,7 +123,7 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
      * The leaseMoment and timeLimit are set if lock is obtained
      * @return true if lock obtained, false otherwise
      */
-    public synchronized boolean redisLock() {
+    private synchronized boolean redisLock() {
         checkTimeoutAndUnlock();
         SetParams setParams = new SetParams();
         setParams.nx();
@@ -154,6 +154,18 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         return redisLock();
     }
 
+
+
+    @Override
+    public boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
+        long tryLockTimeLimit = System.currentTimeMillis() + unit.toMillis(time);
+        tryLock();
+        while (!isLocked() && tryLockTimeLimit > System.currentTimeMillis()) {
+            Thread.sleep(1000);
+            tryLock();
+        }
+        return isLocked();
+    }
 
     /**
      * Try to lock, sleeping while it tries
@@ -244,9 +256,13 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
     /**
      * Creates a java.util.concurrent.Lock instance of this lock
      * The new instance is binded to this object
+     *
+     * A JedisLock with leaseTinme can not be a concurrent lock, an exception will be thrown if you try
+     *
      * @return Lock of JedisLock
      */
     public Lock asConcurrentLock(){
+        if (leaseTime != null) throw new IllegalStateException("A JedisLock with leaseTinme can not be a concurrent lock");
         return new Lock(this);
     }
 

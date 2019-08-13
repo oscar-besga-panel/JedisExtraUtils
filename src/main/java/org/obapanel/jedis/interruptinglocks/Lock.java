@@ -13,15 +13,15 @@ import java.util.concurrent.locks.Condition;
 class Lock implements java.util.concurrent.locks.Lock, Closeable, AutoCloseable {
 
 
-    private final JedisLock rLock;
+    private final JedisLock jedisLock;
 
 
     /**
      * Creates a java.util.concurrent.locks.Lock from a Redis Lock
-     * @param rLock Redis Lock
+     * @param jedisLock Redis Lock
      */
-    Lock(JedisLock rLock){
-        this.rLock = rLock;
+    Lock(JedisLock jedisLock){
+        this.jedisLock = jedisLock;
     }
 
 
@@ -29,45 +29,27 @@ class Lock implements java.util.concurrent.locks.Lock, Closeable, AutoCloseable 
 
     @Override
     public void lock() {
-        rLock.redisLock();
-        while (!rLock.isLocked()) {
-            try {
-                Thread.sleep(1000);
-                rLock.redisLock();
-            } catch (InterruptedException e) {
-                // NOOP
-            }
-        }
+        jedisLock.lock();
     }
 
     @Override
     public void lockInterruptibly() throws InterruptedException {
-        rLock.redisLock();
-        while (!rLock.isLocked()) {
-            Thread.sleep(1000);
-            rLock.isLocked();
-        }
+        jedisLock.lockInterruptibly();
     }
 
     @Override
     public boolean tryLock() {
-        return rLock.redisLock();
+        return jedisLock.tryLock();
     }
 
     @Override
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        long tryLockTimeLimit = System.currentTimeMillis() + unit.toMillis(time);
-        rLock.redisLock();
-        while (!rLock.isLocked() && tryLockTimeLimit > System.currentTimeMillis()) {
-            Thread.sleep(1000);
-            rLock.redisLock();
-        }
-        return rLock.isLocked();
+        return jedisLock.tryLockForAWhile(time, unit);
     }
 
     @Override
     public void unlock() {
-        rLock.unlock();
+        jedisLock.unlock();
     }
 
     @Override
@@ -80,7 +62,7 @@ class Lock implements java.util.concurrent.locks.Lock, Closeable, AutoCloseable 
      * @return true if the lock is active
      */
     public boolean isLocked(){
-        return rLock.isLocked();
+        return jedisLock.isLocked();
     }
 
     @Override
