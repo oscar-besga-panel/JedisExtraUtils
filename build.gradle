@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+}
+
+group 'org.obapanel.jedis'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'redis.clients:jedis:3.1.0'
+    compile 'org.slf4j:slf4j-api:1.7.25'
+    compile 'org.slf4j:slf4j-simple:1.7.25'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    // sadly doesnt work
+    // testCompile 'com.github.fppt:jedis-mock:0.1.14' 
+}
+
