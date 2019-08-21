@@ -22,10 +22,6 @@ public class MockOfJedis {
     private Timer timer;
 
     public MockOfJedis() {
-        create();
-    }
-
-    private MockOfJedis create() {
         timer = new Timer();
         jedis = Mockito.mock(Jedis.class);
         Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
@@ -45,8 +41,6 @@ public class MockOfJedis {
             List<String> values = ioc.getArgument(2);
             return mockEval(script, keys, values);
         });
-        return this;
-
     }
 
     private synchronized Object mockGet(String key) {
