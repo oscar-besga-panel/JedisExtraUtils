@@ -25,7 +25,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         return jedisLock.isLocked();
     }
 
-    public boolean tryLock() {
+    public synchronized boolean tryLock() {
         jedisLock.tryLock();
         if (isLocked()) {
             afterLock();
@@ -33,7 +33,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         return isLocked();
     }
 
-    public boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
+    public synchronized boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
         jedisLock.tryLockForAWhile(time, unit);
         if (isLocked()) {
             afterLock();
@@ -42,7 +42,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     }
 
 
-    public void lock() {
+    public synchronized void lock() {
         jedisLock.lock();
         if (isLocked()) {
             afterLock();
@@ -50,7 +50,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     }
 
 
-    public void lockInterruptibly() throws InterruptedException {
+    public synchronized void lockInterruptibly() throws InterruptedException {
         jedisLock.lockInterruptibly();
         if (isLocked()) {
             afterLock();
@@ -77,7 +77,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     }
 
     @Override
-    public void unlock() {
+    public synchronized void unlock() {
         jedisLock.unlock();
         if (!isLocked()) {
             afterUnLock();

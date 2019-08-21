@@ -151,7 +151,7 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
 
 
     @Override
-    public boolean tryLock() {
+    public synchronized boolean tryLock() {
         return redisLock();
     }
 
