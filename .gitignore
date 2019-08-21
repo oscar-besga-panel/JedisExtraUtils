@@ -29,3 +29,9 @@ out/
 build/docs/javadoc/
 
 build/tmp/javadoc/
+
+gradle/wrapper/
+
+gradlew
+
+gradlew.bat
