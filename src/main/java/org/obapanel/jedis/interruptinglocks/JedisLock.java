@@ -24,9 +24,9 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
 
     private static final Logger log = LoggerFactory.getLogger(JedisLock.class);
 
-    private static String CLIENT_RESPONSE_OK = "OK";
+    public static final String CLIENT_RESPONSE_OK = "OK";
 
-    private static String UNLOCK_LUA_SCRIPT = "" +
+    public static final String UNLOCK_LUA_SCRIPT = "" +
             "if redis.call(\"get\",KEYS[1]) == ARGV[1] then\n" +
             "    return redis.call(\"del\",KEYS[1])\n" +
             "else\n" +
@@ -110,6 +110,16 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
     }
 
     /**
+     * Returns the current value in Redis
+     * A string whem is locked, null if not
+     * For testing
+     * @return Strig of redis
+     */
+    private String getValue(){
+        return value;
+    }
+
+    /**
      * Attempts to get the lock.
      * It will try one time and return
      * The leaseMoment and timeLimit are set if lock is obtained
@@ -189,7 +199,10 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         List<String> keys = Arrays.asList(name);
         List<String> values = Arrays.asList(value);
         Object response = jedis.eval(UNLOCK_LUA_SCRIPT, keys, values);
-        int num = Integer.parseInt(response.toString());
+        int num = 0;
+        if (response != null) {
+            num = Integer.parseInt(response.toString());
+        }
         if ( num > 0 ) {
             setUnlockState();
         }

@@ -10,7 +10,7 @@ import java.util.concurrent.locks.Condition;
 /**
  * java.util.concurrent.locks.Lock from a Redis Lock
  */
-class Lock implements java.util.concurrent.locks.Lock, Closeable, AutoCloseable {
+public class Lock implements java.util.concurrent.locks.Lock, Closeable, AutoCloseable {
 
 
     private final JedisLock jedisLock;
