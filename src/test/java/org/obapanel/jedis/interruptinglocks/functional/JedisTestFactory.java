@@ -20,7 +20,7 @@ public class JedisTestFactory {
     // Zero to prevent any functional test
     // One to one pass
     // More to more passes
-    public static final int FUNCTIONAL_TEST_CYCLES = 25;
+    public static final int FUNCTIONAL_TEST_CYCLES = 1;
 
     public static final String HOST = "127.0.0.1";
     public static final int PORT = 6739;
@@ -114,6 +114,7 @@ public class JedisTestFactory {
         testConnection(jedis);
         Lock jedisLock = new JedisLock(jedis,"jedisLock").asConcurrentLock();
         boolean locked = jedisLock.tryLock();
+        boolean reallyLocked = jedisLock.isLocked();
         jedisLock.unlock();
         jedis.quit();
         System.out.println("JEDISLOCK");
