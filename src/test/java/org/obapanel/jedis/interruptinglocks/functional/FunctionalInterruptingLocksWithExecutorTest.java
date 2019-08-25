@@ -14,13 +14,13 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.TEST_CYCLES;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
 
-public class TestOfInterruptingLocksWithExecutor {
+public class FunctionalInterruptingLocksWithExecutorTest {
 
-    private static final Logger log = LoggerFactory.getLogger(TestOfInterruptingLocksWithExecutor.class);
+    private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksWithExecutorTest.class);
 
 
 
@@ -34,22 +34,22 @@ public class TestOfInterruptingLocksWithExecutor {
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (TEST_CYCLES <= 0) return;
-        executorService = Executors.newFixedThreadPool(1);
+        if (!functionalTestEnabled()) return;
+        executorService = Executors.newFixedThreadPool(4);
         jedis = JedisTestFactory.createJedisClient();
         lockName = "lock_" + this.getClass().getName() + "_" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
-        if (TEST_CYCLES <= 0) return;
-        jedis.quit();
+        if (jedis != null) jedis.quit();
+        if (executorService != null) executorService.shutdown();
     }
 
 
     @Test
     public void testIfInterruptedFor5SecondsLock() {
-        for(int i=0; i < TEST_CYCLES ; i++) {
+        for(int i = 0; i < FUNCTIONAL_TEST_CYCLES; i++) {
             log.info("i {}", i);
             boolean wasInterruptedFor3Seconds = wasInterrupted(3);
             boolean wasInterruptedFor7Seconds = wasInterrupted(7);
@@ -67,8 +67,6 @@ public class TestOfInterruptingLocksWithExecutor {
 
     private boolean wasInterrupted(int sleepSeconds){
         boolean wasInterrupted = false;
-//            public z_InterruptingJedisJedisLockExecutor(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit, ExecutorService executorService) {
-
         InterruptingJedisJedisLockExecutor interruptingLock = new InterruptingJedisJedisLockExecutor(jedis, lockName, 5, TimeUnit.SECONDS, executorService);
         interruptingLock.lock();
         checkLock(interruptingLock);

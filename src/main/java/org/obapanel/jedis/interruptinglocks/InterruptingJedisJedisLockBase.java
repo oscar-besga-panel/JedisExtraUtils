@@ -4,7 +4,7 @@ import redis.clients.jedis.Jedis;
 
 import java.util.concurrent.TimeUnit;
 
-public final class InterruptingJedisJedisLock extends AbstractInterruptingJedisLock {
+public final class InterruptingJedisJedisLockBase extends AbstractInterruptingJedisLock {
 
 
     private Thread interruptingThread;
@@ -15,7 +15,7 @@ public final class InterruptingJedisJedisLock extends AbstractInterruptingJedisL
      * @param jedis client to generate the lock
      * @param name Lock name
      */
-    public InterruptingJedisJedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit) {
+    public InterruptingJedisJedisLockBase(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit) {
         super(jedis, name, leaseTime, timeUnit);
         interruptingThread = new Thread(this::runInterruptThread);
         interruptingThread.setDaemon(true);

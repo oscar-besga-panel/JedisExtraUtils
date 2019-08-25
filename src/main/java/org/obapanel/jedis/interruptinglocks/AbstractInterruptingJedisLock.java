@@ -120,18 +120,17 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
             long realTimeToSleep = jedisLock.getLeaseMoment() + currentLeaseTime - System.currentTimeMillis();
             LOG.debug("runInterruptThread realTimeToSleep {} leaseTime {} ", realTimeToSleep, currentLeaseTime);
             Thread.sleep(realTimeToSleep);
+            interruptAndUnlock();
         } catch (InterruptedException e) {
             LOG.debug("runInterruptThread interrupted");
         }
-        // If lock is locked, then unlock
-        if (isLocked()) {
-            LOG.debug("runInterruptThread lock is locked");
-            jedisLock.unlock();
-        }
-        // If no manual unlock has happened, interrupt current thread
+    }
+
+    private synchronized void interruptAndUnlock() {
         if (!manualUnlock.get() && currentThread != null) {
-            LOG.debug("runInterruptThread interrupt current thread");
+            LOG.debug("interruptAndUnlock interrupt current thread " + currentThread.getName());
             currentThread.interrupt();
         }
+        jedisLock.unlock();
     }
 }

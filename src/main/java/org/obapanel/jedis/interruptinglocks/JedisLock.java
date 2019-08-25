@@ -43,6 +43,10 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
     private long leaseMoment = -1L;
     private long timeLimit = -1L;
 
+    private long waitCylce = 300L;
+
+    private static long lastCurrentTimeMilis = 0L;
+
     /**
      * Creates a Redis lock with a name
      * This constructor makes the lock with no time limitations
@@ -64,9 +68,27 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
     public JedisLock(Jedis jedis, String name, Long leaseTime, TimeUnit timeUnit){
         this.jedis = jedis;
         this.name = name;
-        this.value = name + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt(1_000_000);
+        this.value = getUniqueValue(name);
         this.leaseTime = leaseTime;
         this.timeUnit = timeUnit;
+    }
+
+    private synchronized static String getUniqueValue(String name){
+        long currentTimeMillis = System.currentTimeMillis();
+        while(currentTimeMillis == lastCurrentTimeMilis){
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                //NOOP
+            }
+            currentTimeMillis = System.currentTimeMillis();
+        }
+        lastCurrentTimeMilis = currentTimeMillis;
+        return name + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt(1_000_000);
+    }
+
+    public void setWaitCylce(int time, TimeUnit timeUnit){
+        this.waitCylce = timeUnit.toMillis(time);
     }
 
     @Override
@@ -127,8 +149,7 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
      */
     private synchronized boolean redisLock() {
         checkTimeoutAndUnlock();
-        SetParams setParams = new SetParams();
-        setParams.nx();
+        SetParams setParams = new SetParams().nx();
         if (leaseTime != null) {
             setParams.px(timeUnit.toMillis(leaseTime));
         }
@@ -141,7 +162,7 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         return isLocked.get();
     }
 
-    private void setLockState() {
+    private synchronized void setLockState() {
         isLocked.set(true);
         leaseMoment = System.currentTimeMillis();
         if (leaseTime != null){
@@ -158,11 +179,11 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
 
 
     @Override
-    public boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
+    public synchronized boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
         long tryLockTimeLimit = System.currentTimeMillis() + unit.toMillis(time);
         tryLock();
         while (!isLocked() && tryLockTimeLimit > System.currentTimeMillis()) {
-            Thread.sleep(1000);
+            Thread.sleep(waitCylce);
             tryLock();
         }
         return isLocked();
@@ -170,7 +191,8 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
 
 
     @Override
-    public void lock() {
+    public synchronized void lock() {
+        redisLock();
         while (!isLocked.get()){
             try {
                 lockInterruptibly();
@@ -182,10 +204,10 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
 
 
     @Override
-    public void lockInterruptibly() throws InterruptedException {
+    public synchronized void lockInterruptibly() throws InterruptedException {
         redisLock();
         while (!isLocked.get()){
-            Thread.sleep(1000);
+            Thread.sleep(waitCylce);
             redisLock();
         }
     }
@@ -210,7 +232,7 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
     }
 
     @Override
-    public void unlock() {
+    public synchronized void unlock() {
         redisUnlock();
     }
 

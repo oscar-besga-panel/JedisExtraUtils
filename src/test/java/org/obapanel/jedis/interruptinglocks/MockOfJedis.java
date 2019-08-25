@@ -1,6 +1,8 @@
 package org.obapanel.jedis.interruptinglocks;
 
 import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.params.SetParams;
 
@@ -19,6 +21,51 @@ import static org.mockito.ArgumentMatchers.*;
  * Mock of jedis methods used by the lock
  */
 public class MockOfJedis {
+
+    private static final Logger log = LoggerFactory.getLogger(MockOfJedis.class);
+
+    public static final String CLIENT_RESPONSE_OK = "OK";
+    public static final String CLIENT_RESPONSE_KO = "KO";
+
+
+    // Zero to prevent some integration test
+    // One to one pass
+    // More to more passes
+    public static final int INTEGRATION_TEST_CYCLES = 100;
+
+    static boolean integrationTestEnabled(){
+        return INTEGRATION_TEST_CYCLES > 0;
+    }
+
+
+    static boolean checkLock(IJedisLock jedisLock){
+        log.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
+        if (jedisLock.isLocked()) {
+            log.debug("LOCKED");
+            return true;
+        } else {
+            IllegalStateException ise =  new IllegalStateException("LOCK NOT ADQUIRED isLocked " + jedisLock.isLocked());
+            log.error("ERROR LOCK NOT ADQUIRED e {} ", ise.getMessage(), ise);
+            throw ise;
+        }
+    }
+
+    static boolean checkLock(java.util.concurrent.locks.Lock lock){
+        if (lock instanceof  org.obapanel.jedis.interruptinglocks.Lock) {
+            org.obapanel.jedis.interruptinglocks.Lock jedisLock = (org.obapanel.jedis.interruptinglocks.Lock) lock;
+            log.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
+            if (jedisLock.isLocked()) {
+                log.debug("LOCKED");
+                return true;
+            } else {
+                IllegalStateException ise =  new IllegalStateException("LOCK NOT ADQUIRED isLocked " + jedisLock.isLocked());
+                log.error("ERROR LOCK NOT ADQUIRED e {} ", ise.getMessage(), ise);
+                throw ise;
+            }
+        } else {
+            return true;
+        }
+    }
 
     private Jedis jedis;
     private Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
@@ -62,15 +109,20 @@ public class MockOfJedis {
     }
 
     private synchronized String mockSet(final String key, String value, SetParams setParams) {
-        boolean insert = !(isSetParamsNX(setParams) && data.containsKey(key));
+        boolean insert = true;
+        if (isSetParamsNX(setParams)) {
+            insert = !data.containsKey(key);
+        }
         if (insert) {
             data.put(key, value);
             Long expireTime = getExpireTimePX(setParams);
             if (expireTime != null){
                 timer.schedule(wrapTTL(() -> { data.remove(key);}),expireTime);
             }
+            return  CLIENT_RESPONSE_OK;
+        } else {
+            return  CLIENT_RESPONSE_KO;
         }
-        return  JedisLock.CLIENT_RESPONSE_OK;
     }
 
     public Jedis getJedis(){

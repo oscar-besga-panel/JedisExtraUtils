@@ -9,6 +9,9 @@ import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.params.SetParams;
+
+import java.time.Duration;
 
 public class JedisTestFactory {
 
@@ -17,37 +20,66 @@ public class JedisTestFactory {
     // Zero to prevent any functional test
     // One to one pass
     // More to more passes
-    public static final int TEST_CYCLES = 1;
+    public static final int FUNCTIONAL_TEST_CYCLES = 25;
 
     public static final String HOST = "127.0.0.1";
-    public static final int PORT = 6379;
+    public static final int PORT = 6739;
+    public static final String PASS = "";
+
     public static final String URI = "redis://" + HOST + ":" + PORT;
 
+
     static boolean functionalTestEnabled(){
-        return TEST_CYCLES > 0;
+        return FUNCTIONAL_TEST_CYCLES > 0;
     }
 
     static Jedis createJedisClient(){
         HostAndPort hostAndPort = new HostAndPort(HOST,PORT);
         Jedis jedis = new Jedis(hostAndPort);
-
-        return jedis;
+        return authJedis(jedis);
     }
 
     static JedisPool createJedisPool(){
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-        jedisPoolConfig.setMinIdle(0);
-        jedisPoolConfig.setMaxIdle(0);
-        jedisPoolConfig.setTestOnCreate(true);
-        jedisPoolConfig.setTestOnReturn(true);
+        jedisPoolConfig.setMaxTotal(128);
+        jedisPoolConfig.setMaxIdle(128);
+        jedisPoolConfig.setMinIdle(16);
         jedisPoolConfig.setTestOnBorrow(true);
+        jedisPoolConfig.setTestOnReturn(true);
+        jedisPoolConfig.setTestWhileIdle(true);
+        jedisPoolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(60).toMillis());
+        jedisPoolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(30).toMillis());
+        jedisPoolConfig.setNumTestsPerEvictionRun(3);
+        jedisPoolConfig.setBlockWhenExhausted(true);
         JedisPool jedisPool = new JedisPool(jedisPoolConfig, HOST, PORT);
+        /*
+        if (PASS != null && !   PASS.trim().isEmpty()) {
+            jedisPool.auth(PASS);
+        }
+        */
+
         return jedisPool;
+    }
+
+    static Jedis authJedis(Jedis jedis){
+        if (PASS != null && !PASS.trim().isEmpty()) {
+            jedis.auth(PASS);
+        }
+        return jedis;
+    }
+
+    public static Jedis testConnection(Jedis jedis){
+        String val = "test:" + System.currentTimeMillis();
+        jedis.set(val,val,new SetParams().px(5000));
+        String check = jedis.get(val);
+        jedis.del(val);
+        if (!val.equalsIgnoreCase(check)) throw new IllegalStateException("Jedis connection not ok");
+        return jedis;
     }
 
 
     static boolean checkLock(IJedisLock jedisLock){
-        System.out.println("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
+        log.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
         if (jedisLock.isLocked()) {
             log.debug("LOCKED");
             return true;
@@ -61,7 +93,7 @@ public class JedisTestFactory {
     static boolean checkLock(java.util.concurrent.locks.Lock lock){
         if (lock instanceof  org.obapanel.jedis.interruptinglocks.Lock) {
             org.obapanel.jedis.interruptinglocks.Lock jedisLock = (org.obapanel.jedis.interruptinglocks.Lock) lock;
-            System.out.println("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
+            log.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
             if (jedisLock.isLocked()) {
                 log.debug("LOCKED");
                 return true;
@@ -75,9 +107,11 @@ public class JedisTestFactory {
         }
     }
 
+
+
     public static void main(String[] args) {
         Jedis jedis = JedisTestFactory.createJedisClient();
-        jedis.set("x",System.currentTimeMillis()+"");
+        testConnection(jedis);
         Lock jedisLock = new JedisLock(jedis,"jedisLock").asConcurrentLock();
         boolean locked = jedisLock.tryLock();
         jedisLock.unlock();
