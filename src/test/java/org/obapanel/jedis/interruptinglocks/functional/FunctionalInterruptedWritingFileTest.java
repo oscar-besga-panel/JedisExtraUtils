@@ -104,8 +104,6 @@ public class FunctionalInterruptedWritingFileTest {
                 jedisLock.lock();
                 checkLock(jedisLock);
                 writeTest();
-                jedisLock.unlock();
-                lockList.remove(jedisLock);
                 //} catch (InterruptedException e) {
                 //NOPE
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
@@ -114,6 +112,9 @@ public class FunctionalInterruptedWritingFileTest {
             } catch (Exception e){
                 log.error("Error ", e);
                 otherError.set(true);
+            } finally {
+                jedisLock.unlock();
+                lockList.remove(jedisLock);
             }
         }
 
