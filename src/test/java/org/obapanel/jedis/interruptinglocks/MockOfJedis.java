@@ -31,7 +31,7 @@ public class MockOfJedis {
     // Zero to prevent some integration test
     // One to one pass
     // More to more passes
-    public static final int INTEGRATION_TEST_CYCLES = 25;
+    public static final int INTEGRATION_TEST_CYCLES = 5;
 
     static boolean integrationTestEnabled(){
         return INTEGRATION_TEST_CYCLES > 0;

@@ -16,6 +16,8 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     private JedisLock jedisLock;
     private Thread currentThread;
     private AtomicBoolean manualUnlock = new AtomicBoolean(false);
+    private long leaseTimeDiscountMilis = 300L;
+    private long recoverFromInteruptionMilis = 100L;
 
     AbstractInterruptingJedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit) {
         jedisLock = new JedisLock(jedis,name,leaseTime, timeUnit);
@@ -117,9 +119,11 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     final void runInterruptThread() {
         try {
             long currentLeaseTime = jedisLock.getTimeUnit().toMillis( jedisLock.getLeaseTime() );
-            long realTimeToSleep = jedisLock.getLeaseMoment() + currentLeaseTime - System.currentTimeMillis();
+            long realTimeToSleep = jedisLock.getLeaseMoment() + currentLeaseTime - System.currentTimeMillis() - leaseTimeDiscountMilis;
             LOG.debug("runInterruptThread realTimeToSleep {} leaseTime {} ", realTimeToSleep, currentLeaseTime);
-            Thread.sleep(realTimeToSleep);
+            if (realTimeToSleep > 0) {
+                Thread.sleep(realTimeToSleep);
+            }
             interruptAndUnlock();
         } catch (InterruptedException e) {
             LOG.debug("runInterruptThread interrupted");
@@ -130,6 +134,11 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         if (!manualUnlock.get() && currentThread != null) {
             LOG.debug("interruptAndUnlock interrupt current thread " + currentThread.getName());
             currentThread.interrupt();
+        }
+        try {
+            Thread.sleep(recoverFromInteruptionMilis);
+        } catch (InterruptedException e) {
+            //NOOP
         }
         jedisLock.unlock();
     }

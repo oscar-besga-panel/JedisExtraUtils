@@ -109,7 +109,8 @@ public class FunctionalInterruptedWritingFileTest {
                 //} catch (InterruptedException e) {
                 //NOPE
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
-                log.info("Closed channel by interrupt exception");
+                log.info("Closed channel by interrupt exception ClosedByInterruptException");
+                Thread.interrupted();  // We clean the state
             } catch (Exception e){
                 log.error("Error ", e);
                 otherError.set(true);

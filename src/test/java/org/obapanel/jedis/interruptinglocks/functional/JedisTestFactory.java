@@ -20,10 +20,10 @@ public class JedisTestFactory {
     // Zero to prevent any functional test
     // One to one pass
     // More to more passes
-    public static final int FUNCTIONAL_TEST_CYCLES = 1;
+    public static final int FUNCTIONAL_TEST_CYCLES = 5;
 
     public static final String HOST = "127.0.0.1";
-    public static final int PORT = 6739;
+    public static final int PORT = 6379;
     public static final String PASS = "";
 
     public static final String URI = "redis://" + HOST + ":" + PORT;
