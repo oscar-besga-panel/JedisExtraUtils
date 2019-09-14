@@ -62,12 +62,13 @@ public class FunctionalWritingFileTest {
             File tempFile = folder.newFile(getClass().getName() + "." + System.currentTimeMillis() + ".txt");
             log.info("Temp file is " + tempFile.getAbsolutePath());
             otherError.set(false);
+            log.info("_\n");
             log.info("FUNCTIONAL_TEST_CYCLES " + i);
-            Thread t1 = new Thread(new WriteTest(10, tempFile));
+            Thread t1 = new Thread(new WriteTest(270, tempFile));
             t1.setName("T1_i"+i);
-            Thread t2 = new Thread(new WriteTest(70, tempFile));
+            Thread t2 = new Thread(new WriteTest(190, tempFile));
             t2.setName("T2_i"+i);
-            Thread t3 = new Thread(new WriteTest(30, tempFile));
+            Thread t3 = new Thread(new WriteTest(220, tempFile));
             t3.setName("T3_i"+i);
 
             List<Thread> threadList = Arrays.asList(t1,t2,t3);
@@ -94,14 +95,14 @@ public class FunctionalWritingFileTest {
 
         @Override
         public void run() {
-            try (Jedis jedis = authJedis(jedisPool.getResource())) {
+            //try (Jedis jedis = authJedis(jedisPool.getResource())) {
+            try (Jedis jedis = jedisPool.getResource()) {
                 jedisLock = new JedisLock(jedis, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
                 checkLock(jedisLock);
                 writeTest();
-                jedisLock.unlock();
-                lockList.remove(jedisLock);
+
                 //} catch (InterruptedException e) {
                 //NOPE
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
@@ -110,6 +111,9 @@ public class FunctionalWritingFileTest {
             } catch (Exception e){
                 log.error("Error ", e);
                 otherError.set(true);
+            } finally {
+                jedisLock.unlock();
+                lockList.remove(jedisLock);
             }
         }
 

@@ -38,6 +38,7 @@ public class FunctionalInterruptingLocksBaseTest {
     public void testIfInterruptedFor5SecondsLock() {
         try {
             for(int i = 0; i < FUNCTIONAL_TEST_CYCLES; i++) {
+                log.info("_\n");
                 log.info("FUNCTIONAL_TEST_CYCLES " + i);
                 log.info("_i" + i + "_3s");
                 boolean wasInterruptedFor3Seconds = wasInterrupted(3);

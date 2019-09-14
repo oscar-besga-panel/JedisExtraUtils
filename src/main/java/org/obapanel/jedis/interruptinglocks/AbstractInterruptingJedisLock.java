@@ -16,8 +16,8 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     private JedisLock jedisLock;
     private Thread currentThread;
     private AtomicBoolean manualUnlock = new AtomicBoolean(false);
-    private long leaseTimeDiscountMilis = 300L;
-    private long recoverFromInteruptionMilis = 100L;
+    private long leaseTimeDiscountMilis = 10L;
+    private long recoverFromInteruptionMilis = 15L;
 
     AbstractInterruptingJedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit) {
         jedisLock = new JedisLock(jedis,name,leaseTime, timeUnit);
@@ -28,35 +28,31 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     }
 
     public synchronized boolean tryLock() {
-        jedisLock.tryLock();
-        if (isLocked()) {
+        boolean result = jedisLock.tryLock();
+        if (result) {
             afterLock();
         }
-        return isLocked();
+        return result;
     }
 
     public synchronized boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
-        jedisLock.tryLockForAWhile(time, unit);
-        if (isLocked()) {
+        boolean result = jedisLock.tryLockForAWhile(time, unit);
+        if (result) {
             afterLock();
         }
-        return isLocked();
+        return result;
     }
 
 
     public synchronized void lock() {
         jedisLock.lock();
-        if (isLocked()) {
-            afterLock();
-        }
+        afterLock();
     }
 
 
     public synchronized void lockInterruptibly() throws InterruptedException {
         jedisLock.lockInterruptibly();
-        if (isLocked()) {
-            afterLock();
-        }
+        afterLock();
     }
 
 
@@ -120,9 +116,12 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         try {
             long currentLeaseTime = jedisLock.getTimeUnit().toMillis( jedisLock.getLeaseTime() );
             long realTimeToSleep = jedisLock.getLeaseMoment() + currentLeaseTime - System.currentTimeMillis() - leaseTimeDiscountMilis;
-            LOG.debug("runInterruptThread realTimeToSleep {} leaseTime {} ", realTimeToSleep, currentLeaseTime);
+            LOG.info("runInterruptThread realTimeToSleep {} leaseTime {} ", realTimeToSleep, currentLeaseTime);
             if (realTimeToSleep > 0) {
                 Thread.sleep(realTimeToSleep);
+            } else {
+                LOG.error("runInterruptThread realTimeToSleep ERROR, sleepring 50");
+                Thread.sleep(50);
             }
             interruptAndUnlock();
         } catch (InterruptedException e) {

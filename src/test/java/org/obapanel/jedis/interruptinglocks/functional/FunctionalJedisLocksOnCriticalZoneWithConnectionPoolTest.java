@@ -54,6 +54,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
             intoCriticalZone.set(false);
             errorInCriticalZone.set(false);
             otherError.set(false);
+            log.info("_\n");
             log.info("i {}", i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
             t1.setName("prueba_t1");
@@ -74,14 +75,14 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime) {
-        try (Jedis jedis = authJedis(jedisPool.getResource())){
+        //try (Jedis jedis = authJedis(jedisPool.getResource())){
+        try (Jedis jedis = jedisPool.getResource()){
             JedisLock jedisLock = new JedisLock(jedis,lockName);
             lockList.add(jedisLock);
             jedisLock.lock();
             checkLock(jedisLock);
             accessCriticalZone(sleepTime);
             jedisLock.unlock();
-            jedis.quit();
         } catch (Exception e){
             log.error("Error ", e);
             otherError.set(true);

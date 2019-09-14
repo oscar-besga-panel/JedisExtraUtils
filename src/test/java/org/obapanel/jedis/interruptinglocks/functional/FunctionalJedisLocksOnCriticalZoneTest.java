@@ -58,6 +58,7 @@ public class FunctionalJedisLocksOnCriticalZoneTest {
             intoCriticalZone.set(false);
             errorInCriticalZone.set(false);
             otherError.set(false);
+            log.info("_\n");
             log.info("i {}", i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
             t1.setName("prueba_t1");

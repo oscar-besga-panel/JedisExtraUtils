@@ -13,14 +13,14 @@ import java.util.concurrent.locks.Condition;
 public class Lock implements java.util.concurrent.locks.Lock, Closeable, AutoCloseable {
 
 
-    private final JedisLock jedisLock;
+    private final IJedisLock jedisLock;
 
 
     /**
      * Creates a java.util.concurrent.locks.Lock from a Redis Lock
      * @param jedisLock Redis Lock
      */
-    Lock(JedisLock jedisLock){
+    public Lock(IJedisLock jedisLock){
         this.jedisLock = jedisLock;
     }
 

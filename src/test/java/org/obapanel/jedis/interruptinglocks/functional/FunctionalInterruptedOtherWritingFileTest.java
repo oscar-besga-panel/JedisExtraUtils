@@ -17,8 +17,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,13 +24,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static java.nio.file.StandardOpenOption.APPEND;
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
 
-public class FunctionalInterruptedWritingFileTest {
+public class FunctionalInterruptedOtherWritingFileTest {
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptedWritingFileTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptedOtherWritingFileTest.class);
 
     private JedisPool jedisPool;
     private String lockName;
@@ -70,18 +69,20 @@ public class FunctionalInterruptedWritingFileTest {
             otherError.set(false);
             log.info("_\n");
             log.info("FUNCTIONAL_TEST_CYCLES " + i);
-            Thread t1 = new Thread(new WriteTest(250, tempFile));
+            Thread t1 = new Thread(new WriteTest(270, tempFile));
             t1.setName("T1_i"+i);
-            Thread t2 = new Thread(new WriteTest(150, tempFile));
+            Thread t2 = new Thread(new WriteTest(190, tempFile));
             t2.setName("T2_i"+i);
-            Thread t3 = new Thread(new WriteTest(300, tempFile));
+            Thread t3 = new Thread(new WriteTest(220, tempFile));
             t3.setName("T3_i"+i);
+
             List<Thread> threadList = Arrays.asList(t1,t2,t3);
             Collections.shuffle(threadList);
             threadList.forEach(Thread::start);
             for(Thread tt: threadList) tt.join();
             assertFalse(otherError.get());
             assertFalse(lockList.stream().anyMatch(il -> il != null && il.isLocked()));
+
         }
     }
 
@@ -106,10 +107,11 @@ public class FunctionalInterruptedWritingFileTest {
                 jedisLock.lock();
                 checkLock(jedisLock);
                 writeTest();
+
                 //} catch (InterruptedException e) {
                 //NOPE
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
-                log.info("Closed channel by interrupt exception ClosedByInterruptException");
+                log.info("Closed channel by interrupt exception");
                 Thread.interrupted();  // We clean the state
             } catch (Exception e){
                 log.error("Error ", e);
@@ -122,10 +124,18 @@ public class FunctionalInterruptedWritingFileTest {
 
         private void writeTest() throws IOException {
             log.info("Writing with thread " + Thread.currentThread().getName());
-            while(true) {
-                line++;
-                String text = "#" + line + " " + Thread.currentThread().getName();
-                Files.write(tempFile.toPath(), Arrays.asList(text)  , StandardOpenOption.APPEND);
+            FileWriter fileWriter= null;
+            PrintWriter printWriter = null;
+            try {
+                fileWriter = new FileWriter(tempFile, true);
+                printWriter = new PrintWriter(fileWriter);
+                while(jedisLock.isLocked()) {
+                    line++;
+                    printWriter.printf("#" + line + " " + Thread.currentThread().getName()+"\n");
+                }
+            } finally {
+                if (printWriter!=null) printWriter.close();
+                if (fileWriter!= null) fileWriter.close();
             }
         }
     }

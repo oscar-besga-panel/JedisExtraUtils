@@ -67,6 +67,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
             errorInCriticalZone.set(false);
             otherError.set(false);
             intoCriticalZone.set(false);
+            log.info("_\n");
             log.info("FUNCTIONAL_TEST_CYCLES " + i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
             t1.setName("T1_1s_i"+i);
@@ -87,7 +88,8 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime){
-        try (Jedis jedis = authJedis(jedisPool.getResource())){
+       // try (Jedis jedis = authJedis(jedisPool.getResource())){
+        try (Jedis jedis = jedisPool.getResource()){
             //Jedis myjedis = createJedisClient();
             ;
             InterruptingJedisJedisLockExecutor interruptingJedisJedisLockExecutor = new InterruptingJedisJedisLockExecutor(jedis, lockName, 5, TimeUnit.SECONDS, executorService);

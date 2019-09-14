@@ -50,6 +50,7 @@ public class FunctionalInterruptingLocksWithExecutorTest {
     @Test
     public void testIfInterruptedFor5SecondsLock() {
         for(int i = 0; i < FUNCTIONAL_TEST_CYCLES; i++) {
+            log.info("_\n");
             log.info("i {}", i);
             boolean wasInterruptedFor3Seconds = wasInterrupted(3);
             boolean wasInterruptedFor7Seconds = wasInterrupted(7);
