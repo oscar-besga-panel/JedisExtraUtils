@@ -15,12 +15,32 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
 
     private JedisLock jedisLock;
     private Thread currentThread;
+    private boolean forceTimeoutRedis;
+    private long leaseTime;
+    private TimeUnit timeUnit;
     private AtomicBoolean manualUnlock = new AtomicBoolean(false);
-    private long leaseTimeDiscountMilis = 10L;
-    private long recoverFromInteruptionMilis = 15L;
+    private long leaseTimeDiscountMilis;
+    private long recoverFromInteruptionMilis;
+
+
 
     AbstractInterruptingJedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit) {
-        jedisLock = new JedisLock(jedis,name,leaseTime, timeUnit);
+        this(jedis, name,leaseTime, timeUnit, false);
+    }
+    AbstractInterruptingJedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit, boolean forceTimeoutRedis) {
+        if (forceTimeoutRedis){
+            jedisLock = new JedisLock(jedis, name, leaseTime, timeUnit);
+            this.leaseTimeDiscountMilis = 10L;
+            this.recoverFromInteruptionMilis = 15L;
+
+        } else {
+            jedisLock = new JedisLock(jedis, name);
+            this.leaseTimeDiscountMilis = 0L;
+            this.recoverFromInteruptionMilis = 10L;
+        }
+        this.forceTimeoutRedis = forceTimeoutRedis;
+        this.leaseTime = leaseTime;
+        this.timeUnit = timeUnit;
     }
 
     public boolean isLocked() {
@@ -61,12 +81,12 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
 
     @Override
     public Long getLeaseTime() {
-        return jedisLock.getLeaseTime();
+        return this.leaseTime;
     }
 
     @Override
     public TimeUnit getTimeUnit() {
-        return jedisLock.getTimeUnit();
+        return this.timeUnit;
     }
 
     @Override
@@ -114,9 +134,9 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
      */
     final void runInterruptThread() {
         try {
-            long currentLeaseTime = jedisLock.getTimeUnit().toMillis( jedisLock.getLeaseTime() );
+            long currentLeaseTime = timeUnit.toMillis( leaseTime );
             long realTimeToSleep = jedisLock.getLeaseMoment() + currentLeaseTime - System.currentTimeMillis() - leaseTimeDiscountMilis;
-            LOG.info("runInterruptThread realTimeToSleep {} leaseTime {} ", realTimeToSleep, currentLeaseTime);
+            LOG.info("runInterruptThread realTimeToSleep {} leaseTime {} forceTimeoutRedis ", realTimeToSleep, currentLeaseTime, forceTimeoutRedis);
             if (realTimeToSleep > 0) {
                 Thread.sleep(realTimeToSleep);
             } else {
