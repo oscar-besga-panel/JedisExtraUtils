@@ -21,19 +21,12 @@ public class JedisTestFactory {
     // Zero to prevent any functional test
     // One to one pass
     // More to more passes
-    public static final int FUNCTIONAL_TEST_CYCLES = 25;
+    public static final int FUNCTIONAL_TEST_CYCLES = 100;
 
     public static final String HOST = "127.0.0.1";
     public static final int PORT = 6379;
     public static final String PASS = "";
 
-//     public static final String HOST = "10.95.217.96";
-//    public static final int PORT = 6379;
-//    public static final String PASS = "Vaz2aaDRae4ysZKKdawU";
-//
-//    public static final String HOST = "192.168.0.19";
-//    public static final int PORT = 6379;
-//    public static final String PASS = "";
 
     public static final String URI = "redis://" + HOST + ":" + PORT;
 
@@ -80,7 +73,6 @@ public class JedisTestFactory {
     }
 
     public static JedisPool testPoolConnection(JedisPool jedisPool){
-        //Jedis jedis = authJedis(jedisPool.getResource());
         Jedis jedis = jedisPool.getResource();
         String val = "test:" + System.currentTimeMillis();
         jedis.set(val,val,new SetParams().px(5000));
@@ -131,7 +123,7 @@ public class JedisTestFactory {
         boolean reallyLocked = jedisLock.isLocked();
         jedisLock.unlock();
         jedis.close();
-        System.out.println("JEDISLOCK");
+        System.out.println("JEDISLOCK " + locked + " " + reallyLocked);
 
         JedisPool jedisPool = JedisTestFactory.createJedisPool();
         testPoolConnection(jedisPool);
@@ -141,7 +133,7 @@ public class JedisTestFactory {
         boolean preallyLocked = jedisPoolLock.isLocked();
         jedisPoolLock.unlock();
         jedisFromPool.close();
-        System.out.println("JEDISPOOLLOCK");
+        System.out.println("JEDISPOOLLOCK " + locked + " " + preallyLocked);
 
     }
 

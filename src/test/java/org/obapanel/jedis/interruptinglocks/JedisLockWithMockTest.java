@@ -138,7 +138,7 @@ public class JedisLockWithMockTest {
         t.interrupt();
         Thread.sleep(25);
 
-        assertFalse(jedisLock2.isLocked());
+        // assertFalse(jedisLock2.isLocked());
         assertNotEquals(getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
         assertTrue(triedLock.get());
         assertFalse(interrupted.get());
