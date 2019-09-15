@@ -8,7 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class AbstractInterruptingJedisLock implements IJedisLock {
+public abstract class AbstractInterruptingJedisLock implements AutoCloseable, IJedisLock {
 
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractInterruptingJedisLock.class);
@@ -79,7 +79,6 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
 
 
 
-
     @Override
     public Long getLeaseTime() {
         return this.leaseTime;
@@ -103,17 +102,25 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         }
     }
 
-    public synchronized void underLock(Runnable task) {
-        this.lock();
-        task.run();
+    @Override
+    public synchronized void close() {
         this.unlock();
     }
 
+
+    public synchronized void underLock(Runnable task) {
+        try(AbstractInterruptingJedisLock aijl = this) {
+            aijl.lock();
+            task.run();
+        }
+    }
+
     public synchronized <T> T underLock(Callable<T> task) throws Exception {
-        this.lock();
-        T result = task.call();
-        this.unlock();
-        return result;
+        try(AbstractInterruptingJedisLock aijl = this) {
+            aijl.lock();
+            T result = task.call();
+            return result;
+        }
     }
 
 

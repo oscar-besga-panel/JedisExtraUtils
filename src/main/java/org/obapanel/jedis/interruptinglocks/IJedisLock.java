@@ -2,6 +2,7 @@ package org.obapanel.jedis.interruptinglocks;
 
 import redis.clients.jedis.Jedis;
 
+import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -72,6 +73,7 @@ public interface IJedisLock {
     /**
      * Will execute the task between locking
      * The steps are: obtain lock - execute task - free lock
+     * This is into a try-catch so close is mandatory, even after an exception
      * A simple lock without time limit and interrumpiblity is used
      * This method will use and consume the lock
      * @param task Task to execute
@@ -82,6 +84,7 @@ public interface IJedisLock {
     /**
      * Will execute the task between locking and return the result
      * The steps are: obtain lock - execute task - free lock - return result
+     * This is into a try-catch so close is mandatory, even after an exception
      * A simple lock without time limit and interrumpiblity is used
      * @param task Task to execute with return type
      */
@@ -100,11 +103,11 @@ public interface IJedisLock {
      * @param task Task to execute
      */
     public static <T> T underLockTask(Jedis jedis, String name, Callable<T> task) throws Exception {
-        JedisLock jedisLock = new JedisLock(jedis, name);
-        jedisLock.lock();
-        T result = task.call();
-        jedisLock.unlock();
-        return result;
+        try (JedisLock jedisLock = new JedisLock(jedis, name)) {
+            jedisLock.lock();
+            T result = task.call();
+            return result;
+        }
     }
 
     /**
@@ -117,10 +120,10 @@ public interface IJedisLock {
      * @param task Task to execute with return type
      */
     public static void underLockTask(Jedis jedis, String name, Runnable task) {
-        JedisLock jedisLock = new JedisLock(jedis, name);
-        jedisLock.lock();
-        task.run();
-        jedisLock.unlock();
+        try (JedisLock jedisLock = new JedisLock(jedis, name)) {
+            jedisLock.lock();
+            task.run();
+        }
     }
 
 

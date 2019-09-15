@@ -81,7 +81,6 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseUnderlockTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime){
-        //try (Jedis jedis = authJedis(jedisPool.getResource())) {
         try (Jedis jedis = jedisPool.getResource()) {
             InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(jedis, lockName, 5, TimeUnit.SECONDS);
             interruptingLockBaseList.add(interruptingJedisJedisLockBase);

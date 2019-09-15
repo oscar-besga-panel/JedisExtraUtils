@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * https://redis.io/topics/distlock
  *
  */
-public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
+public class JedisLock implements AutoCloseable, IJedisLock {
 
     private static final Logger log = LoggerFactory.getLogger(JedisLock.class);
 
@@ -199,22 +199,24 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public synchronized void close() {
         redisUnlock();
     }
 
 
     public synchronized void underLock(Runnable task) {
-        this.lock();
-        task.run();
-        this.unlock();
+        try (JedisLock jl = this) {
+            jl.lock();
+            task.run();
+        }
     }
 
     public synchronized <T> T underLock(Callable<T> task) throws Exception {
-        this.lock();
-        T result = task.call();
-        this.unlock();
-        return result;
+        try (JedisLock jl = this){
+            jl.lock();
+            T result = task.call();
+            return result;
+        }
     }
 
 
