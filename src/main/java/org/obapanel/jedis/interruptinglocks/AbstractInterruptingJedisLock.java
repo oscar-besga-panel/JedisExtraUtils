@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -100,6 +101,19 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         if (!isLocked()) {
             afterUnLock();
         }
+    }
+
+    public synchronized void underLock(Runnable task) {
+        this.lock();
+        task.run();
+        this.unlock();
+    }
+
+    public synchronized <T> T underLock(Callable<T> task) throws Exception {
+        this.lock();
+        T result = task.call();
+        this.unlock();
+        return result;
     }
 
 

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -200,6 +201,20 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
     @Override
     public synchronized void close() throws IOException {
         redisUnlock();
+    }
+
+
+    public synchronized void underLock(Runnable task) {
+        this.lock();
+        task.run();
+        this.unlock();
+    }
+
+    public synchronized <T> T underLock(Callable<T> task) throws Exception {
+        this.lock();
+        T result = task.call();
+        this.unlock();
+        return result;
     }
 
 

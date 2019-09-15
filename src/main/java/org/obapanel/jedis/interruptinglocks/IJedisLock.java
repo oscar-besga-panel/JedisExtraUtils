@@ -1,5 +1,8 @@
 package org.obapanel.jedis.interruptinglocks;
 
+import redis.clients.jedis.Jedis;
+
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 public interface IJedisLock {
@@ -60,7 +63,65 @@ public interface IJedisLock {
     /**
      * Returns true if the lock is retained with this object
      * If lock is retained, and the time has expired, a unlock will be performed
+     * This method will use and consume the lock
      * @return true if lock is retained here
      */
     boolean isLocked();
+
+
+    /**
+     * Will execute the task between locking
+     * The steps are: obtain lock - execute task - free lock
+     * A simple lock without time limit and interrumpiblity is used
+     * This method will use and consume the lock
+     * @param task Task to execute
+     */
+    void underLock(Runnable task);
+
+
+    /**
+     * Will execute the task between locking and return the result
+     * The steps are: obtain lock - execute task - free lock - return result
+     * A simple lock without time limit and interrumpiblity is used
+     * @param task Task to execute with return type
+     */
+    <T> T underLock(Callable<T> task) throws Exception;
+
+
+
+
+    /**
+     * Will execute the task between locking
+     * Helper method that creates the lock for simpler use
+     * The steps are: create lock - obtain lock - execute task - free lock
+     * A simple lock without time limit and interrumpiblity is used
+     * @param jedis Jedis client
+     * @param name Name of the lock
+     * @param task Task to execute
+     */
+    public static <T> T underLockTask(Jedis jedis, String name, Callable<T> task) throws Exception {
+        JedisLock jedisLock = new JedisLock(jedis, name);
+        jedisLock.lock();
+        T result = task.call();
+        jedisLock.unlock();
+        return result;
+    }
+
+    /**
+     * Will execute the task between locking and return the result
+     * Helper method that creates the lock for simpler use
+     * The steps are: obtain lock - execute task - free lock - return result
+     * A simple lock without time limit and interrumpiblity is used
+     * @param jedis Jedis client
+     * @param name Name of the lock
+     * @param task Task to execute with return type
+     */
+    public static void underLockTask(Jedis jedis, String name, Runnable task) {
+        JedisLock jedisLock = new JedisLock(jedis, name);
+        jedisLock.lock();
+        task.run();
+        jedisLock.unlock();
+    }
+
+
 }
