@@ -4,6 +4,8 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.SetParams;
 
 import java.lang.reflect.InvocationTargetException;
@@ -68,12 +70,14 @@ public class MockOfJedis {
     }
 
     private Jedis jedis;
+    private Transaction transaction;
     private Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private Timer timer;
 
     public MockOfJedis() {
         timer = new Timer();
         jedis = Mockito.mock(Jedis.class);
+        transaction = Mockito.mock(Transaction.class);
         Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
@@ -91,6 +95,20 @@ public class MockOfJedis {
             List<String> values = ioc.getArgument(2);
             return mockEval(script, keys, values);
         });
+        Mockito.when(jedis.multi()).thenReturn(transaction);
+        Mockito.when(transaction.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            String value = ioc.getArgument(1);
+            SetParams setParams = ioc.getArgument(2);
+            String s = mockSet(key, value, setParams);
+            return createMockResponse(s);
+        });
+        Mockito.when(transaction.get(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            Object o = mockGet(key);
+            return createMockResponse(o);
+        });
+
     }
 
     private synchronized Object mockGet(String key) {
@@ -123,6 +141,12 @@ public class MockOfJedis {
         } else {
             return  CLIENT_RESPONSE_KO;
         }
+    }
+
+    private static <T> Response<T> createMockResponse(T data) {
+        Response<T> response = Mockito.mock(Response.class);
+        Mockito.when(response.get()).thenReturn(data);
+        return  response;
     }
 
     public Jedis getJedis(){

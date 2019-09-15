@@ -21,7 +21,7 @@ import java.util.function.Supplier;
  * It is also closeable to be used in try-with-resources
  *
  * I do not recommend reuse a locked-and-unlocked JedisLock
- * Should be thread-safe, I do not recomend using between threads
+ * Should be thread-safe, I do not recomend using between thread s
  *
  * https://redis.io/topics/distlock
  *
@@ -140,18 +140,10 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         return timeLimit;
     }
 
-    /**
-     * Returns the current value in Redis
-     * A string whem is locked, null if not
-     * For testing
-     * @return Strig of redis
-     */
-    private String getValue(){
+    // VisibleForTesting
+    private String getValue() {
         return value;
     }
-
-
-
 
     @Override
     public synchronized boolean tryLock() {
@@ -267,13 +259,6 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
      * @return true if unlocked
      */
     private synchronized void redisUnlock() {
-//        if (redisCheckLock()) {
-//            //safeFromInterruptingCall(this::safeRedisUnlock);
-//            safeRedisUnlock();
-//        }
-//    }
-//
-//    private synchronized void safeRedisUnlock() {
         if (!redisCheckLock()) return;
         List<String> keys = Arrays.asList(name);
         List<String> values = Arrays.asList(value);
@@ -309,16 +294,11 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
      * @return true if the lock is remotely held
      */
     private synchronized boolean redisCheckLock() {
-        return safeRedisCheckLock();
-        //return safeFromInterruptingOperation(this::safeRedisCheckLock);
-    }
-
-    private synchronized boolean safeRedisCheckLock() {
         boolean check = false;
-        log.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
+        log.debug("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
         if (leaseTime == null || ((leaseTime != null && timeLimit > System.currentTimeMillis()))) {
             String currentValueRedis = jedis.get(name);
-            log.info("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", value, currentValueRedis);
+            log.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", value, currentValueRedis);
             check = value.equals(currentValueRedis);
         }
         if (!check) {
@@ -326,35 +306,6 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
         }
         return check;
     }
-
-
-/*
-    private synchronized void safeFromInterruptingCall(Runnable runnable) {
-        boolean wasInterrupted = false;
-        if (Thread.currentThread().isInterrupted()){
-            Thread.interrupted();
-            wasInterrupted = true;
-        }
-        runnable.run();
-        if (wasInterrupted) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    private synchronized boolean safeFromInterruptingOperation(Supplier<Boolean> supplier) {
-        boolean wasInterrupted = false;
-        if (Thread.currentThread().isInterrupted()){
-            Thread.interrupted();
-            wasInterrupted = true;
-        }
-        Boolean result = supplier.get();
-        if (wasInterrupted) {
-            Thread.currentThread().interrupt();
-        }
-        return result;
-    }
-*/
-
 
     /**
      * Creates a java.util.concurrent.Lock instance of this lock
@@ -384,3 +335,34 @@ public class JedisLock implements Closeable, AutoCloseable, IJedisLock {
     }
 
 }
+
+
+
+
+/*
+    private synchronized void safeFromInterruptingCall(Runnable runnable) {
+        boolean wasInterrupted = false;
+        if (Thread.currentThread().isInterrupted()){
+            Thread.interrupted();
+            wasInterrupted = true;
+        }
+        runnable.run();
+        if (wasInterrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private synchronized boolean safeFromInterruptingOperation(Supplier<Boolean> supplier) {
+        boolean wasInterrupted = false;
+        if (Thread.currentThread().isInterrupted()){
+            Thread.interrupted();
+            wasInterrupted = true;
+        }
+        Boolean result = supplier.get();
+        if (wasInterrupted) {
+            Thread.currentThread().interrupt();
+        }
+        return result;
+    }
+*/
+
