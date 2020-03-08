@@ -32,8 +32,5 @@ build/tmp/javadoc/
 
 gradle/wrapper/
 
-gradlew
-
-gradlew.bat
 
 tmp/
