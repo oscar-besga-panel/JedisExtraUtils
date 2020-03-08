@@ -21,19 +21,6 @@ public class InterruptingJedisJedisLockExecutor extends AbstractInterruptingJedi
     private ExecutorService executorService;
     private Future future;
 
-    /**
-     * Main constructor
-     * Creates a cached thread pool, which will create bew threads on demand or will use old ones if avalible
-     * @param jedis Jedis client
-     * @param name Lock name
-     * @param leaseTime Time to lease the lock
-     * @param timeUnit Unit of leaseTime
-     */
-    public InterruptingJedisJedisLockExecutor(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit) {
-        super(jedis, name, leaseTime, timeUnit);
-        this.executorService = Executors.newCachedThreadPool();
-    }
-
 
     /**
      * Main constructor

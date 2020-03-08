@@ -1,8 +1,6 @@
 package org.obapanel.jedis.interruptinglocks;
 
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
@@ -10,7 +8,7 @@ import java.util.concurrent.locks.Condition;
 /**
  * java.util.concurrent.locks.Lock from a Redis Lock
  */
-public class Lock implements java.util.concurrent.locks.Lock, Closeable, AutoCloseable {
+public class Lock implements java.util.concurrent.locks.Lock, AutoCloseable {
 
 
     private final IJedisLock jedisLock;
@@ -23,9 +21,6 @@ public class Lock implements java.util.concurrent.locks.Lock, Closeable, AutoClo
     public Lock(IJedisLock jedisLock){
         this.jedisLock = jedisLock;
     }
-
-
-
 
     @Override
     public void lock() {
@@ -66,7 +61,7 @@ public class Lock implements java.util.concurrent.locks.Lock, Closeable, AutoClo
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         unlock();
     }
 

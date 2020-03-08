@@ -3,9 +3,9 @@ package org.obapanel.jedis.interruptinglocks.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.obapanel.jedis.interruptinglocks.IJedisLock;
 import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
+import org.obapanel.jedis.interruptinglocks.JedisLockUtils;
 import redis.clients.jedis.Jedis;
 
 
@@ -42,10 +42,10 @@ public class FunctionalJedisLockUnderlockTask {
     @Test
     public void underLockTask() throws Exception {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        IJedisLock.underLockTask(jedis, keyName, () -> {
+        JedisLockUtils.underLockTask(jedis, keyName, () -> {
             result1.set(true);
         });
-        boolean result2 = IJedisLock.underLockTask(jedis, keyName, () -> {
+        boolean result2 = JedisLockUtils.underLockTask(jedis, keyName, () -> {
             return true;
         });
         assertTrue(result1.get());

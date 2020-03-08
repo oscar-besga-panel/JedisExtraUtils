@@ -3,6 +3,7 @@ package org.obapanel.jedis.interruptinglocks;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Builder;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
@@ -10,12 +11,15 @@ import redis.clients.jedis.params.SetParams;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.*;
 
@@ -33,7 +37,7 @@ public class MockOfJedis {
     // Zero to prevent some integration test
     // One to one pass
     // More to more passes
-    public static final int INTEGRATION_TEST_CYCLES = 5;
+    public static final int INTEGRATION_TEST_CYCLES = 1;
 
     static boolean integrationTestEnabled(){
         return INTEGRATION_TEST_CYCLES > 0;
@@ -71,6 +75,7 @@ public class MockOfJedis {
 
     private Jedis jedis;
     private Transaction transaction;
+    private List<TransactionOrder> transactionActions = new ArrayList<>();
     private Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private Timer timer;
 
@@ -96,22 +101,20 @@ public class MockOfJedis {
             return mockEval(script, keys, values);
         });
         Mockito.when(jedis.multi()).thenReturn(transaction);
+        Mockito.when(transaction.get(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            return mockTransactionGet(key);
+        });
         Mockito.when(transaction.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = ioc.getArgument(2);
-            String s = mockSet(key, value, setParams);
-            return createMockResponse(s);
+            return mockTransactionSet(key, value, setParams);
         });
-        Mockito.when(transaction.get(anyString())).thenAnswer(ioc -> {
-            String key = ioc.getArgument(0);
-            Object o = mockGet(key);
-            return createMockResponse(o);
-        });
-
+        Mockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
     }
 
-    private synchronized Object mockGet(String key) {
+    private synchronized String mockGet(String key) {
         return data.get(key);
     }
 
@@ -135,7 +138,7 @@ public class MockOfJedis {
             data.put(key, value);
             Long expireTime = getExpireTimePX(setParams);
             if (expireTime != null){
-                timer.schedule(wrapTTL(() -> { data.remove(key);}),expireTime);
+                timer.schedule(wrapTTL(() -> data.remove(key)),expireTime);
             }
             return  CLIENT_RESPONSE_OK;
         } else {
@@ -143,11 +146,27 @@ public class MockOfJedis {
         }
     }
 
-    private static <T> Response<T> createMockResponse(T data) {
-        Response<T> response = Mockito.mock(Response.class);
-        Mockito.when(response.get()).thenReturn(data);
-        return  response;
+    private synchronized Response<String> mockTransactionGet(String key){
+        TransactionOrder<String> transactionOrder = new TransactionOrder<>(() -> mockGet(key));
+        transactionActions.add(transactionOrder);
+        return transactionOrder.getResponse();
     }
+
+    private synchronized Response<String> mockTransactionSet(String key, String value, SetParams setParams){
+        TransactionOrder<String> transactionOrder = new TransactionOrder<>(() -> mockSet(key, value, setParams));
+        transactionActions.add(transactionOrder);
+        return transactionOrder.getResponse();
+    }
+
+    private synchronized List<Object> mockTransactionExec(){
+        transactionActions.forEach(TransactionOrder::execute);
+        List<Object> responses = transactionActions.stream().
+                map(TransactionOrder::getResponse).
+                collect(Collectors.toList());
+        transactionActions.clear();
+        return responses;
+    }
+
 
     public Jedis getJedis(){
         return jedis;
@@ -155,6 +174,7 @@ public class MockOfJedis {
 
     public synchronized void clearData(){
         data.clear();
+        transactionActions.clear();
     }
 
 
@@ -204,6 +224,35 @@ public class MockOfJedis {
         }
     }
 
+
+    private static class TransactionOrder<T> extends Builder<T> {
+        Response<T> response;
+        Supplier<T> supplier;
+        T result;
+
+
+        TransactionOrder(Supplier<T> callable) {
+            this.response = new Response<>(this);
+            this.supplier = callable;
+        }
+
+        void execute(){
+           result = supplier.get();
+           response.set(result);
+        }
+
+        @Override
+        public T build(Object data) {
+            if (result == null) {
+                execute();
+            }
+            return result;
+        }
+
+        public Response getResponse(){
+            return response;
+        }
+    }
 
 
 }

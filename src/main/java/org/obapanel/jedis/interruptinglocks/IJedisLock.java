@@ -1,12 +1,10 @@
 package org.obapanel.jedis.interruptinglocks;
 
-import redis.clients.jedis.Jedis;
 
-import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
-public interface IJedisLock {
+public interface IJedisLock extends AutoCloseable {
 
     /**
      * Name of the lock
@@ -61,20 +59,25 @@ public interface IJedisLock {
      */
     void unlock();
 
+    // Closing the resource is the same as unlocking the lock
+    default void close() {
+        unlock();
+    }
+
     /**
      * Returns true if the lock is retained with this object
-     * If lock is retained, and the time has expired, a unlock will be performed
-     * This method will use and consume the lock
+     * If the time has expired, it will return false
+     * If the time has not expired or no lease time is set, it will check the lock value against redis
      * @return true if lock is retained here
      */
     boolean isLocked();
 
 
     /**
-     * Will execute the task between locking
+     * Will execute the task between locking of this lock
      * The steps are: obtain lock - execute task - free lock
      * This is into a try-catch so close is mandatory, even after an exception
-     * A simple lock without time limit and interrumpiblity is used
+     * This operation can be interrputed, and will wait to obtaint the lock
      * This method will use and consume the lock
      * @param task Task to execute
      */
@@ -85,46 +88,11 @@ public interface IJedisLock {
      * Will execute the task between locking and return the result
      * The steps are: obtain lock - execute task - free lock - return result
      * This is into a try-catch so close is mandatory, even after an exception
-     * A simple lock without time limit and interrumpiblity is used
+     * This operation can be interrputed, and will wait to obtaint the lock
      * @param task Task to execute with return type
      */
-    <T> T underLock(Callable<T> task) throws Exception;
+    <T> T underLock(Supplier<T> task);
 
-
-
-
-    /**
-     * Will execute the task between locking
-     * Helper method that creates the lock for simpler use
-     * The steps are: create lock - obtain lock - execute task - free lock
-     * A simple lock without time limit and interrumpiblity is used
-     * @param jedis Jedis client
-     * @param name Name of the lock
-     * @param task Task to execute
-     */
-    public static <T> T underLockTask(Jedis jedis, String name, Callable<T> task) throws Exception {
-        try (JedisLock jedisLock = new JedisLock(jedis, name)) {
-            jedisLock.lock();
-            T result = task.call();
-            return result;
-        }
-    }
-
-    /**
-     * Will execute the task between locking and return the result
-     * Helper method that creates the lock for simpler use
-     * The steps are: obtain lock - execute task - free lock - return result
-     * A simple lock without time limit and interrumpiblity is used
-     * @param jedis Jedis client
-     * @param name Name of the lock
-     * @param task Task to execute with return type
-     */
-    public static void underLockTask(Jedis jedis, String name, Runnable task) {
-        try (JedisLock jedisLock = new JedisLock(jedis, name)) {
-            jedisLock.lock();
-            task.run();
-        }
-    }
 
 
 }

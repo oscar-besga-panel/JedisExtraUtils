@@ -4,11 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
-public abstract class AbstractInterruptingJedisLock implements AutoCloseable, IJedisLock {
+public abstract class AbstractInterruptingJedisLock implements IJedisLock {
 
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractInterruptingJedisLock.class);
@@ -76,9 +76,6 @@ public abstract class AbstractInterruptingJedisLock implements AutoCloseable, IJ
         afterLock();
     }
 
-
-
-
     @Override
     public Long getLeaseTime() {
         return this.leaseTime;
@@ -102,11 +99,6 @@ public abstract class AbstractInterruptingJedisLock implements AutoCloseable, IJ
         }
     }
 
-    @Override
-    public synchronized void close() {
-        this.unlock();
-    }
-
 
     public synchronized void underLock(Runnable task) {
         try(AbstractInterruptingJedisLock aijl = this) {
@@ -115,21 +107,17 @@ public abstract class AbstractInterruptingJedisLock implements AutoCloseable, IJ
         }
     }
 
-    public synchronized <T> T underLock(Callable<T> task) throws Exception {
+    public synchronized <T> T underLock(Supplier<T> task) {
         try(AbstractInterruptingJedisLock aijl = this) {
             aijl.lock();
-            T result = task.call();
-            return result;
+            return task.get();
         }
     }
-
 
     private void afterLock(){
         currentThread = Thread.currentThread();
         startInterruptingThread();
     }
-
-
 
     private void afterUnLock(){
         manualUnlock.set(true);
@@ -157,7 +145,7 @@ public abstract class AbstractInterruptingJedisLock implements AutoCloseable, IJ
         try {
             long currentLeaseTime = timeUnit.toMillis( leaseTime );
             long realTimeToSleep = jedisLock.getLeaseMoment() + currentLeaseTime - System.currentTimeMillis() - leaseTimeDiscountMilis;
-            LOG.info("runInterruptThread realTimeToSleep {} leaseTime {} forceTimeoutRedis ", realTimeToSleep, currentLeaseTime, forceTimeoutRedis);
+            LOG.debug("runInterruptThread realTimeToSleep {} leaseTime {} forceTimeoutRedis ", realTimeToSleep, currentLeaseTime, forceTimeoutRedis);
             if (realTimeToSleep > 0) {
                 Thread.sleep(realTimeToSleep);
             } else {

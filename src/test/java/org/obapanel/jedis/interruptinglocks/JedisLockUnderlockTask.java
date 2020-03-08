@@ -33,12 +33,10 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLockTask() throws Exception {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        IJedisLock.underLockTask(mockOfJedis.getJedis(), lockName,() -> {
+        JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() -> {
             result1.set(true);
         });
-        boolean result2 = IJedisLock.underLockTask(mockOfJedis.getJedis(), lockName,() -> {
-            return true;
-        });
+        boolean result2 = JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }
@@ -51,9 +49,7 @@ public class JedisLockUnderlockTask {
             result1.set(true);
         });
         JedisLock jedisLock2 = new JedisLock(mockOfJedis.getJedis(), lockName);
-        boolean result2 = jedisLock2.underLock(() -> {
-            return true;
-        });
+        boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }
@@ -66,9 +62,7 @@ public class JedisLockUnderlockTask {
             result1.set(true);
         });
         InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(mockOfJedis.getJedis(), lockName, 1, TimeUnit.SECONDS);
-        boolean result2 = jedisLock2.underLock(() -> {
-            return true;
-        });
+        boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }

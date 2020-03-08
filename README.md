@@ -8,7 +8,7 @@ Also, an interrupting lock is a Jedis based lock which interrupts the lock owner
 
 The basic interface is IJedisLock, which all implemented locks must follow
 The basic implementation is JedisLock, also other classes use this class
-The class Lock is the reimplementation of java.util.concurrent.locksLock with a JedisLock backend, if needed. It only can be generated from a RedisLock object.
+The class Lock is the reimplementation of java.util.concurrent.locksLock with a JedisLock backend, if needed. It only can be generated from a JedisLock object.
 The AbstractInterruptingLock has the main code of an interrupting lock, and two implementing classes
 - InterruptingLockBase will create a new background thread to control the leasing time
 - InterruptingLockExecutor will use a ExecutorService to retrieve a  thread to control the leasing time
@@ -32,6 +32,3 @@ https://github.com/xetorthio/jedis
 WORK IN PROGRESS !!!
 UNDER CONSTRUCTION !!!
 
-
-¿ Using Redisson instead of Jedis ?
-Try my sibling project at: https://github.com/oscar-besga-panel/InterruptingRedissonLocks/

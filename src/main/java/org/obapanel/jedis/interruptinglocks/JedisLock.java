@@ -7,12 +7,9 @@ import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.SetParams;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -27,7 +24,7 @@ import java.util.function.Supplier;
  * https://redis.io/topics/distlock
  *
  */
-public class JedisLock implements AutoCloseable, IJedisLock {
+public class JedisLock implements IJedisLock {
 
     private static final Logger log = LoggerFactory.getLogger(JedisLock.class);
 
@@ -198,47 +195,20 @@ public class JedisLock implements AutoCloseable, IJedisLock {
         redisUnlock();
     }
 
-    @Override
-    public synchronized void close() {
-        redisUnlock();
-    }
-
-
-    public synchronized void underLock(Runnable task) {
+    public synchronized void underLock(Runnable task)  {
         try (JedisLock jl = this) {
             jl.lock();
             task.run();
         }
     }
 
-    public synchronized <T> T underLock(Callable<T> task) throws Exception {
+    public synchronized <T> T underLock(Supplier<T> task) {
         try (JedisLock jl = this){
             jl.lock();
-            T result = task.call();
-            return result;
+            return task.get();
         }
     }
 
-
-    /**
-     * Attempts to get the lock.
-     * It will try one time and return
-     * The leaseMoment and timeLimit are set if lock is obtained
-     * @return true if lock obtained, false otherwise
-     */
-    private synchronized boolean OLD_redisLock() {
-        SetParams setParams = new SetParams().nx();
-        if (leaseTime != null) {
-            setParams.px(timeUnit.toMillis(leaseTime));
-        }
-        String clientStatusCodeReply = jedis.set(name,value,setParams);
-        String currentValueRedis = jedis.get(name);
-        boolean locked = CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && value.equals(currentValueRedis);
-        if (locked) {
-            setLockMoment();
-        }
-        return  locked;
-    }
 
     /**
      * Attempts to get the lock.
@@ -264,7 +234,7 @@ public class JedisLock implements AutoCloseable, IJedisLock {
         return  locked;
     }
 
-    private synchronized void setLockMoment() {
+    private void setLockMoment() {
         leaseMoment = System.currentTimeMillis();
         if (leaseTime != null){
             this.timeLimit = System.currentTimeMillis() +  timeUnit.toMillis(leaseTime);
@@ -282,27 +252,13 @@ public class JedisLock implements AutoCloseable, IJedisLock {
         Object response = jedis.eval(UNLOCK_LUA_SCRIPT, keys, values);
         int num = 0;
         if (response != null) {
-            log.info("response " + response.toString());
+            log.debug("response " + response.toString());
             num = Integer.parseInt(response.toString());
         }
         if ( num > 0 ) {
             resetLockMoment();
         }
     }
-
-
-
-
-
-
-    /**
-     * Resets the internal timers
-     */
-    private void resetLockMoment() {
-        leaseMoment = -1L;
-        timeLimit = -1L;
-    }
-
 
     /**
      * If a leaseTime is set, it checks the leasetime and the timelimit
@@ -312,8 +268,8 @@ public class JedisLock implements AutoCloseable, IJedisLock {
      */
     private synchronized boolean redisCheckLock() {
         boolean check = false;
-        log.debug("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
-        if (leaseTime == null || ((leaseTime != null && timeLimit > System.currentTimeMillis()))) {
+        log.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
+        if ((leaseTime == null) || ((leaseTime != null) && (timeLimit > System.currentTimeMillis()))) {
             String currentValueRedis = jedis.get(name);
             log.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", value, currentValueRedis);
             check = value.equals(currentValueRedis);
@@ -322,6 +278,14 @@ public class JedisLock implements AutoCloseable, IJedisLock {
             resetLockMoment();
         }
         return check;
+    }
+
+    /**
+     * Resets the internal timers
+     */
+    private void resetLockMoment() {
+        leaseMoment = -1L;
+        timeLimit = -1L;
     }
 
     /**
@@ -356,30 +320,5 @@ public class JedisLock implements AutoCloseable, IJedisLock {
 
 
 
-/*
-    private synchronized void safeFromInterruptingCall(Runnable runnable) {
-        boolean wasInterrupted = false;
-        if (Thread.currentThread().isInterrupted()){
-            Thread.interrupted();
-            wasInterrupted = true;
-        }
-        runnable.run();
-        if (wasInterrupted) {
-            Thread.currentThread().interrupt();
-        }
-    }
 
-    private synchronized boolean safeFromInterruptingOperation(Supplier<Boolean> supplier) {
-        boolean wasInterrupted = false;
-        if (Thread.currentThread().isInterrupted()){
-            Thread.interrupted();
-            wasInterrupted = true;
-        }
-        Boolean result = supplier.get();
-        if (wasInterrupted) {
-            Thread.currentThread().interrupt();
-        }
-        return result;
-    }
-*/
 
