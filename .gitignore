@@ -26,6 +26,8 @@ hs_err_pid*
 \.gradle/
 out/
 
+build/
+
 build/docs/javadoc/
 
 build/tmp/javadoc/
