@@ -3,7 +3,6 @@ package org.obapanel.jedis.interruptinglocks;
 import redis.clients.jedis.Jedis;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * For this reason, is recommended a cached thread pool, which will create bew threads on demand or will use old ones if avalible
  * For example, with Executors.newCachedThreadPool()
  */
-public class InterruptingJedisJedisLockExecutor extends AbstractInterruptingJedisLock {
+public final class InterruptingJedisJedisLockExecutor extends AbstractInterruptingJedisLock {
 
     private ExecutorService executorService;
     private Future future;

@@ -2,7 +2,6 @@ package org.obapanel.jedis.interruptinglocks;
 
 import redis.clients.jedis.Jedis;
 
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 public final class JedisLockUtils {

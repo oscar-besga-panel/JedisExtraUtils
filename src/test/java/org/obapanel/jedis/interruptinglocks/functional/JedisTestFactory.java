@@ -5,11 +5,7 @@ import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.obapanel.jedis.interruptinglocks.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.Protocol;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
 import java.time.Duration;

@@ -15,9 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.INTEGRATION_TEST_CYCLES;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.checkLock;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.integrationTestEnabled;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.*;
 
 
 public class JedisLocksOnCriticalZoneTest {

@@ -8,7 +8,6 @@ import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.obapanel.jedis.interruptinglocks.JedisLockUtils;
 import redis.clients.jedis.Jedis;
 
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 

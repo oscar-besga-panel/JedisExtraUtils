@@ -5,15 +5,11 @@ import org.junit.Before;
 import org.junit.Test;
 import redis.clients.jedis.params.SetParams;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.getJedisLockValue;
+import static org.junit.Assert.*;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.integrationTestEnabled;
 
 public class MockOfJedisTest {
 
@@ -22,12 +18,16 @@ public class MockOfJedisTest {
 
     @Before
     public void setup() {
+        org.junit.Assume.assumeTrue(integrationTestEnabled());
+        if (!integrationTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
     }
 
     @After
     public void tearDown() {
-        mockOfJedis.clearData();
+        if (mockOfJedis != null) {
+            mockOfJedis.clearData();
+        }
     }
 
     @Test

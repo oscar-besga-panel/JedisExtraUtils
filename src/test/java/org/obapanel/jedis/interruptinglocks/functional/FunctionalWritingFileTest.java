@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,7 +25,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
 
 public class FunctionalWritingFileTest {
 

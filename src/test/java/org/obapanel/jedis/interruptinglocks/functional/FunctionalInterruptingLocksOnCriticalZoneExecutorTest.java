@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,10 +87,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime){
-       // try (Jedis jedis = authJedis(jedisPool.getResource())){
         try (Jedis jedis = jedisPool.getResource()){
-            //Jedis myjedis = createJedisClient();
-            ;
             InterruptingJedisJedisLockExecutor interruptingJedisJedisLockExecutor = new InterruptingJedisJedisLockExecutor(jedis, lockName, 5, TimeUnit.SECONDS, executorService);
             interruptingJedisJedisLockExecutor.lock();
             interruptingLockBaseList.add(interruptingJedisJedisLockExecutor);

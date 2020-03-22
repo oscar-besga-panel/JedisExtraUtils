@@ -7,16 +7,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.obapanel.jedis.interruptinglocks.IJedisLock;
 import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockBase;
-import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -26,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static java.nio.file.StandardOpenOption.APPEND;
 import static org.junit.Assert.assertFalse;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*;
 

@@ -50,7 +50,8 @@ public interface IJedisLock extends AutoCloseable {
 
     /**
      * Try to lock, sleeping while it tries
-     * @throws InterruptedException can be interrupted
+     * Can be interrupted
+     * @throws InterruptedException if interrupted
      */
     void lockInterruptibly() throws InterruptedException;
 

@@ -10,12 +10,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.getJedisLockValue;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.integrationTestEnabled;
 
 public class JedisLockWithMockTest {
 
@@ -26,14 +23,20 @@ public class JedisLockWithMockTest {
 
     @Before
     public void setup() {
+        org.junit.Assume.assumeTrue(integrationTestEnabled());
+        if (!integrationTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
         jedis = mockOfJedis.getJedis();
     }
 
     @After
     public void tearDown() {
-        mockOfJedis.clearData();
-        jedis.quit();
+        if (mockOfJedis != null) {
+            mockOfJedis.clearData();
+        }
+        if (jedis != null) {
+            jedis.quit();
+        }
     }
 
     @Test
