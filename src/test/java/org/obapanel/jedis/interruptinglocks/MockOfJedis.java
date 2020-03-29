@@ -29,7 +29,7 @@ public class MockOfJedis {
     public static final String CLIENT_RESPONSE_KO = "KO";
 
 
-    // Zero to prevent some integration test
+    // Zero to prevent some unit test
     // One to one pass
     // More to more passes
     public static final int INTEGRATION_TEST_CYCLES = 1;

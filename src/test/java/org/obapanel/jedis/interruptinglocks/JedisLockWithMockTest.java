@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.getJedisLockValue;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.integrationTestEnabled;
 
@@ -186,8 +187,33 @@ public class JedisLockWithMockTest {
         jedisLock3.unlock();
     }
 
+    @Test
+    public void testAsConcurrentLock() throws InterruptedException {
+        String lockname = getUniqueName();
+        JedisLock jedisLock1 = new JedisLock(jedis,lockname);
+        java.util.concurrent.locks.Lock lock1 = jedisLock1.asConcurrentLock();
+        JedisLock jedisLock2 = new JedisLock(jedis,lockname);
+        java.util.concurrent.locks.Lock lock2 = jedisLock2.asConcurrentLock();
+        boolean result1 = lock1.tryLock();
+        boolean result2 = lock2.tryLock();
+        Thread.sleep(5000);
+        lock1.unlock();
+        assertTrue(result1);
+        assertFalse(result2);
+    }
 
-    private static long lastCurrentTimeMilis = -1L;
+    @Test
+    public void testEqualsAndHashcode() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
+        String lockname = getUniqueName();
+        JedisLock jedisLock1 = new JedisLock(jedis,lockname);
+        JedisLock jedisLock2 = new JedisLock(jedis,lockname);
+        assertNotEquals(jedisLock1, jedisLock2);
+        assertNotEquals(jedisLock1.hashCode(), jedisLock2.hashCode());
+        assertEquals(jedisLock1.getName(), jedisLock2.getName());
+    }
+
+
+        private static long lastCurrentTimeMilis = -1L;
 
     private synchronized static String getUniqueName(){
         long currentTimeMillis = System.currentTimeMillis();

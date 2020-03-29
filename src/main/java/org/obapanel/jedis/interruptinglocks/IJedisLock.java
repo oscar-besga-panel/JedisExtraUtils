@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 public interface IJedisLock extends AutoCloseable {
 
     /**
-     * Name of the lock
+     * Name of the lock. Can not be null
      * @return name
      */
     String getName();

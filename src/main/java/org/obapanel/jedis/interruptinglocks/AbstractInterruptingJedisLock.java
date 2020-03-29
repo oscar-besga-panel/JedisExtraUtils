@@ -20,24 +20,25 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     private long leaseTime;
     private TimeUnit timeUnit;
     private AtomicBoolean manualUnlock = new AtomicBoolean(false);
-    private long leaseTimeDiscountMilis;
-    private long recoverFromInteruptionMilis;
+    private long leaseTimeDiscountMillis;
+    private long recoverFromInterruptionMillis;
 
 
 
     AbstractInterruptingJedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit) {
         this(jedis, name,leaseTime, timeUnit, false);
     }
+
     AbstractInterruptingJedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit, boolean forceTimeoutRedis) {
         if (forceTimeoutRedis){
             jedisLock = new JedisLock(jedis, name, leaseTime, timeUnit);
-            this.leaseTimeDiscountMilis = 10L;
-            this.recoverFromInteruptionMilis = 15L;
+            this.leaseTimeDiscountMillis = 10L;
+            this.recoverFromInterruptionMillis = 15L;
 
         } else {
             jedisLock = new JedisLock(jedis, name);
-            this.leaseTimeDiscountMilis = 0L;
-            this.recoverFromInteruptionMilis = 10L;
+            this.leaseTimeDiscountMillis = 0L;
+            this.recoverFromInterruptionMillis = 10L;
         }
         this.forceTimeoutRedis = forceTimeoutRedis;
         this.leaseTime = leaseTime;
@@ -144,7 +145,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     final void runInterruptThread() {
         try {
             long currentLeaseTime = timeUnit.toMillis( leaseTime );
-            long realTimeToSleep = jedisLock.getLeaseMoment() + currentLeaseTime - System.currentTimeMillis() - leaseTimeDiscountMilis;
+            long realTimeToSleep = jedisLock.getLeaseMoment() + currentLeaseTime - System.currentTimeMillis() - leaseTimeDiscountMillis;
             LOG.debug("runInterruptThread realTimeToSleep {} leaseTime {} forceTimeoutRedis ", realTimeToSleep, currentLeaseTime, forceTimeoutRedis);
             if (realTimeToSleep > 0) {
                 Thread.sleep(realTimeToSleep);
@@ -164,7 +165,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
             currentThread.interrupt();
         }
         try {
-            Thread.sleep(recoverFromInteruptionMilis);
+            Thread.sleep(recoverFromInterruptionMillis);
         } catch (InterruptedException e) {
             //NOOP
         }

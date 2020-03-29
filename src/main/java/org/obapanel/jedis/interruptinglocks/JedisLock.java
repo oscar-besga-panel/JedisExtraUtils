@@ -269,7 +269,7 @@ public class JedisLock implements IJedisLock {
     private synchronized boolean redisCheckLock() {
         boolean check = false;
         log.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
-        if ((leaseTime == null) || ((leaseTime != null) && (timeLimit > System.currentTimeMillis()))) {
+        if ((leaseTime == null) || (timeLimit > System.currentTimeMillis())) {
             String currentValueRedis = jedis.get(name);
             log.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", value, currentValueRedis);
             check = value.equals(currentValueRedis);
