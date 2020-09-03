@@ -40,8 +40,6 @@ public class FunctionalInterruptedWritingFileTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
-
-
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
@@ -51,11 +49,11 @@ public class FunctionalInterruptedWritingFileTest {
 
     }
 
-
     @After
     public void after() {
         if (jedisPool != null) jedisPool.close();
     }
+
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
@@ -95,15 +93,12 @@ public class FunctionalInterruptedWritingFileTest {
 
         @Override
         public void run() {
-            //try (Jedis jedis = authJedis(jedisPool.getResource())) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedisLock = new InterruptingJedisJedisLockBase(jedis, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
                 checkLock(jedisLock);
                 writeTest();
-                //} catch (InterruptedException e) {
-                //NOPE
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
                 log.info("Closed channel by interrupt exception ClosedByInterruptException");
                 Thread.interrupted();  // We clean the state
@@ -125,7 +120,5 @@ public class FunctionalInterruptedWritingFileTest {
             }
         }
     }
-
-
 
 }

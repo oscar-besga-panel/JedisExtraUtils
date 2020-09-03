@@ -80,4 +80,5 @@ public class FunctionalJedisLockUnderlockTask {
         assertTrue(result1.get());
         assertTrue(result2);
     }
+
 }

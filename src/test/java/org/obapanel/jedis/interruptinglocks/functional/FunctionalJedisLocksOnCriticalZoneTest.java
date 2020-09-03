@@ -21,9 +21,7 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*
 
 public class FunctionalJedisLocksOnCriticalZoneTest {
 
-
     private static final Logger log = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneTest.class);
-
 
     private AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
@@ -49,6 +47,7 @@ public class FunctionalJedisLocksOnCriticalZoneTest {
             il.unlock();
         });
     }
+
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {

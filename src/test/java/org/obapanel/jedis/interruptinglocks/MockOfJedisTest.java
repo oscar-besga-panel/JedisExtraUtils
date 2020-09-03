@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.integrationTestEnabled;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
 public class MockOfJedisTest {
 
@@ -18,8 +18,8 @@ public class MockOfJedisTest {
 
     @Before
     public void setup() {
-        org.junit.Assume.assumeTrue(integrationTestEnabled());
-        if (!integrationTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
     }
 

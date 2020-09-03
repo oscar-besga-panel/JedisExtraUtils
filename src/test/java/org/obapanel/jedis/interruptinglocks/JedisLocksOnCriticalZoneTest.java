@@ -34,8 +34,8 @@ public class JedisLocksOnCriticalZoneTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(integrationTestEnabled());
-        if (!integrationTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedis = new MockOfJedis();
     }
@@ -47,7 +47,7 @@ public class JedisLocksOnCriticalZoneTest {
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
-        for(int i = 0; i < INTEGRATION_TEST_CYCLES; i++) {
+        for(int i = 0; i < UNIT_TEST_CYCLES; i++) {
             intoCriticalZone.set(false);
             errorInCriticalZone.set(false);
             otherErrors.set(false);
@@ -89,22 +89,6 @@ public class JedisLocksOnCriticalZoneTest {
             log.error("Other error ", e);
         }
     }
-
-    /*
-    private void accessCriticalZone(int sleepTime){
-        if (intoCriticalZone.get()) {
-            errorInCriticalZone.set(true);
-            throw new IllegalStateException("Other thread is here");
-        }
-        intoCriticalZone.set(true);
-        try {
-            Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
-        } catch (InterruptedException e) {
-            //Noop
-        }
-        intoCriticalZone.set(false);
-    }
-    */
 
     private void accessCriticalZone(int sleepTime){
         log.info("accessCriticalZone > enter  > " + Thread.currentThread().getName());

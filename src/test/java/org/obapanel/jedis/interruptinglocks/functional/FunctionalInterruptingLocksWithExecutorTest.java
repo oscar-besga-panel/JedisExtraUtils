@@ -20,13 +20,9 @@ public class FunctionalInterruptingLocksWithExecutorTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksWithExecutorTest.class);
 
-
-
-
     private String lockName;
     private Jedis jedis;
     private ExecutorService executorService;
-
 
 
     @Before

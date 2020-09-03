@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.integrationTestEnabled;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
 public class JedisLockUnderlockTask {
 
@@ -18,8 +18,8 @@ public class JedisLockUnderlockTask {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(integrationTestEnabled());
-        if (!integrationTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedis = new MockOfJedis();
     }

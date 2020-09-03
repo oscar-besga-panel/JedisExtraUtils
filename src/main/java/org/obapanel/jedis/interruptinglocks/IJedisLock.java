@@ -4,6 +4,9 @@ package org.obapanel.jedis.interruptinglocks;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+/**
+ * Interface for locks on redis
+ */
 public interface IJedisLock extends AutoCloseable {
 
     /**

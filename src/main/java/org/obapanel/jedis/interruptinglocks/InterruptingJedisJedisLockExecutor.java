@@ -44,6 +44,10 @@ public final class InterruptingJedisJedisLockExecutor extends AbstractInterrupti
         future.cancel(true);
     }
 
+    /**
+     * Current executor service
+     * @return executorService
+     */
     public ExecutorService getExecutorService(){
         return executorService;
     }

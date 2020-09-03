@@ -8,6 +8,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+/**
+ * Abstract class base to interrupting locks
+ * It carries most of the code, and the thread generation is in the descendants
+ */
 public abstract class AbstractInterruptingJedisLock implements IJedisLock {
 
 
@@ -24,17 +28,30 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     private long recoverFromInterruptionMillis;
 
 
-
+    /**
+     * Base constructor
+     * @param jedis Jedis connection
+     * @param name Name of the lock
+     * @param leaseTime time to lease the lock and wait to interrupt the main thread
+     * @param timeUnit  unit of the lease time
+     */
     AbstractInterruptingJedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit) {
         this(jedis, name,leaseTime, timeUnit, false);
     }
 
+    /**
+     * Base constructor
+     * @param jedis Jedis connection
+     * @param name Name of the lock
+     * @param leaseTime time to lease the lock and wait to interrupt the main thread
+     * @param forceTimeoutRedis If jedis lock should have a timeout or be released when the interrput occurs from java
+     * @param timeUnit  unit of the lease time
+     */
     AbstractInterruptingJedisLock(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit, boolean forceTimeoutRedis) {
         if (forceTimeoutRedis){
             jedisLock = new JedisLock(jedis, name, leaseTime, timeUnit);
             this.leaseTimeDiscountMillis = 10L;
             this.recoverFromInterruptionMillis = 15L;
-
         } else {
             jedisLock = new JedisLock(jedis, name);
             this.leaseTimeDiscountMillis = 0L;
@@ -115,11 +132,17 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         }
     }
 
+    /**
+     * Execute after getting a lock
+     */
     private void afterLock(){
         currentThread = Thread.currentThread();
         startInterruptingThread();
     }
 
+    /**
+     * Execute after relesing a lock
+     */
     private void afterUnLock(){
         manualUnlock.set(true);
         stopInterruptingThread();
@@ -159,6 +182,9 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         }
     }
 
+    /**
+     * Interrupts the main thread and unlocks the redis lock in remote
+     */
     private synchronized void interruptAndUnlock() {
         if (!manualUnlock.get() && currentThread != null) {
             LOG.debug("interruptAndUnlock interrupt current thread " + currentThread.getName());

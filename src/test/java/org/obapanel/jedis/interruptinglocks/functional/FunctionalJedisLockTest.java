@@ -16,8 +16,6 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.f
 
 public class FunctionalJedisLockTest {
 
-
-
     private Jedis jedis;
     private String keyName;
 
@@ -175,10 +173,6 @@ public class FunctionalJedisLockTest {
         jedisLock1.unlock();
         jedisLock3.unlock();
     }
-
-
-
-
 
 
 }

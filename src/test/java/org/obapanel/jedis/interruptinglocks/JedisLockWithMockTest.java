@@ -13,19 +13,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.getJedisLockValue;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.integrationTestEnabled;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
 public class JedisLockWithMockTest {
-
-
 
     private MockOfJedis mockOfJedis;
     private Jedis jedis;
 
     @Before
     public void setup() {
-        org.junit.Assume.assumeTrue(integrationTestEnabled());
-        if (!integrationTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
         jedis = mockOfJedis.getJedis();
     }
@@ -228,9 +226,5 @@ public class JedisLockWithMockTest {
         lastCurrentTimeMilis = currentTimeMillis;
         return "lock:K" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt(1_000_000);
     }
-
-
-
-
 
 }

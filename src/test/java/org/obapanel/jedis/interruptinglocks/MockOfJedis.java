@@ -20,6 +20,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 
 /**
  * Mock of jedis methods used by the lock
+ *
+ * To allow or disallow unit tests
+ * change the UNIT_TEST_CYCLES variable to 1 or more (allow) or zero (disallow)
  */
 public class MockOfJedis {
 
@@ -32,10 +35,10 @@ public class MockOfJedis {
     // Zero to prevent some unit test
     // One to one pass
     // More to more passes
-    public static final int INTEGRATION_TEST_CYCLES = 1;
+    public static final int UNIT_TEST_CYCLES = 1;
 
-    static boolean integrationTestEnabled(){
-        return INTEGRATION_TEST_CYCLES > 0;
+    static boolean unitTestEnabled(){
+        return UNIT_TEST_CYCLES > 0;
     }
 
 

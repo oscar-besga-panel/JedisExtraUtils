@@ -4,6 +4,10 @@ import redis.clients.jedis.Jedis;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This interrupting lock will create a background thread into the class
+ * This is the preferred method for the interrupting locks
+ */
 public final class InterruptingJedisJedisLockBase extends AbstractInterruptingJedisLock {
 
 

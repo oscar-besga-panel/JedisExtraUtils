@@ -20,8 +20,7 @@ import static org.obapanel.jedis.interruptinglocks.MockOfJedis.*;
 
 public class InterruptingLocksOnCriticalZoneBaseTest {
 
-
-    private static final Logger log = LoggerFactory.getLogger(InterruptingLocksOnCriticalZoneBaseTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(InterruptingLocksOnCriticalZoneBaseTest.class);
 
 
     private AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
@@ -34,8 +33,8 @@ public class InterruptingLocksOnCriticalZoneBaseTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(integrationTestEnabled());
-        if (!integrationTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
         lockName = "lock:" + this.getClass().getName() + ":lockT" + System.currentTimeMillis();
     }
@@ -45,7 +44,7 @@ public class InterruptingLocksOnCriticalZoneBaseTest {
         if (mockOfJedis!= null) mockOfJedis.clearData();
         interruptingLockBaseList.stream().filter(il ->  il != null ).forEach(il -> {
             if (il.isLocked()) {
-                log.error("A lock named {} is locked !", il.getName());
+                LOG.error("A lock named {} is locked !", il.getName());
             }
             il.unlock();
         });
@@ -53,11 +52,11 @@ public class InterruptingLocksOnCriticalZoneBaseTest {
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
-        for (int i = 0; i < INTEGRATION_TEST_CYCLES; i ++) {
+        for (int i = 0; i < UNIT_TEST_CYCLES; i ++) {
             errorInCriticalZone.set(false);
             otherError.set(false);
             intoCriticalZone.set(false);
-            log.info("FUNCTIONAL_TEST_CYCLES " + i);
+            LOG.info("FUNCTIONAL_TEST_CYCLES " + i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
             t1.setName("T1_1s_i"+i);
             Thread t2 = new Thread(() -> accesLockOfCriticalZone(7));
@@ -91,28 +90,28 @@ public class InterruptingLocksOnCriticalZoneBaseTest {
             e.printStackTrace();
             otherError.set(true);
         } finally {
-
+            //NOOP
         }
     }
 
     private void accessCriticalZone(int sleepTime){
-        log.info("accessCriticalZone > enter  > " + Thread.currentThread().getName());
+        LOG.info("accessCriticalZone > enter  > " + Thread.currentThread().getName());
         if (intoCriticalZone.get()) {
             errorInCriticalZone.set(true);
             throw new IllegalStateException("Other thread is here " + Thread.currentThread().getName());
         }
         try {
-            log.info("accessCriticalZone > bef true  > " + Thread.currentThread().getName());
+            LOG.info("accessCriticalZone > bef true  > " + Thread.currentThread().getName());
             intoCriticalZone.set(true);
-            log.info("accessCriticalZone > aft true  > " + Thread.currentThread().getName());
+            LOG.info("accessCriticalZone > aft true  > " + Thread.currentThread().getName());
             Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
         } catch (InterruptedException e) {
             //NOOP
         } finally {
-            log.info("accessCriticalZone > bef false > " + Thread.currentThread().getName());
+            LOG.info("accessCriticalZone > bef false > " + Thread.currentThread().getName());
             intoCriticalZone.set(false);
-            log.info("accessCriticalZone > aft false > " + Thread.currentThread().getName());
+            LOG.info("accessCriticalZone > aft false > " + Thread.currentThread().getName());
         }
-        log.info("accessCriticalZone > exit   > " + Thread.currentThread().getName());
+        LOG.info("accessCriticalZone > exit   > " + Thread.currentThread().getName());
     }
 }
