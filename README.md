@@ -25,6 +25,9 @@ The ``IJedisLock`` interface is ``Closeable``, so you can use it in a try/catch 
 Also, you can put your critical section under a lamda on the ``underLock`` method, that will execute this code opening and closing the lock before/after.  
 ``JedisLockUtils`` is a static shortcut to this method on a lock, in shake of simplicity.     
 
+![alt text](docs/JedisLock.png)
+
+
 ### Rationale and example of use of an interruping lock:  
 
 Imagine you have a file in a shared folder that many processes want to write.  
