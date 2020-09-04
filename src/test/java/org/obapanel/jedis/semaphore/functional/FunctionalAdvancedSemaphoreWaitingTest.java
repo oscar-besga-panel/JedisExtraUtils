@@ -40,10 +40,17 @@ public class FunctionalAdvancedSemaphoreWaitingTest {
 
     @After
     public void after() throws IOException {
-        jedis1.del(semaphoreName);
-        jedis1.close();
-        jedis2.close();
-        jedisPool.close();
+        if (!functionalTestEnabled()) return;
+        if (jedis1 != null) {
+            jedis1.del(semaphoreName);
+            jedis1.close();
+        }
+        if (jedis2 != null) {
+            jedis2.close();
+        }
+        if (jedisPool != null) {
+            jedisPool.close();
+        }
     }
 
 

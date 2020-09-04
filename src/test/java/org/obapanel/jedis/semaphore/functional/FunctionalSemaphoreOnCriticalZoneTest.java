@@ -37,7 +37,7 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
 
     @After
     public void after() {
-
+        //NOOP
     }
 
     @Test

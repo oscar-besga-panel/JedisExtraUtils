@@ -31,8 +31,11 @@ public class FunctionalSemaphoreNumberPermitsTest {
 
     @After
     public void after() throws IOException {
-        jedis.del(semaphoreName);
-        jedis.close();
+        if (!functionalTestEnabled()) return;
+        if (jedis != null) {
+            jedis.del(semaphoreName);
+            jedis.close();
+        }
     }
 
 
