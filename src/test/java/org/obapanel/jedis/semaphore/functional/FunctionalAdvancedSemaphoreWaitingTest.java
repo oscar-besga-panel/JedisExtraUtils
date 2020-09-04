@@ -18,7 +18,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.semaphore.functional.JedisTestFactory.functionalTestEnabled;
 
-
+/**
+ * Test to see that JedisAdvancedSemaphore works fine
+ */
+@Deprecated
 public class FunctionalAdvancedSemaphoreWaitingTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalAdvancedSemaphoreWaitingTest.class);

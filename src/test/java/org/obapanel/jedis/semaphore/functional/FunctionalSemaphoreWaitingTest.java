@@ -48,6 +48,14 @@ public class FunctionalSemaphoreWaitingTest {
     }
 
 
+    @Test
+    public void tesSemaphore() throws InterruptedException {
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(jedis1, semaphoreName,0);
+        assertEquals(semaphoreName, jedisSemaphore.getName());
+        jedisSemaphore.destroy();
+        assertTrue(-1 == jedisSemaphore.availablePermits());
+    }
+
 
     @Test
     public void testNumOfPermits1() throws InterruptedException {

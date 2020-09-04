@@ -33,19 +33,38 @@ public class JedisSemaphoreNumberPermitsTest {
 
     @Test
     public void testNumOfPermits(){
-        JedisAdvancedSemaphore jedisAdvancedSemaphore = new JedisAdvancedSemaphore(mockOfJedis.getJedisPool(),semaphoreName,3);
-        assertEquals(3, jedisAdvancedSemaphore.availablePermits());
-        assertFalse( jedisAdvancedSemaphore.tryAcquire(5));
-        assertEquals(3, jedisAdvancedSemaphore.availablePermits());
-        assertTrue( jedisAdvancedSemaphore.tryAcquire(1));
-        assertEquals(2, jedisAdvancedSemaphore.availablePermits());
-        assertTrue( jedisAdvancedSemaphore.tryAcquire(2));
-        assertEquals(0, jedisAdvancedSemaphore.availablePermits());
-        assertFalse( jedisAdvancedSemaphore.tryAcquire(1));
-        assertEquals(0, jedisAdvancedSemaphore.availablePermits());
-        jedisAdvancedSemaphore.release(2);
-        assertEquals(2, jedisAdvancedSemaphore.availablePermits());
-        assertTrue( jedisAdvancedSemaphore.tryAcquire(1));
-        assertEquals(1, jedisAdvancedSemaphore.availablePermits());
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedis(),semaphoreName,3);
+        assertEquals(3, jedisSemaphore.availablePermits());
+        assertFalse( jedisSemaphore.tryAcquire(5));
+        assertEquals(3, jedisSemaphore.availablePermits());
+        assertTrue( jedisSemaphore.tryAcquire(1));
+        assertEquals(2, jedisSemaphore.availablePermits());
+        assertTrue( jedisSemaphore.tryAcquire(2));
+        assertEquals(0, jedisSemaphore.availablePermits());
+        assertFalse( jedisSemaphore.tryAcquire(1));
+        assertEquals(0, jedisSemaphore.availablePermits());
+        jedisSemaphore.release(2);
+        assertEquals(2, jedisSemaphore.availablePermits());
+        assertTrue( jedisSemaphore.tryAcquire(1));
+        assertEquals(1, jedisSemaphore.availablePermits());
+        assertTrue( jedisSemaphore.tryAcquire());
+        assertEquals(0, jedisSemaphore.availablePermits());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNumOfPermitsErrorAcquire(){
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedis(),semaphoreName,0);
+        jedisSemaphore.tryAcquire(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNumOfPermitsErrorRelease(){
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedis(),semaphoreName,0);
+        jedisSemaphore.release(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNumOfPermitsErrorOnCreation(){
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedis(),semaphoreName,-1);
     }
 }

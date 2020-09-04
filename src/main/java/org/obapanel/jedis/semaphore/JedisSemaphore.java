@@ -9,18 +9,6 @@ import redis.clients.jedis.params.SetParams;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-/*
-http://tutorials.jenkov.com/java-util-concurrent/semaphore.html
-https://github.com/redisson/redisson/blob/master/redisson/src/main/java/org/redisson/RedissonSemaphore.java
-https://www.javadoc.io/static/org.redisson/redisson/3.11.6/index.html?org/redisson/RedissonReadWriteLock.html
-https://github.com/redisson/redisson/wiki/8.-distributed-locks-and-synchronizers#86-semaphore
-
-https://gist.github.com/FredrikWendt/3343861
-https://www.alibabacloud.com/help/doc-detail/26368.htm
- */
-
-
-
 /**
  * A redis/jedis implementation of a Java semaphore that is distributed over various processes/threads
  * It works like a semaphore, but the semaphore counter is stored in redis and operated by all the
@@ -97,7 +85,7 @@ public class JedisSemaphore {
      */
     private void init(int initialPermits){
         if (initialPermits < 0) {
-            initialPermits = 0;
+            throw new IllegalArgumentException("initial permit on semaphore must be always equal or more than zero");
         }
         jedis.set(name, String.valueOf(initialPermits), new SetParams().nx());
     }
@@ -176,7 +164,10 @@ public class JedisSemaphore {
      * @param permits permits to obain
      * @return true if permits obtained
      */
-    private boolean redisAcquire(int permits){
+    private boolean redisAcquire(int permits) {
+        if (permits <= 0){
+            throw new IllegalArgumentException("permits to acquire on semaphore must be always more than zero");
+        }
         Object oresult = jedis.eval(SEMAPHORE_LUA_SCRIPT, Arrays.asList(name), Arrays.asList(String.valueOf(permits)));
         String result = (String) oresult;
         return Boolean.parseBoolean(result);
@@ -195,11 +186,15 @@ public class JedisSemaphore {
      * @param permits permits to release
      */
     public void release(int permits) {
+        if (permits <= 0){
+            throw new IllegalArgumentException("permit to release on semaphore must be always more than zero");
+        }
         jedis.incrBy(name,permits);
     }
 
     /**
      * Return the current avalible permits on this semaphore
+     * If value doesn't exists, it returns -1
      * @return number of permits
      */
     public int availablePermits() {
@@ -211,6 +206,7 @@ public class JedisSemaphore {
         }
     }
 
+
     /**
      * CAUTION !!
      * THIS METHOD DELETES THE REMOTE VALUE DESTROYING THIS SEMAPHORE AND OHTERS
@@ -219,6 +215,8 @@ public class JedisSemaphore {
     public void destroy(){
         jedis.del(name);
     }
+
+
 
 
 }

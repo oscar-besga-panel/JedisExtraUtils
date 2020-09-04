@@ -70,6 +70,10 @@ public class MockOfJedis {
             List<String> values = ioc.getArgument(2);
             return mockEval(script, keys, values);
         });
+        Mockito.when(jedis.del(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            return mockDel(key);
+        });
         jedisPool = Mockito.mock(JedisPool.class);
         Mockito.when(jedisPool.getResource()).thenReturn(jedis);
     }
@@ -124,6 +128,15 @@ public class MockOfJedis {
             return  CLIENT_RESPONSE_OK;
         } else {
             return  CLIENT_RESPONSE_KO;
+        }
+    }
+
+    private synchronized Long mockDel(String key) {
+        if (data.containsKey(key)) {
+            data.remove(key);
+            return 1L;
+        } else {
+            return 0L;
         }
     }
 

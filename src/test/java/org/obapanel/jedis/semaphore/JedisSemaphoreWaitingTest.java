@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.semaphore.MockOfJedis.integrationTestEnabled;
@@ -44,6 +45,13 @@ public class JedisSemaphoreWaitingTest {
     }
 
 
+    @Test
+    public void tesSemaphore() throws InterruptedException {
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(jedis1, semaphoreName,0);
+        assertEquals(semaphoreName, jedisSemaphore.getName());
+        jedisSemaphore.destroy();
+        assertTrue(-1 == jedisSemaphore.availablePermits());
+    }
 
     @Test
     public void testNumOfPermits1() throws InterruptedException {

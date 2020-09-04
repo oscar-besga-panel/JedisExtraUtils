@@ -56,6 +56,8 @@ public class FunctionalSemaphoreNumberPermitsTest {
         assertEquals(2, jedisSemaphore.availablePermits());
         assertTrue( jedisSemaphore.tryAcquire(1));
         assertEquals(1, jedisSemaphore.availablePermits());
+        assertTrue( jedisSemaphore.tryAcquire());
+        assertEquals(0, jedisSemaphore.availablePermits());
     }
 
 }
