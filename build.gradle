@@ -1,9 +1,10 @@
 plugins {
     id 'java'
+    id 'maven-publish'
 }
 
 group 'org.obapanel.jedis'
-version '1.5.1-SNAPSHOT'
+version '1.5.2'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -24,3 +25,20 @@ dependencies {
     // testCompile 'com.github.fppt:jedis-mock:0.1.14' 
 }
 
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/oscar-besga-panel/InterruptingJedisLocks")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            from(components.java)
+        }
+    }
+}
