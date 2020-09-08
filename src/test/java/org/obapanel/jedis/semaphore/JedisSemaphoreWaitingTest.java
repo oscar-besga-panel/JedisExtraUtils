@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.semaphore.MockOfJedis.integrationTestEnabled;
+import static org.obapanel.jedis.semaphore.MockOfJedis.unitTestEnabled;
 
 
 public class JedisSemaphoreWaitingTest {
@@ -28,8 +28,8 @@ public class JedisSemaphoreWaitingTest {
 
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(integrationTestEnabled());
-        if (!integrationTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
         jedis1 = mockOfJedis.getJedis();
         jedis2 = mockOfJedis.getJedis();

@@ -52,8 +52,10 @@ The class ``JedisSemaphore``, like the standart Java one, is the one that implem
 
 ## Test 
 
-The tests are done to check the most common use cases of the lock and the semaphore.  
-The tests under functional packages are launched against a real redis instalation. You can configure them in the JedisTestFactory class. To make them run (by default are disbaled ) use the variable ``FUNCTIONAL_TEST_CYCLES``, by putting a value ditinct to zero. 
+The tests are done to check the most common use cases of the lock and the semaphore.    
+
+The tests under functional packages are launched against a real redis instalation. You can configure them in the JedisTestFactory class, in the proper package.    
+To make them run (by default are disbaled ) use the variable ``FUNCTIONAL_TEST_CYCLES``, by putting a value ditinct to zero. 
 
 
 ## Extra

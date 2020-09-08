@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.semaphore.MockOfJedis.INTEGRATION_TEST_CYCLES;
-import static org.obapanel.jedis.semaphore.MockOfJedis.integrationTestEnabled;
+import static org.obapanel.jedis.semaphore.MockOfJedis.UNIT_TEST_CYCLES;
+import static org.obapanel.jedis.semaphore.MockOfJedis.unitTestEnabled;
 
 
 public class JedisSemaphoresOnCriticalZoneTest {
@@ -33,8 +33,8 @@ public class JedisSemaphoresOnCriticalZoneTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(integrationTestEnabled());
-        if (!integrationTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedis = new MockOfJedis();
     }
@@ -46,7 +46,7 @@ public class JedisSemaphoresOnCriticalZoneTest {
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
-        for(int i = 0; i < INTEGRATION_TEST_CYCLES; i++) {
+        for(int i = 0; i < UNIT_TEST_CYCLES; i++) {
             intoCriticalZone.set(false);
             errorInCriticalZone.set(false);
             otherErrors.set(false);

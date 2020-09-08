@@ -32,10 +32,10 @@ public class MockOfJedis {
     // Zero to prevent some unit test
     // One to one pass
     // More to more passes
-    static final int INTEGRATION_TEST_CYCLES = 1;
+    static final int UNIT_TEST_CYCLES = 1;
 
-    static boolean integrationTestEnabled(){
-        return INTEGRATION_TEST_CYCLES > 0;
+    static boolean unitTestEnabled(){
+        return UNIT_TEST_CYCLES > 0;
     }
 
     private JedisPool jedisPool;
@@ -61,8 +61,11 @@ public class MockOfJedis {
         Mockito.when(jedis.incrBy(anyString(), anyLong())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long value = ioc.getArgument(1);
-            mockIncrBy(key, value);
-            return null;
+            return mockIncrBy(key, value);
+        });
+        Mockito.when(jedis.del(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            return mockDel(key);
         });
         Mockito.when(jedis.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> {
             String script = ioc.getArgument(0);
@@ -70,19 +73,18 @@ public class MockOfJedis {
             List<String> values = ioc.getArgument(2);
             return mockEval(script, keys, values);
         });
-        Mockito.when(jedis.del(anyString())).thenAnswer(ioc -> {
-            String key = ioc.getArgument(0);
-            return mockDel(key);
-        });
         jedisPool = Mockito.mock(JedisPool.class);
         Mockito.when(jedisPool.getResource()).thenReturn(jedis);
     }
 
-    private synchronized void mockIncrBy(String key, long value) {
+    private synchronized Long mockIncrBy(String key, long value) {
         if (data.containsKey(key)) {
             long permitsAvalible = data.containsKey(key) ? Long.parseLong(data.get(key)) : -1;
             permitsAvalible = permitsAvalible + value;
             data.put(key, String.valueOf(permitsAvalible));
+            return permitsAvalible;
+        } else {
+            return null;
         }
     }
 

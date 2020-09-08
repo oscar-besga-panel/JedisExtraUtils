@@ -8,7 +8,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.semaphore.MockOfJedis.integrationTestEnabled;
+import static org.obapanel.jedis.semaphore.MockOfJedis.unitTestEnabled;
 
 public class JedisSemaphoreNumberPermitsTest {
 
@@ -18,8 +18,8 @@ public class JedisSemaphoreNumberPermitsTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(integrationTestEnabled());
-        if (!integrationTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedis = new MockOfJedis();
     }
