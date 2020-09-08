@@ -4,7 +4,14 @@
 
 ## Basics
 
-If you want to use Redis and java library Jedis to control resources and locks between threads and processes, take a look into this library.
+If you want to use Redis and java library Jedis to control resources and locks between threads and processes, take a look into this library.  
+It contains the next distributed synchronization classes:
+- Locks
+- Semaphores
+- CountDownLatch
+
+All classes have tests, unit and functional ones. You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.
+
 
 ### Locks
 
@@ -47,8 +54,15 @@ The interrupting lock uses a background thread that will interrupts the main wri
 Redis based semaphore that works like a normal Java semaphore but it is distributed, works in different threads and processes that can access a redis server.  
 A semaphore with the same name on different threads/processes shares the same number on permits on any moment.
 
-The class ``JedisSemaphore``, like the standart Java one, is the one that implements the semaphore.
+The class ``JedisSemaphore``, like the standard Java one, is the one that implements the semaphore.
   
+
+### CountDownLatch
+
+A Redis based countDownLach, that makes threads wait until a counter reaches zero; then all threads are enabled to continue.  
+
+It is inited with a given count. The threads (of different processes) halts on the wait method until the count reaches zero; to decrease the count the countDown() method is called.   
+The class ``JedisCountDownLatch``, like the standard Java one, is the one that implements the functionality.
 
 ## Test 
 
