@@ -1,6 +1,7 @@
 package org.obapanel.jedis.interruptinglocks;
 
 import org.mockito.Mockito;
+import org.obapanel.jedis.common.test.TransactionOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Builder;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.obapanel.jedis.common.test.TTL.wrapTTL;
 
 /**
  * Mock of jedis methods used by the lock
@@ -201,55 +203,6 @@ public class MockOfJedis {
         privateMethod.setAccessible(true);
         String returnValue = (String) privateMethod.invoke(jedisLock, null);
         return returnValue;
-    }
-
-    private static TimerTask wrapTTL(Runnable r) {
-        return new TTL(r);
-    }
-
-    // TimerTaskLamda
-    private static class TTL extends TimerTask {
-
-        private Runnable runnable;
-
-        public TTL(Runnable runnable) {
-            this.runnable = runnable;
-        }
-
-        @Override
-        public void run() {
-            runnable.run();
-        }
-    }
-
-
-    private static class TransactionOrder<T> extends Builder<T> {
-        Response<T> response;
-        Supplier<T> supplier;
-        T result;
-
-
-        TransactionOrder(Supplier<T> callable) {
-            this.response = new Response<>(this);
-            this.supplier = callable;
-        }
-
-        void execute(){
-           result = supplier.get();
-           response.set(result);
-        }
-
-        @Override
-        public T build(Object data) {
-            if (result == null) {
-                execute();
-            }
-            return result;
-        }
-
-        public Response getResponse(){
-            return response;
-        }
     }
 
 

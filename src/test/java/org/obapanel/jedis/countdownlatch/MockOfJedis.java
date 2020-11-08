@@ -14,6 +14,7 @@ import java.util.TimerTask;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.obapanel.jedis.common.test.TTL.wrapTTL;
 
 /**
  * Mock of jedis methods used by the lock
@@ -138,26 +139,6 @@ public class MockOfJedis {
         return (Long) setParams.getParam("px");
     }
 
-
-
-    private static TimerTask wrapTTL(Runnable r) {
-        return new TTL(r);
-    }
-
-    // TimerTaskLamda
-    private static class TTL extends TimerTask {
-
-        private Runnable runnable;
-
-        public TTL(Runnable runnable) {
-            this.runnable = runnable;
-        }
-
-        @Override
-        public void run() {
-            runnable.run();
-        }
-    }
 
 
 
