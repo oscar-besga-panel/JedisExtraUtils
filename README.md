@@ -87,3 +87,23 @@ Made with
 - Intellij
 - https://pandao.github.io/editor.md/en.html 
 - Draw io https://app.diagrams.net/
+
+
+## TODO
+
+On branch ``develop/mapper`` I'm trying to make a POJO <-> RedisObject mapper to store objects in Redis directly.  
+Internally it uses Redis maps, and for the moment it only can translate POJOS without other classes inside (no nested POJOs, no Lists no maps).  
+It's barely working, so it is not production ready.
+  
+  
+On branch ``develop/mapper`` I'm trying to make a direct implementation on Redis of basic Java collections; like List, Map and Set.  
+Each one links to the same type on redis, and all the operations on the collection are donde directly and synchronously to Redis.  
+No data is stored in Java process (if possible), only on Redis.  
+For the moment only List is implemented, but more tests are needed. So it is not production ready. 
+
+Also, I need to move this README to a wiki and improve comments and examples.
+
+Help, suggestions, critics and tests will be greatly appreciated.
+
+ 
+ 
