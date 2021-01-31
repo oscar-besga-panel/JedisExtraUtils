@@ -1,10 +1,8 @@
 package org.obapanel.jedis.mapper.functional;
 
-import com.sun.javaws.security.AppPolicy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.obapanel.jedis.collections.functional.FunctionalJedisListTest;
 import org.obapanel.jedis.mapper.MapSaver;
 import org.obapanel.jedis.mapper.PojoDataTest;
 import org.slf4j.Logger;
@@ -24,7 +22,7 @@ import static org.obapanel.jedis.mapper.functional.JedisTestFactory.functionalTe
 public class FunctionalJedisMapperTest {
 
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisMapperTest.class);
 
     private String keyName;
     private Jedis jedis;
