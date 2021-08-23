@@ -99,8 +99,24 @@ public class MockOfJedisForListTest {
         assertTrue(mockOfJedis.dataToList("data2", true).isEmpty());
         mockOfJedis.dataToList("data2").add("x");
         assertFalse(mockOfJedis.dataToList("data2").isEmpty());
-
     }
+
+    @Test
+    public void testMockListLlen() {
+        mockOfJedis.put("data1", new ArrayList<>(Arrays.asList("a","b","c")));
+        long result1 = mockOfJedis.mockListLlen("data1");
+        assertEquals(3L, result1);
+        long result21 = mockOfJedis.mockListLlen("data2");
+        assertEquals(0L, result21);
+        assertTrue(mockOfJedis.dataToList("data2", true).isEmpty());
+        long result22 = mockOfJedis.mockListLlen("data2");
+        assertEquals(0L, result22);
+        mockOfJedis.dataToList("data2").add("x");
+        assertFalse(mockOfJedis.dataToList("data2").isEmpty());
+        long result23 = mockOfJedis.mockListLlen("data2");
+        assertEquals(1L, result23);
+    }
+
 
 
 

@@ -5,8 +5,8 @@ import redis.clients.jedis.ListPosition;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -21,7 +21,10 @@ import java.util.concurrent.ThreadLocalRandom;
  * or by other commands/clients of Redis. This is assumed, and a caveat on using this class.
  * In case of iterators, it can cause malfunctions.
  * But the security of non interference of the Redis list data can not be given by this class; it must be
- * enforced by the environment, or not assumed.
+ * enforced by the environment or by a distributable lock or not assumed.
+ *
+ * Every process using the same name against the same Jedis server will share the underlying data in the Redis
+ * server, and access to the same elements in the Redis list
  *
  * There are a few Redis-exclusive operations that will help to operate with Redis backed lists,
  * and you can retrieve the data to a pure Java list anytime.
@@ -56,7 +59,7 @@ public final class JedisList implements List<String> {
             "end \n" +
             "return poss";
 
-    private static final synchronized String generateToDelete() {
+    private static synchronized String generateToDelete() {
         return TO_DELETE + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt();
     }
 
@@ -223,6 +226,7 @@ public final class JedisList implements List<String> {
         return changed;
     }
 
+    //TODO check mock
     @Override
     public boolean retainAll(Collection<?> c) {
         boolean changed = false;
@@ -281,14 +285,14 @@ public final class JedisList implements List<String> {
     @Override
     public int indexOf(Object o) {
         String element = (String) o;
-        Object result = jedis.eval(LUE_SCRIPT_INDEX_OF, Arrays.asList(name), Arrays.asList(element));
+        Object result = jedis.eval(LUE_SCRIPT_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
         return ((Long)result).intValue();
     }
 
     @Override
     public int lastIndexOf(Object o) {
         String element = (String) o;
-        Object result = jedis.eval(LUE_SCRIPT_LAST_INDEX_OF, Arrays.asList(name), Arrays.asList(element));
+        Object result = jedis.eval(LUE_SCRIPT_LAST_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
         return ((Long)result).intValue();
     }
 
