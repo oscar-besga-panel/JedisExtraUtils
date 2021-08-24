@@ -38,9 +38,9 @@ public class JedisSemaphoreWaitingTest {
 
     @After
     public void after() throws IOException {
-        Jedis jedis1 = jedisPool.getResource();
-        jedis1.del(semaphoreName);
-        jedis1.close();
+        try (Jedis jedis1 = jedisPool.getResource()) {
+            jedis1.del(semaphoreName);
+        }
         jedisPool.close();
         mockOfJedis.clearData();
     }
