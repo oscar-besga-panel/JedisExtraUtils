@@ -45,7 +45,6 @@ public class JedisAdvancedSemaphore {
 
     private static final String JEDIS_SEMAPHORE_CHANNEL_PREFIX = "JedisSemaphoreChannel:";
     private final JedisPool jedisPool;
-    private final Jedis jedis;
     private final Jedis jedisForPubSub;
     private final String name;
     private final String channelName;
@@ -62,7 +61,6 @@ public class JedisAdvancedSemaphore {
 
     public JedisAdvancedSemaphore(JedisPool jedisPool, String name, int initialPermits) {
         this.jedisPool = jedisPool;
-        this.jedis = jedisPool.getResource();
         this.jedisForPubSub = jedisPool.getResource();
         this.name = name;
         this.channelName = JEDIS_SEMAPHORE_CHANNEL_PREFIX + name;
@@ -73,7 +71,9 @@ public class JedisAdvancedSemaphore {
         if (initialPermits < 0) {
             initialPermits = 0;
         }
-        jedis.set(name, String.valueOf(initialPermits), new SetParams().nx());
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.set(name, String.valueOf(initialPermits), new SetParams().nx());
+        }
     }
 
     public JedisAdvancedSemaphore withExecutor(Executor executor){
@@ -129,9 +129,11 @@ public class JedisAdvancedSemaphore {
     }
 
     public void release(int permits) {
-        jedis.incrBy(name,permits);
-        jedis.publish(channelName, name);
-        LOG.debug("release channel {} message {}", channelName, name);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.incrBy(name, permits);
+            jedis.publish(channelName, name);
+            LOG.debug("release channel {} message {}", channelName, name);
+        }
     }
 
     public boolean tryAcquire() {
@@ -160,17 +162,21 @@ public class JedisAdvancedSemaphore {
     }
 
     private boolean redisAcquire(int permits){
-        Object oresult = jedis.eval(SEMAPHORE_LUA_SCRIPT, Arrays.asList(name), Arrays.asList(String.valueOf(permits)));
-        String result = (String) oresult;
-        return Boolean.parseBoolean(result);
+        try (Jedis jedis = jedisPool.getResource()) {
+            Object oresult = jedis.eval(SEMAPHORE_LUA_SCRIPT, Arrays.asList(name), Arrays.asList(String.valueOf(permits)));
+            String result = (String) oresult;
+            return Boolean.parseBoolean(result);
+        }
     }
 
     public int availablePermits() {
-        String permits = jedis.get(name);
-        if (permits == null || permits.isEmpty()) {
-            return -1;
-        } else {
-            return Integer.parseInt(permits);
+        try (Jedis jedis = jedisPool.getResource()) {
+            String permits = jedis.get(name);
+            if (permits == null || permits.isEmpty()) {
+                return -1;
+            } else {
+                return Integer.parseInt(permits);
+            }
         }
     }
 
@@ -187,12 +193,13 @@ public class JedisAdvancedSemaphore {
         pubSub.unsubscribe(channelName);
         pubSub = null;
         jedisForPubSub.close();
-        jedis.close();
     }
 
     public void destroy(){
         invalidate();
-        jedis.del(name);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.del(name);
+        }
     }
 
 

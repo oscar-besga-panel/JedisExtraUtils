@@ -4,7 +4,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.semaphore.JedisAdvancedSemaphore;
-import org.obapanel.jedis.semaphore.JedisSemaphore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
