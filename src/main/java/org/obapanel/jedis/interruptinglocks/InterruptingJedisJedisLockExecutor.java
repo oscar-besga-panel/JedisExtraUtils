@@ -1,6 +1,6 @@
 package org.obapanel.jedis.interruptinglocks;
 
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -17,20 +17,20 @@ import java.util.concurrent.TimeUnit;
  */
 public final class InterruptingJedisJedisLockExecutor extends AbstractInterruptingJedisLock {
 
-    private ExecutorService executorService;
-    private Future future;
+    private final ExecutorService executorService;
+    private Future<?> future;
 
 
     /**
      * Main constructor
-     * @param jedis Client to generate the lock
+     * @param jedisPool Client pool to generate the lock
      * @param name Lock name
      * @param leaseTime Time to lease the lock
      * @param timeUnit Unit of leaseTime
      * @param executorService Executor service that will provide locks
      */
-    public InterruptingJedisJedisLockExecutor(Jedis jedis, String name, long leaseTime, TimeUnit timeUnit, ExecutorService executorService) {
-        super(jedis, name, leaseTime, timeUnit);
+    public InterruptingJedisJedisLockExecutor(JedisPool jedisPool, String name, long leaseTime, TimeUnit timeUnit, ExecutorService executorService) {
+        super(jedisPool, name, leaseTime, timeUnit);
         this.executorService = executorService;
     }
 

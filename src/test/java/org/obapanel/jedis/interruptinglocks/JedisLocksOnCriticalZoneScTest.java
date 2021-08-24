@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,17 +20,17 @@ import static org.obapanel.jedis.interruptinglocks.MockOfJedis.checkLock;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
 
-public class JedisLocksOnCriticalZoneTest {
+public class JedisLocksOnCriticalZoneScTest {
 
 
-    private static final Logger log = LoggerFactory.getLogger(JedisLocksOnCriticalZoneTest.class);
+    private static final Logger log = LoggerFactory.getLogger(JedisLocksOnCriticalZoneScTest.class);
 
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean otherErrors = new AtomicBoolean(false);
     private String lockName;
-    private final List<JedisLock> lockList = new ArrayList<>();
+    private final List<JedisLockSc> lockList = new ArrayList<>();
     private MockOfJedis mockOfJedis;
 
 
@@ -79,8 +80,8 @@ public class JedisLocksOnCriticalZoneTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime) {
-        try {
-            JedisLock jedisLock = new JedisLock(mockOfJedis.getJedisPool(), lockName);
+        try (Jedis jedis = mockOfJedis.getJedisPool().getResource()){
+            JedisLockSc jedisLock = new JedisLockSc(jedis, lockName);
             lockList.add(jedisLock);
             jedisLock.lock();
             checkLock(jedisLock);

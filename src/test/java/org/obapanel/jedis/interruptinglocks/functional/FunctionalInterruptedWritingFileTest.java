@@ -9,7 +9,6 @@ import org.obapanel.jedis.interruptinglocks.IJedisLock;
 import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.io.File;
@@ -24,7 +23,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
 
 public class FunctionalInterruptedWritingFileTest {
 
@@ -32,8 +33,8 @@ public class FunctionalInterruptedWritingFileTest {
 
     private JedisPool jedisPool;
     private String lockName;
-    private List<IJedisLock> lockList = new ArrayList<>();
-    private AtomicBoolean otherError = new AtomicBoolean(false);
+    private final List<IJedisLock> lockList = new ArrayList<>();
+    private final AtomicBoolean otherError = new AtomicBoolean(false);
     private int line = 0;
 
 
@@ -81,10 +82,9 @@ public class FunctionalInterruptedWritingFileTest {
 
     private class WriteTest implements Runnable {
 
-        private long milis;
+        private final long milis;
+        private final File tempFile;
         private IJedisLock jedisLock;
-        private File tempFile;
-
 
         WriteTest(long milis, File tempFile){
             this.milis = milis;
@@ -93,14 +93,14 @@ public class FunctionalInterruptedWritingFileTest {
 
         @Override
         public void run() {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedisLock = new InterruptingJedisJedisLockBase(jedis, lockName, milis, TimeUnit.MILLISECONDS);
+            try {
+                jedisLock = new InterruptingJedisJedisLockBase(jedisPool, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
                 checkLock(jedisLock);
                 writeTest();
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
-                log.info("Closed channel by interrupt exception ClosedByInterruptException");
+                log.info("Closed channel by interrupt exception ClosedByInterruptException", cbie);
                 Thread.interrupted();  // We clean the state
             } catch (Exception e){
                 log.error("Error ", e);
@@ -116,7 +116,7 @@ public class FunctionalInterruptedWritingFileTest {
             while(true) {
                 line++;
                 String text = "#" + line + " " + Thread.currentThread().getName();
-                Files.write(tempFile.toPath(), Arrays.asList(text)  , StandardOpenOption.APPEND);
+                Files.write(tempFile.toPath(), Collections.singletonList(text), StandardOpenOption.APPEND);
             }
         }
     }

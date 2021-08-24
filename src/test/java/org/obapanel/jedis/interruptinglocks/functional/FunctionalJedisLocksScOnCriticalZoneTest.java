@@ -4,8 +4,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
+import org.obapanel.jedis.interruptinglocks.JedisLockSc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
@@ -23,11 +25,9 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.c
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
 
 
-public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
+public class FunctionalJedisLocksScOnCriticalZoneTest {
 
-
-    private static final Logger log = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneUnderlockTest.class);
-
+    private static final Logger log = LoggerFactory.getLogger(FunctionalJedisLocksScOnCriticalZoneTest.class);
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
@@ -35,7 +35,7 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
 
     private JedisPool jedisPool;
     private String lockName;
-    private final List<JedisLock> lockList = new ArrayList<>();
+    private final List<JedisLockSc> lockList = new ArrayList<>();
 
 
     @Before
@@ -59,7 +59,9 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
         if (jedisPool != null) {
             jedisPool.close();
         }
+
     }
+
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
@@ -88,13 +90,13 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime) {
-        try {
-            JedisLock jedisLock = new JedisLock(jedisPool, lockName);
+        try (Jedis jedis = jedisPool.getResource()){
+            JedisLockSc jedisLock = new JedisLockSc(jedis, lockName);
             lockList.add(jedisLock);
-            jedisLock.underLock(() -> {
-                checkLock(jedisLock);
-                accessCriticalZone(sleepTime);
-            });
+            jedisLock.lock();
+            checkLock(jedisLock);
+            accessCriticalZone(sleepTime);
+            jedisLock.unlock();
         } catch (Exception e){
             log.error("Error ", e);
             otherError.set(true);
@@ -110,7 +112,7 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
         try {
             Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
         } catch (InterruptedException e) {
-            //NOPE
+            // NOPE
         }
         intoCriticalZone.set(false);
     }

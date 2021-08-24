@@ -2,10 +2,15 @@ package org.obapanel.jedis.interruptinglocks.functional;
 
 import org.obapanel.jedis.interruptinglocks.IJedisLock;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
+import org.obapanel.jedis.interruptinglocks.JedisLockSc;
 import org.obapanel.jedis.interruptinglocks.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.*;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.Protocol;
 import redis.clients.jedis.params.SetParams;
 
 import java.time.Duration;
@@ -114,7 +119,7 @@ public class JedisTestFactory {
     public static void main(String[] args) {
         Jedis jedis = JedisTestFactory.createJedisClient();
         testConnection(jedis);
-        Lock jedisLock = new JedisLock(jedis,"jedisLock").asConcurrentLock();
+        Lock jedisLock = new JedisLockSc(jedis,"jedisLockSc").asConcurrentLock();
         boolean locked = jedisLock.tryLock();
         boolean reallyLocked = jedisLock.isLocked();
         jedisLock.unlock();
@@ -123,12 +128,11 @@ public class JedisTestFactory {
 
         JedisPool jedisPool = JedisTestFactory.createJedisPool();
         testPoolConnection(jedisPool);
-        Jedis jedisFromPool = jedisPool.getResource();
-        Lock jedisPoolLock = new JedisLock(jedisFromPool,"jedisPoolLock").asConcurrentLock();
+        Lock jedisPoolLock = new JedisLock(jedisPool,"jedisPoolLock").asConcurrentLock();
         boolean plocked = jedisPoolLock.tryLock();
         boolean preallyLocked = jedisPoolLock.isLocked();
         jedisPoolLock.unlock();
-        jedisFromPool.close();
+        jedisPool.close();
         System.out.println("JEDISPOOLLOCK " + plocked + " " + preallyLocked);
 
     }
