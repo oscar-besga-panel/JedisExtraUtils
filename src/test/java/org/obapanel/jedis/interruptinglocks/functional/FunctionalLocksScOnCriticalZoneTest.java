@@ -3,18 +3,19 @@ package org.obapanel.jedis.interruptinglocks.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.obapanel.jedis.interruptinglocks.JedisLock;
+import org.obapanel.jedis.interruptinglocks.JedisLockSc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
 
 import static org.junit.Assert.assertFalse;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
@@ -23,39 +24,30 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.c
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
 
 
-public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
+public class FunctionalLocksScOnCriticalZoneTest {
 
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneUnderlockTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FunctionalLocksScOnCriticalZoneTest.class);
 
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean otherError = new AtomicBoolean(false);
-
-    private JedisPool jedisPool;
     private String lockName;
-    private final List<JedisLock> lockList = new ArrayList<>();
+    private final List<Lock> lockList = new ArrayList<>();
+    private JedisPool jedisPool;
+
 
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
-        lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         jedisPool = createJedisPool();
     }
 
     @After
     public void after() {
-        lockList.stream().
-                filter(Objects::nonNull).
-                forEach(il -> {
-                    if (il.isLocked()) {
-                        log.error("A lock named {} is locked !", il.getName());
-                    }
-                    il.unlock();
-        });
         if (jedisPool != null) {
             jedisPool.close();
         }
@@ -83,20 +75,20 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
             t3.join();
             assertFalse(errorInCriticalZone.get());
             assertFalse(otherError.get());
-            assertFalse(lockList.stream().anyMatch(il -> il != null && il.isLocked()));
+            assertFalse(lockList.stream().anyMatch(il -> il != null && ((org.obapanel.jedis.interruptinglocks.Lock) il).isLocked()));
         }
     }
 
     private void accesLockOfCriticalZone(int sleepTime) {
-        try {
-            JedisLock jedisLock = new JedisLock(jedisPool, lockName);
-            lockList.add(jedisLock);
-            jedisLock.underLock(() -> {
-                checkLock(jedisLock);
-                accessCriticalZone(sleepTime);
-            });
-        } catch (Exception e){
-            log.error("Error ", e);
+        try (Jedis jedis = jedisPool.getResource()){
+            Lock lock = new JedisLockSc(jedis, lockName).asConcurrentLock();
+            lockList.add(lock);
+            lock.lock();
+            checkLock(lock);
+            accessCriticalZone(sleepTime);
+            lock.unlock();
+        } catch (Exception e) {
+            log.error("Other error ", e);
             otherError.set(true);
         }
     }
@@ -104,13 +96,13 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
     private void accessCriticalZone(int sleepTime){
         if (intoCriticalZone.get()) {
             errorInCriticalZone.set(true);
-            throw new IllegalStateException("Other thread is here, I am " + Thread.currentThread().getName());
+            throw new IllegalStateException("Other thread is here");
         }
         intoCriticalZone.set(true);
         try {
             Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
         } catch (InterruptedException e) {
-            //NOPE
+            // NOPE
         }
         intoCriticalZone.set(false);
     }

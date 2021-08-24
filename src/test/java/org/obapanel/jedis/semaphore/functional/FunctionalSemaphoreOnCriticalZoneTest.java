@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.obapanel.jedis.semaphore.JedisSemaphore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,9 +23,9 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalSemaphoreOnCriticalZoneTest.class);
 
-    private AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
-    private AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
-    private AtomicBoolean otherError = new AtomicBoolean(false);
+    private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
+    private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
+    private final AtomicBoolean otherError = new AtomicBoolean(false);
     private String semaphoreName;
 
 
@@ -67,12 +67,12 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            Jedis jedis = JedisTestFactory.createJedisClient();
-            JedisSemaphore semaphore = new JedisSemaphore(jedis, semaphoreName, 1);
+            JedisPool jedisPool = JedisTestFactory.createJedisPool();
+            JedisSemaphore semaphore = new JedisSemaphore(jedisPool, semaphoreName, 1);
             semaphore.acquire();
             accessCriticalZone(sleepTime);
             semaphore.release();
-            jedis.quit();
+            jedisPool.close();
         }catch (Exception e) {
             LOG.error("Other error ", e);
             otherError.set(true);

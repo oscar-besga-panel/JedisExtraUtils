@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -39,10 +38,10 @@ public class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private JedisPool jedisPool;
-    private Jedis jedis;
-    private Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
-    private Timer timer;
+    private final JedisPool jedisPool;
+    private final Jedis jedis;
+    private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
+    private final Timer timer;
 
     public MockOfJedis() {
         timer = new Timer();
@@ -166,13 +165,14 @@ public class MockOfJedis {
             String s = new String(b);
             if ("nx".equalsIgnoreCase(s)){
                 result = true;
+                break;
             }
         }
         return result;
     }
 
     Long getExpireTimePX(SetParams setParams) {
-        return (Long) setParams.getParam("px");
+        return setParams.getParam("px");
     }
 
 

@@ -1,8 +1,5 @@
 package org.obapanel.jedis.semaphore.functional;
 
-import org.obapanel.jedis.interruptinglocks.IJedisLock;
-import org.obapanel.jedis.interruptinglocks.JedisLock;
-import org.obapanel.jedis.interruptinglocks.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.HostAndPort;
@@ -92,7 +89,7 @@ public class JedisTestFactory {
 
         JedisPool jedisPool = JedisTestFactory.createJedisPool();
         testPoolConnection(jedisPool);
-
+        LOG.info("Connections tested");
     }
 
 

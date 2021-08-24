@@ -1,12 +1,13 @@
-package org.obapanel.jedis.semaphore;
+package org.obapanel.jedis.interruptinglocks;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Jedis;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -14,20 +15,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.semaphore.MockOfJedis.UNIT_TEST_CYCLES;
-import static org.obapanel.jedis.semaphore.MockOfJedis.unitTestEnabled;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.UNIT_TEST_CYCLES;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.checkLock;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
 
-public class JedisSemaphoresOnCriticalZoneTest {
+public class JedisLocksOnCriticalZoneScTest {
 
 
-    private static final Logger LOG = LoggerFactory.getLogger(JedisSemaphoresOnCriticalZoneTest.class);
+    private static final Logger log = LoggerFactory.getLogger(JedisLocksOnCriticalZoneScTest.class);
 
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean otherErrors = new AtomicBoolean(false);
-    private String semaphoreName;
+    private String lockName;
+    private final List<JedisLockSc> lockList = new ArrayList<>();
     private MockOfJedis mockOfJedis;
 
 
@@ -35,13 +38,16 @@ public class JedisSemaphoresOnCriticalZoneTest {
     public void before() {
         org.junit.Assume.assumeTrue(unitTestEnabled());
         if (!unitTestEnabled()) return;
-        semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedis = new MockOfJedis();
     }
 
     @After
     public void after() {
-        if (mockOfJedis != null) mockOfJedis.clearData();
+        if (mockOfJedis != null) {
+            mockOfJedis.getJedisPool().close();
+            mockOfJedis.clearData();
+        }
     }
 
     @Test
@@ -50,7 +56,7 @@ public class JedisSemaphoresOnCriticalZoneTest {
             intoCriticalZone.set(false);
             errorInCriticalZone.set(false);
             otherErrors.set(false);
-            LOG.info("i {}", i);
+            log.info("i {}", i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
             t1.setName("prueba_t1");
             Thread t2 = new Thread(() -> accesLockOfCriticalZone(7));
@@ -60,46 +66,51 @@ public class JedisSemaphoresOnCriticalZoneTest {
             List<Thread> threadList = Arrays.asList(t1,t2,t3);
             Collections.shuffle(threadList);
             threadList.forEach(Thread::start);
+//            t1.start();
+//            t2.start();
+//            t3.start();
+            //Thread.sleep(TimeUnit.SECONDS.toMillis(5));
             t1.join();
             t2.join();
             t3.join();
             assertFalse(errorInCriticalZone.get());
             assertFalse(otherErrors.get());
+            assertFalse(lockList.stream().anyMatch(il -> il != null && il.isLocked()));
         }
     }
 
     private void accesLockOfCriticalZone(int sleepTime) {
-        try {
-            JedisPool jedisPool = mockOfJedis.getJedisPool();
-            JedisSemaphore jedisSemaphore = new JedisSemaphore(jedisPool, semaphoreName, 1);
-            jedisSemaphore.acquire();
+        try (Jedis jedis = mockOfJedis.getJedisPool().getResource()){
+            JedisLockSc jedisLock = new JedisLockSc(jedis, lockName);
+            lockList.add(jedisLock);
+            jedisLock.lock();
+            checkLock(jedisLock);
             accessCriticalZone(sleepTime);
-            jedisSemaphore.release();
-            jedisPool.close();
+            jedisLock.unlock();
         } catch (Exception e){
             otherErrors.set(true);
-            LOG.error("Other error ", e);
+            log.error("Other error ", e);
         }
     }
 
     private void accessCriticalZone(int sleepTime){
-        LOG.info("accessCriticalZone > enter  > " + Thread.currentThread().getName());
+        log.info("accessCriticalZone > enter  > " + Thread.currentThread().getName());
         if (intoCriticalZone.get()) {
             errorInCriticalZone.set(true);
             throw new IllegalStateException("Other thread is here " + Thread.currentThread().getName());
         }
         try {
-            LOG.info("accessCriticalZone > bef true  > " + Thread.currentThread().getName());
+            log.info("accessCriticalZone > bef true  > " + Thread.currentThread().getName());
             intoCriticalZone.set(true);
-            LOG.info("accessCriticalZone > aft true  > " + Thread.currentThread().getName());
+            log.info("accessCriticalZone > aft true  > " + Thread.currentThread().getName());
             Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
         } catch (InterruptedException e) {
             //NOOP
         } finally {
-            LOG.info("accessCriticalZone > bef false > " + Thread.currentThread().getName());
+            log.info("accessCriticalZone > bef false > " + Thread.currentThread().getName());
             intoCriticalZone.set(false);
-            LOG.info("accessCriticalZone > aft false > " + Thread.currentThread().getName());
+            log.info("accessCriticalZone > aft false > " + Thread.currentThread().getName());
         }
-        LOG.info("accessCriticalZone > exit   > " + Thread.currentThread().getName());
+        log.info("accessCriticalZone > exit   > " + Thread.currentThread().getName());
     }
 }

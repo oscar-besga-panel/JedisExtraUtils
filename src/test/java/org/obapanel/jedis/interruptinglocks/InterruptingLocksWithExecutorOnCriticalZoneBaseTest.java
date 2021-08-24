@@ -5,19 +5,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.*;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.UNIT_TEST_CYCLES;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.checkLock;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
 
 public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
@@ -26,11 +29,11 @@ public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
     private static final Logger LOG = LoggerFactory.getLogger(InterruptingLocksWithExecutorOnCriticalZoneBaseTest.class);
 
 
-    private AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
-    private AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
-    private AtomicBoolean otherError = new AtomicBoolean(false);
+    private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
+    private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
+    private final AtomicBoolean otherError = new AtomicBoolean(false);
     private String lockName;
-    private List<InterruptingJedisJedisLockExecutor> interruptingLockBaseList = new ArrayList<>();
+    private final List<InterruptingJedisJedisLockExecutor> interruptingLockBaseList = new ArrayList<>();
     private ExecutorService executorService;
 
     private MockOfJedis mockOfJedis;
@@ -46,12 +49,17 @@ public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
 
     @After
     public void after() {
-        if (mockOfJedis!= null) mockOfJedis.clearData();
-        interruptingLockBaseList.stream().filter(il ->  il != null ).forEach(il -> {
-            if (il.isLocked()) {
-                LOG.error("A lock named {} is locked !", il.getName());
-            }
-            il.unlock();
+        if (mockOfJedis!= null) {
+            mockOfJedis.getJedisPool().close();
+            mockOfJedis.clearData();
+        }
+        interruptingLockBaseList.stream().
+                filter(Objects::nonNull).
+                forEach(il -> {
+                    if (il.isLocked()) {
+                        LOG.error("A lock named {} is locked !", il.getName());
+                    }
+                    il.unlock();
         });
         if (executorService != null) {
             executorService.shutdown();
@@ -85,22 +93,16 @@ public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime){
-        try (Jedis jedis = mockOfJedis.getJedis()) {
-            InterruptingJedisJedisLockExecutor interruptingJedisJedisLockExecutor = new InterruptingJedisJedisLockExecutor(jedis, lockName, 5, TimeUnit.SECONDS, executorService);
-            interruptingLockBaseList.add(interruptingJedisJedisLockExecutor);
-            interruptingJedisJedisLockExecutor.lock();
-            boolean c = checkLock(interruptingJedisJedisLockExecutor);
-            if (c) {
-                accessCriticalZone(sleepTime);
-            }
-            interruptingJedisJedisLockExecutor.unlock();
-            interruptingLockBaseList.remove(interruptingJedisJedisLockExecutor);
-        } catch (Exception e) {
-            e.printStackTrace();
-            otherError.set(true);
-        } finally {
-
+        JedisPool jedisPool = mockOfJedis.getJedisPool();
+        InterruptingJedisJedisLockExecutor interruptingJedisJedisLockExecutor = new InterruptingJedisJedisLockExecutor(jedisPool, lockName, 5, TimeUnit.SECONDS, executorService);
+        interruptingLockBaseList.add(interruptingJedisJedisLockExecutor);
+        interruptingJedisJedisLockExecutor.lock();
+        boolean c = checkLock(interruptingJedisJedisLockExecutor);
+        if (c) {
+            accessCriticalZone(sleepTime);
         }
+        interruptingJedisJedisLockExecutor.unlock();
+        interruptingLockBaseList.remove(interruptingJedisJedisLockExecutor);
     }
 
     private void accessCriticalZone(int sleepTime){

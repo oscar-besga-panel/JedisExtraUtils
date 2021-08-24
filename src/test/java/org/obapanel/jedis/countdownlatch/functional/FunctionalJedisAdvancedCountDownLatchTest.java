@@ -50,11 +50,9 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
         final AtomicBoolean awaitDone = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                Jedis jedis1 = jedisPool.getResource();
-                JedisAdvancedCountDownLatch jedisCountDownLatch1 = new JedisAdvancedCountDownLatch(jedis1, countDownLatch,1);
+                JedisAdvancedCountDownLatch jedisCountDownLatch1 = new JedisAdvancedCountDownLatch(jedisPool, countDownLatch,1);
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
-                jedis1.close();
             } catch (Exception e) {
                 LOG.error("Error in thread 1", e);
             }
@@ -63,11 +61,9 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                Jedis jedis2 = jedisPool.getResource();
-                JedisAdvancedCountDownLatch jedisCountDownLatch2 = new JedisAdvancedCountDownLatch(jedis2, countDownLatch,1);
+                JedisAdvancedCountDownLatch jedisCountDownLatch2 = new JedisAdvancedCountDownLatch(jedisPool, countDownLatch,1);
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
-                jedis2.close();
             } catch (Exception e) {
                 LOG.error("Error in thread 2", e);
             }
@@ -84,7 +80,7 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
             e.printStackTrace();
         }
         assertTrue(awaitDone.get());
-        assertTrue( 0L ==  new JedisCountDownLatch(jedis, countDownLatch,1).getCount());
+        assertTrue( 0L ==  new JedisCountDownLatch(jedisPool, countDownLatch,1).getCount());
     }
 
     @Test
@@ -92,11 +88,9 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
         final AtomicBoolean awaitDone = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                Jedis jedis1 = jedisPool.getResource();
-                JedisAdvancedCountDownLatch jedisCountDownLatch1 = new JedisAdvancedCountDownLatch(jedis1, countDownLatch,1);
+                JedisAdvancedCountDownLatch jedisCountDownLatch1 = new JedisAdvancedCountDownLatch(jedisPool, countDownLatch,1);
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
-                jedis1.close();
             } catch (Exception e) {
                 LOG.error("Error in thread 1", e);
             }
@@ -105,11 +99,9 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                Jedis jedis2 = jedisPool.getResource();
-                JedisAdvancedCountDownLatch jedisCountDownLatch2 = new JedisAdvancedCountDownLatch(jedis2, countDownLatch,1);
+                JedisAdvancedCountDownLatch jedisCountDownLatch2 = new JedisAdvancedCountDownLatch(jedisPool, countDownLatch,1);
                 Thread.sleep(2500);
                 jedisCountDownLatch2.countDown();
-                jedis2.close();
             } catch (Exception e) {
                 LOG.error("Error in thread 2", e);
             }
@@ -126,13 +118,13 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
             e.printStackTrace();
         }
         assertFalse(awaitDone.get());
-        assertTrue( 1L ==  new JedisCountDownLatch(jedis, countDownLatch,1).getCount());
+        assertTrue( 1L ==  new JedisCountDownLatch(jedisPool, countDownLatch,1).getCount());
     }
 
 
     @Test(expected = IllegalArgumentException.class)
     public void badInit(){
-        new JedisCountDownLatch(jedis, countDownLatch,-1);
+        new JedisCountDownLatch(jedisPool, countDownLatch,-1);
     }
 
 

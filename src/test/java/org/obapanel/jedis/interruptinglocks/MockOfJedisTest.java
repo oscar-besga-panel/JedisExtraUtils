@@ -6,6 +6,7 @@ import org.junit.Test;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -74,8 +75,8 @@ public class MockOfJedisTest {
     public void testEval() {
         mockOfJedis.getJedis().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
-        List<String> keys = Arrays.asList("a");
-        List<String> values = Arrays.asList("A1");
+        List<String> keys = Collections.singletonList("a");
+        List<String> values = Collections.singletonList("A1");
         Object response = mockOfJedis.getJedis().eval(JedisLock.UNLOCK_LUA_SCRIPT, keys, values);
         assertNull( mockOfJedis.getCurrentData().get("a"));
         assertEquals(1,response);

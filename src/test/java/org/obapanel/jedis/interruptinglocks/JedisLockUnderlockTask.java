@@ -31,37 +31,54 @@ public class JedisLockUnderlockTask {
 
 
     @Test
-    public void underLockTask() throws Exception {
+    public void underLockTask() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() -> {
-            result1.set(true);
-        });
-        boolean result2 = JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() -> true);
+        JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() ->
+            result1.set(true)
+        );
+        boolean result2 = JedisLockUtils.underLockTask(mockOfJedis.getJedisPool(), lockName,() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }
 
     @Test
-    public void underLock() throws Exception {
+    public void underLockTaskSc() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        JedisLock jedisLock1 = new JedisLock(mockOfJedis.getJedis(), lockName);
-        jedisLock1.underLock(() -> {
-            result1.set(true);
-        });
-        JedisLock jedisLock2 = new JedisLock(mockOfJedis.getJedis(), lockName);
+        JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() -> result1.set(true));
+        boolean result2 = JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() -> true);
+        assertTrue(result1.get());
+        assertTrue(result2);
+    }
+
+
+    @Test
+    public void underLock() {
+        AtomicBoolean result1 = new AtomicBoolean(false);
+        JedisLock jedisLock1 = new JedisLock(mockOfJedis.getJedisPool(), lockName);
+        jedisLock1.underLock(() -> result1.set(true));
+        JedisLock jedisLock2 = new JedisLock(mockOfJedis.getJedisPool(), lockName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }
 
     @Test
-    public void underLockWithInterrupted() throws Exception {
+    public void underLockSc() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(mockOfJedis.getJedis(), lockName, 1, TimeUnit.SECONDS);
-        jedisLock1.underLock(() -> {
-            result1.set(true);
-        });
-        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(mockOfJedis.getJedis(), lockName, 1, TimeUnit.SECONDS);
+        JedisLockSc jedisLock1 = new JedisLockSc(mockOfJedis.getJedis(), lockName);
+        jedisLock1.underLock(() -> result1.set(true));
+        JedisLockSc jedisLock2 = new JedisLockSc(mockOfJedis.getJedis(), lockName);
+        boolean result2 = jedisLock2.underLock(() -> true);
+        assertTrue(result1.get());
+        assertTrue(result2);
+    }
+
+    @Test
+    public void underLockWithInterrupted() {
+        AtomicBoolean result1 = new AtomicBoolean(false);
+        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(mockOfJedis.getJedisPool(), lockName, 1, TimeUnit.SECONDS);
+        jedisLock1.underLock(() -> result1.set(true) );
+        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(mockOfJedis.getJedisPool(), lockName, 1, TimeUnit.SECONDS);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);

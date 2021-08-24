@@ -3,6 +3,7 @@ package org.obapanel.jedis.countdownlatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.concurrent.TimeUnit;
@@ -26,19 +27,19 @@ public class JedisCountDownLatch {
     private static final Long LONG_NULL_VALUE = -1L;
 
 
-    private final Jedis jedis;
+    private final JedisPool jedisPool;
     private final String name;
     private int waitTimeMilis = 150;
 
 
     /**
      * Creates a new shared CountDownLatch
-     * @param jedis Jedis connection
+     * @param jedisPool Jedis connection pool
      * @param name Shared name
      * @param count Initial count
      */
-    public JedisCountDownLatch(Jedis jedis, String name, long count) {
-        this.jedis = jedis;
+    public JedisCountDownLatch(JedisPool jedisPool, String name, long count) {
+        this.jedisPool = jedisPool;
         this.name = name;
         init(count);
     }
@@ -62,7 +63,9 @@ public class JedisCountDownLatch {
         if (count <= 0) {
             throw new IllegalArgumentException("initial count on countdownlatch must be always more than zero");
         }
-        jedis.set(name, String.valueOf(count), new SetParams().nx());
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.set(name, String.valueOf(count), new SetParams().nx());
+        }
     }
 
     /**
@@ -70,7 +73,7 @@ public class JedisCountDownLatch {
      * @throws InterruptedException if interrupted
      */
     public void await() throws InterruptedException {
-        while(getCount() > 0) {
+        while(!isCountZero()) {
             Thread.sleep(waitTimeMilis);
         }
     }
@@ -84,13 +87,10 @@ public class JedisCountDownLatch {
      */
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         long timeStampToWait = System.currentTimeMillis() + unit.toMillis(timeout);
-        boolean reachedZero = false;
-        while(timeStampToWait > System.currentTimeMillis()) {
-            reachedZero = getCount() == 0;
-            if (reachedZero){
-                break;
-            }
+        boolean reachedZero = isCountZero();
+        while(timeStampToWait > System.currentTimeMillis() && !reachedZero) {
             Thread.sleep(waitTimeMilis);
+            reachedZero = isCountZero();
         }
         return reachedZero;
     }
@@ -101,23 +101,30 @@ public class JedisCountDownLatch {
      * @return the current value, after operation
      */
     public long countDown() {
-        Long value = jedis.decr(name);
-        LOG.debug("countDown name {} value {}", name, value);
-        return value != null ? value : -1;
+        try (Jedis jedis = jedisPool.getResource()) {
+            Long value = jedis.decr(name);
+            LOG.debug("countDown name {} value {}", name, value);
+            return value != null ? value : -1;
+        }
     }
 
+    private boolean isCountZero() {
+        return getCount() <= 0;
+    }
 
     /**
      * Get the current shared value, or -1 if it doen't exists
      * @return current value
      */
     public long getCount() {
-        String value = jedis.get(name);
-        LOG.debug("getCount name {} value {}", name, value);
-        if (value != null && !value.isEmpty()) {
-            return Long.parseLong(value);
-        } else {
-            return LONG_NULL_VALUE;
+        try (Jedis jedis = jedisPool.getResource()) {
+            String value = jedis.get(name);
+            LOG.debug("getCount name {} value {}", name, value);
+            if (value != null && !value.isEmpty()) {
+                return Long.parseLong(value);
+            } else {
+                return LONG_NULL_VALUE;
+            }
         }
     }
 
@@ -126,8 +133,10 @@ public class JedisCountDownLatch {
      * THIS METHOD DELETES THE REMOTE VALUE DESTROYING THIS COUNTDOWNLATCH AND OHTERS
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
-    public void destroy(){
-        jedis.del(name);
+    public void destroy() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.del(name);
+        }
     }
 
 

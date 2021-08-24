@@ -3,7 +3,6 @@ package org.obapanel.jedis.interruptinglocks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.SetParams;
@@ -13,7 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -21,14 +19,21 @@ import java.util.function.Supplier;
  * It is also closeable to be used in try-with-resources
  *
  * I do not recommend reuse a locked-and-unlocked JedisLock
- * Should be thread-safe, I do not recomend using between thread s
+ * It uses a single Jedis connection
+ * Take in account that the jedis connection is not opened,
+ * nor closed when the lock is not in use or unlocked.
+ *
+ * It's better to use the JedisLock, as this class is not thead safe
+ * Also is not as testes as original JedisLock
+ * So this is why it is deprecated
  *
  * https://redis.io/topics/distlock
  *
  */
-public class JedisLock implements IJedisLock {
+@Deprecated
+public class JedisLockSc implements  IJedisLock {
 
-    private static final Logger log = LoggerFactory.getLogger(JedisLock.class);
+    private static final Logger log = LoggerFactory.getLogger(JedisLockSc.class);
 
     public static final String CLIENT_RESPONSE_OK = "OK";
 
@@ -43,7 +48,7 @@ public class JedisLock implements IJedisLock {
     private final TimeUnit timeUnit;
     private final String name;
     private final String value;
-    private final JedisPool jedisPool;
+    private final Jedis jedis;
 
     private long leaseMoment = -1L;
     private long timeLimit = -1L;
@@ -55,11 +60,11 @@ public class JedisLock implements IJedisLock {
     /**
      * Creates a Redis lock with a name
      * This constructor makes the lock with no time limitations
-     * @param jedisPool Jedis is Java Redis connection and operations pool
+     * @param jedis Jedis is Java Redis connection and operartions
      * @param name Unique name of the lock, shared with all distributed lock
      */
-    public JedisLock(JedisPool jedisPool, String name){
-        this(jedisPool, name, null, null);
+    public JedisLockSc(Jedis jedis, String name){
+        this(jedis, name, null, null);
     }
 
 
@@ -67,15 +72,15 @@ public class JedisLock implements IJedisLock {
 
     /**
      * Creates a Redis lock with a name
-     * @param jedisPool Jedis is Java Redis connection and operations pool
+     * @param jedis Jedis is Java Redis connection and operartions
      * @param name Unique name of the lock, shared with all distributed lock
      * @param leaseTime Amount of time in unit that the lock should live
      * @param timeUnit Unit of leaseTime
      */
-    public JedisLock(JedisPool jedisPool, String name, Long leaseTime, TimeUnit timeUnit) {
-        if (jedisPool == null) throw new IllegalArgumentException("JedisPool can not be null");
+    public JedisLockSc(Jedis jedis, String name, Long leaseTime, TimeUnit timeUnit) {
+        if (jedis == null) throw new IllegalArgumentException("Jedis can not be null");
         if (name == null || name.trim().isEmpty()) throw new IllegalArgumentException("Name can not be null nor empty nor whitespace");
-        this.jedisPool = jedisPool;
+        this.jedis = jedis;
         this.name = name;
         this.leaseTime = leaseTime;
         this.timeUnit = timeUnit;
@@ -117,11 +122,11 @@ public class JedisLock implements IJedisLock {
     }
 
     /**
-     * JedisPool object used to lock
-     * @return jedisPool
+     * Jedis object used to lock
+     * @return jedis
      */
-    public JedisPool getJedisPool() {
-        return jedisPool;
+    public Jedis getJedis() {
+        return jedis;
     }
 
     @Override
@@ -195,24 +200,19 @@ public class JedisLock implements IJedisLock {
     }
 
     public synchronized void underLock(Runnable task)  {
-        try (JedisLock jl = this) {
+        try (JedisLockSc jl = this) {
             jl.lock();
             task.run();
         }
     }
 
     public synchronized <T> T underLock(Supplier<T> task) {
-        try (JedisLock jl = this){
+        try (JedisLockSc jl = this){
             jl.lock();
             return task.get();
         }
     }
 
-    private <T> T underPool(Function<Jedis, T> action) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return action.apply(jedis);
-        }
-    }
 
     /**
      * Attempts to get the lock.
@@ -221,10 +221,6 @@ public class JedisLock implements IJedisLock {
      * @return true if lock obtained, false otherwise
      */
     private synchronized boolean redisLock() {
-        return underPool(this::redisLockUnderPool);
-    }
-
-    private synchronized boolean redisLockUnderPool(Jedis jedis) {
         SetParams setParams = new SetParams().nx();
         if (leaseTime != null) {
             setParams.px(timeUnit.toMillis(leaseTime));
@@ -253,19 +249,17 @@ public class JedisLock implements IJedisLock {
      * Attempts to unlock the lock
      */
     private synchronized void redisUnlock() {
-        try (Jedis jedis = jedisPool.getResource()){
-            if (!redisCheckLock()) return;
-            List<String> keys = Collections.singletonList(name);
-            List<String> values = Collections.singletonList(value);
-            Object response = jedis.eval(UNLOCK_LUA_SCRIPT, keys, values);
-            int num = 0;
-            if (response != null) {
-                log.debug("response {}", response);
-                num = Integer.parseInt(response.toString());
-            }
-            if (num > 0) {
-                resetLockMoment();
-            }
+        if (!redisCheckLock()) return;
+        List<String> keys = Collections.singletonList(name);
+        List<String> values = Collections.singletonList(value);
+        Object response = jedis.eval(UNLOCK_LUA_SCRIPT, keys, values);
+        int num = 0;
+        if (response != null) {
+            log.debug("response {}", response);
+            num = Integer.parseInt(response.toString());
+        }
+        if ( num > 0 ) {
+            resetLockMoment();
         }
     }
 
@@ -276,16 +270,6 @@ public class JedisLock implements IJedisLock {
      * @return true if the lock is remotely held
      */
     private synchronized boolean redisCheckLock() {
-        return underPool(this::redisCheckLockUnderPool);
-    }
-
-    /**
-     * If a leaseTime is set, it checks the leasetime and the timelimit
-     * Then it checks if remote redis has te same value as the lock
-     * If not, returns false
-     * @return true if the lock is remotely held
-     */
-    private synchronized boolean redisCheckLockUnderPool(Jedis jedis) {
         boolean check = false;
         log.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
         if ((leaseTime == null) || (timeLimit > System.currentTimeMillis())) {
@@ -324,9 +308,9 @@ public class JedisLock implements IJedisLock {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        JedisLock jedisLock = (JedisLock) o;
-        return name.equals(jedisLock.name) &&
-                value.equals(jedisLock.value);
+        JedisLockSc jedisLockSc = (JedisLockSc) o;
+        return name.equals(jedisLockSc.name) &&
+                value.equals(jedisLockSc.value);
     }
 
     @Override
@@ -335,9 +319,3 @@ public class JedisLock implements IJedisLock {
     }
 
 }
-
-
-
-
-
-
