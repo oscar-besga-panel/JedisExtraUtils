@@ -37,10 +37,10 @@ public class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private Jedis jedis;
-    private JedisPool jedisPool;
-    private Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
-    private Timer timer;
+    private final Jedis jedis;
+    private final JedisPool jedisPool;
+    private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
+    private final Timer timer;
 
     public MockOfJedis() {
         timer = new Timer();
@@ -143,7 +143,7 @@ public class MockOfJedis {
     }
 
     Long getExpireTimePX(SetParams setParams) {
-        return (Long) setParams.getParam("px");
+        return setParams.getParam("px");
     }
 
 

@@ -53,6 +53,10 @@ public class MockOfJedis {
         jedisPool = Mockito.mock(JedisPool.class);
         Mockito.when(jedisPool.getResource()).thenReturn(jedis);
 
+        Mockito.when(jedis.exists(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            return mockExist(key);
+        });
         Mockito.when(jedis.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);
@@ -79,6 +83,10 @@ public class MockOfJedis {
             return mockScan(cursor, scanParams);
         });
 
+    }
+
+    private boolean mockExist(String key) {
+        return data.containsKey(key);
     }
 
 

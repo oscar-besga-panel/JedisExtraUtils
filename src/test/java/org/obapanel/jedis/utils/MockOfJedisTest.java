@@ -8,6 +8,7 @@ import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.params.SetParams;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.utils.MockOfJedis.unitTestEnabled;
@@ -51,6 +52,15 @@ public class MockOfJedisTest {
 
         boolean finalResult = !t11 && !t12 && t21 && !t22 && !t31 && t32 && t41 && t42;
         assertTrue(finalResult);
+    }
+
+    @Test
+    public void testExists() {
+        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
+        assertNull(mockOfJedis.getCurrentData().get("b"));
+        assertTrue( mockOfJedis.getJedis().exists("a"));
+        assertFalse( mockOfJedis.getJedis().exists("b"));
     }
 
     @Test
