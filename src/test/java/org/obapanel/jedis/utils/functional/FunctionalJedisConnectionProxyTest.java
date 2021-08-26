@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisExhaustedPoolException;
 
 import java.io.IOException;
 
@@ -50,10 +51,10 @@ public class FunctionalJedisConnectionProxyTest {
     @Test
     public void testProxy1() {
         JedisPool jedisPoolButReallyIsAProxy = JedisPoolAdapter.poolFromJedis(jedis);
-        try(Jedis jedisProxyConnection = jedisPoolButReallyIsAProxy.getResource()){
-            jedisProxyConnection.set(varName + "a","1");
-            jedisProxyConnection.set(varName + "b","2");
-            jedisProxyConnection.set(varName + "c","3");
+        try (Jedis jedisProxyConnection = jedisPoolButReallyIsAProxy.getResource()) {
+            jedisProxyConnection.set(varName + "a", "1");
+            jedisProxyConnection.set(varName + "b", "2");
+            jedisProxyConnection.set(varName + "c", "3");
         }
         assertTrue(jedis.exists(varName + "a"));
         assertTrue(jedis.exists(varName + "b"));
@@ -62,10 +63,10 @@ public class FunctionalJedisConnectionProxyTest {
 
     @Test
     public void testProxy2() {
-        JedisPoolAdapter.poolFromJedis(jedis).withResource( jedisProxyConnection ->{
-            jedisProxyConnection.set(varName + "a","1");
-            jedisProxyConnection.set(varName + "b","2");
-            jedisProxyConnection.set(varName + "c","3");
+        JedisPoolAdapter.poolFromJedis(jedis).withResource(jedisProxyConnection -> {
+            jedisProxyConnection.set(varName + "a", "1");
+            jedisProxyConnection.set(varName + "b", "2");
+            jedisProxyConnection.set(varName + "c", "3");
         });
         assertTrue(jedis.exists(varName + "a"));
         assertTrue(jedis.exists(varName + "b"));
@@ -77,11 +78,18 @@ public class FunctionalJedisConnectionProxyTest {
         jedis.set(varName + "a", "1");
         String result = JedisPoolAdapter.
                 poolFromJedis(jedis).
-                withResourceFunction( jedisProxyConnection -> {
+                withResourceFunction(jedisProxyConnection -> {
                     return jedisProxyConnection.get(varName + "a");
                 });
         assertEquals("1", result);
         assertEquals("1", jedis.get(varName + "a"));
+    }
+
+    @Test(expected = JedisExhaustedPoolException.class)
+    public void testProxy4() {
+        JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
+        jedisPool.close();
+        jedisPool.getResource();
     }
 
 }

@@ -14,6 +14,21 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+/**
+ * This class creates a new 'pool' of redis connections
+ * from only one existing connection
+ * This fake pool will return the same connection again
+ * and again
+ * In reality it will return a proxy that will execute
+ * all the opetations except close.
+ * Close operation on the returned jedis connection will do nothing
+ * This is because a close on a pool connection will not close it but retrun to
+ * the pool.
+ * And I do not like to cut connection when closed when it comes from pool, from example
+ * in a try-with-resources
+ * Closing the pool will nullify the connection inside the pool making it unusable but
+ * it will not change the original connection
+ */
 public class JedisPoolAdapter extends JedisPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisPoolAdapter.class);
@@ -31,12 +46,14 @@ public class JedisPoolAdapter extends JedisPool {
     }
 
     public void withResource(Consumer<Jedis> action) {
+        checkJedis();
         try(Jedis jedis = getResource()) {
             action.accept(jedis);
         }
     }
 
     public <T> T withResourceFunction(Function<Jedis, T> action) {
+        checkJedis();
         try(Jedis jedis = getResource()) {
             return action.apply(jedis);
         }
@@ -44,11 +61,8 @@ public class JedisPoolAdapter extends JedisPool {
 
     @Override
     public Jedis getResource() {
-        if (jedis != null) {
-            return createDynamicProxyFromJedis(jedis);
-        } else {
-            throw new JedisExhaustedPoolException("Jedis pool adapter is closed");
-        }
+        checkJedis();
+        return createDynamicProxyFromJedis(jedis);
     }
 
     @Override
@@ -98,26 +112,31 @@ public class JedisPoolAdapter extends JedisPool {
 
     @Override
     public int getNumActive() {
+        checkJedis();
         return 1;
     }
 
     @Override
     public int getNumIdle() {
+        checkJedis();
         return 0;
     }
 
     @Override
     public int getNumWaiters() {
+        checkJedis();
         return 0;
     }
 
     @Override
     public long getMeanBorrowWaitTimeMillis() {
+        checkJedis();
         return 0L;
     }
 
     @Override
     public long getMaxBorrowWaitTimeMillis() {
+        checkJedis();
         return 0L;
     }
 
@@ -126,6 +145,10 @@ public class JedisPoolAdapter extends JedisPool {
         //NOPE
     }
 
+    private void checkJedis() {
+        if (jedis == null)
+            throw new JedisExhaustedPoolException("Jedis pool adapter is closed");
+    }
 
     private static Jedis createDynamicProxyFromJedis(final Jedis jedis)  {
         try {
