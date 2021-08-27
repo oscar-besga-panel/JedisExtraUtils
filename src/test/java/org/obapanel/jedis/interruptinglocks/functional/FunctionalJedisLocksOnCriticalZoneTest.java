@@ -46,6 +46,7 @@ public class FunctionalJedisLocksOnCriticalZoneTest {
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         lockList.stream().
                 filter(Objects::nonNull).
                 forEach(il -> {

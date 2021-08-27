@@ -55,6 +55,7 @@ public class FunctionalWritingFileTest {
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         if (jedisPool != null) jedisPool.close();
     }
 

@@ -53,6 +53,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         if (executorService != null) executorService.shutdown();
         interruptingLockBaseList.stream().
                 filter(il ->  il != null ).

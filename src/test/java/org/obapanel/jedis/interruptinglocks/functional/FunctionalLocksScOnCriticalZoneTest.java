@@ -41,11 +41,13 @@ public class FunctionalLocksScOnCriticalZoneTest {
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
+        if (!functionalTestEnabled()) return;
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         jedisPoolList.forEach(JedisPool::close);
         jedisList.forEach(Jedis::close);
     }

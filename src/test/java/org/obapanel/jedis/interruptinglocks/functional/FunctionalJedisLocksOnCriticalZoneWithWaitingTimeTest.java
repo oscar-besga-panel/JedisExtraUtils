@@ -40,12 +40,14 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
+        if (!functionalTestEnabled()) return;
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         jedisPool = createJedisPool();
     }
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         if (jedisPool != null) {
             jedisPool.close();
         }

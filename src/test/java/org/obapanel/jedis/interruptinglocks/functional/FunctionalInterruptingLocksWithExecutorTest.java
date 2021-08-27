@@ -39,6 +39,7 @@ public class FunctionalInterruptingLocksWithExecutorTest {
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         if (jedisPool != null) jedisPool.close();
         if (executorService != null) executorService.shutdown();
     }

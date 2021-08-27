@@ -34,9 +34,9 @@ public class FunctionalSemaphoreNumberPermitsTest {
     public void after() throws IOException {
         if (!functionalTestEnabled()) return;
         if (jedisPool != null) {
-            Jedis jedis = jedisPool.getResource();
-            jedis.del(semaphoreName);
-            jedis.close();
+            try (Jedis jedis = jedisPool.getResource()) {
+                jedis.del(semaphoreName);
+            }
             jedisPool.close();
         }
     }

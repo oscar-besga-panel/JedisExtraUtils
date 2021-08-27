@@ -54,6 +54,7 @@ public class FunctionalWritingFileScTest {
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         jedisPoolList.forEach(JedisPool::close);
         jedisList.forEach(Jedis::close);
     }

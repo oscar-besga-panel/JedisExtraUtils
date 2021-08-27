@@ -38,13 +38,18 @@ public class FunctionalJedisConnectionProxyTest {
 
     @After
     public void after() throws IOException {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.del(varName + "a");
-            jedis.del(varName + "b");
-            jedis.del(varName + "c");
+        if (!functionalTestEnabled()) return;
+        if (jedisPool != null) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                jedis.del(varName + "a");
+                jedis.del(varName + "b");
+                jedis.del(varName + "c");
+            }
+            jedisPool.close();
         }
-        jedisPool.close();
-        jedis.close();
+        if (jedis != null) {
+            jedis.close();
+        }
     }
 
 

@@ -35,6 +35,7 @@ public class FunctionalJedisLockTest {
 
     @After
     public void tearDown() {
+        if (!functionalTestEnabled()) return;
         if (jedisPool != null) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.del(keyName);
