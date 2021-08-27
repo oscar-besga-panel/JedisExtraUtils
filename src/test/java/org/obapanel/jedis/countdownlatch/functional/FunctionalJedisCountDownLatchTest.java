@@ -38,6 +38,7 @@ public class FunctionalJedisCountDownLatchTest {
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         if (jedis != null) jedis.close();
         if (jedisPool != null) jedisPool.close();
     }

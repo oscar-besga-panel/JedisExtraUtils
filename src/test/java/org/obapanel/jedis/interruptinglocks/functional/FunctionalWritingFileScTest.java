@@ -6,7 +6,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.obapanel.jedis.interruptinglocks.IJedisLock;
-import org.obapanel.jedis.interruptinglocks.JedisLockSc;
+import org.obapanel.jedis.interruptinglocks.JedisLock;
+import org.obapanel.jedis.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -24,15 +25,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*;
 
 public class FunctionalWritingFileScTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalWritingFileScTest.class);
 
-    private JedisPool jedisPool;
+    private final List<Jedis> jedisList = new ArrayList<>();
+    private final List<JedisPool> jedisPoolList = new ArrayList<>();
     private String lockName;
     private final List<IJedisLock> lockList = new ArrayList<>();
     private final AtomicBoolean otherError = new AtomicBoolean(false);
@@ -48,16 +48,25 @@ public class FunctionalWritingFileScTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
         if (!functionalTestEnabled()) return;
-        jedisPool = JedisTestFactory.createJedisPool();
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-
     }
 
 
     @After
     public void after() {
-        if (jedisPool != null) jedisPool.close();
+        if (!functionalTestEnabled()) return;
+        jedisPoolList.forEach(JedisPool::close);
+        jedisList.forEach(Jedis::close);
     }
+
+    JedisPool createJedisPoolAdapter() {
+        Jedis jedis = createJedisClient();
+        jedisList.add(jedis);
+        JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
+        jedisPoolList.add(jedisPool);
+        return jedisPool;
+    }
+
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
@@ -100,16 +109,13 @@ public class FunctionalWritingFileScTest {
 
         @Override
         public void run() {
-            //try (Jedis jedis = authJedis(jedisPool.getResource())) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedisLock = new JedisLockSc(jedis, lockName, milis, TimeUnit.MILLISECONDS);
+            try  {
+                JedisPool jedisPool = createJedisPoolAdapter();
+                jedisLock = new JedisLock(jedisPool, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
                 checkLock(jedisLock);
                 writeTest();
-
-                //} catch (InterruptedException e) {
-                //NOPE
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
                 log.info("Closed channel by interrupt exception");
                 Thread.interrupted();  // We clean the state

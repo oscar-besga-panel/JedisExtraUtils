@@ -52,6 +52,7 @@ public class FunctionalInterruptedWritingFileTest {
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         if (jedisPool != null) jedisPool.close();
     }
 

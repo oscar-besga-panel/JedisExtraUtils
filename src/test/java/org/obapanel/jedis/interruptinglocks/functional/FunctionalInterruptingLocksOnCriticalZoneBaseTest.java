@@ -48,6 +48,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseTest {
 
     @After
     public void after() {
+        if (!functionalTestEnabled()) return;
         interruptingLockBaseList.stream().
                 filter(il ->  il != null ).
                 forEach(il -> {

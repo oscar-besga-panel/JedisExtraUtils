@@ -2,15 +2,11 @@ package org.obapanel.jedis.interruptinglocks.functional;
 
 import org.obapanel.jedis.interruptinglocks.IJedisLock;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
-import org.obapanel.jedis.interruptinglocks.JedisLockSc;
 import org.obapanel.jedis.interruptinglocks.Lock;
+import org.obapanel.jedis.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.Protocol;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
 import java.time.Duration;
@@ -73,7 +69,7 @@ public class JedisTestFactory {
         return jedis;
     }
 
-    public static JedisPool testPoolConnection(JedisPool jedisPool){
+    public static void testPoolConnection(JedisPool jedisPool){
         Jedis jedis = jedisPool.getResource();
         String val = "test:" + System.currentTimeMillis();
         jedis.set(val,val,new SetParams().px(5000));
@@ -81,7 +77,6 @@ public class JedisTestFactory {
         jedis.del(val);
         if (!val.equalsIgnoreCase(check)) throw new IllegalStateException("Jedis connection not ok");
         jedis.close();
-        return jedisPool;
     }
 
 
@@ -118,11 +113,13 @@ public class JedisTestFactory {
 
     public static void main(String[] args) {
         Jedis jedis = JedisTestFactory.createJedisClient();
+        JedisPoolAdapter jedisPoolAdapter = JedisPoolAdapter.poolFromJedis(jedis);
         testConnection(jedis);
-        Lock jedisLock = new JedisLockSc(jedis,"jedisLockSc").asConcurrentLock();
+        Lock jedisLock = new JedisLock(jedisPoolAdapter,"jedisLockSc").asConcurrentLock();
         boolean locked = jedisLock.tryLock();
         boolean reallyLocked = jedisLock.isLocked();
         jedisLock.unlock();
+        jedisPoolAdapter.close();
         jedis.close();
         System.out.println("JEDISLOCK " + locked + " " + reallyLocked);
 

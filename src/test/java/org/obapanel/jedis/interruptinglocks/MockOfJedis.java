@@ -12,12 +12,7 @@ import redis.clients.jedis.params.SetParams;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -216,9 +211,4 @@ public class MockOfJedis {
         return (String) privateMethod.invoke(jedisLock, null);
     }
 
-    public static String getJedisLockValue(JedisLockSc jedisLock) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method privateMethod = JedisLockSc.class.getDeclaredMethod("getValue", null);
-        privateMethod.setAccessible(true);
-        return (String) privateMethod.invoke(jedisLock, null);
-    }
 }

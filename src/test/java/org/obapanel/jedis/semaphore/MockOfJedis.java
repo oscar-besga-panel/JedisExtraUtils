@@ -47,6 +47,8 @@ public class MockOfJedis {
         timer = new Timer();
 
         jedis = Mockito.mock(Jedis.class);
+        jedisPool = Mockito.mock(JedisPool.class);
+        Mockito.when(jedisPool.getResource()).thenReturn(jedis);
 
         Mockito.when(jedis.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
@@ -73,8 +75,7 @@ public class MockOfJedis {
             List<String> values = ioc.getArgument(2);
             return mockEval(script, keys, values);
         });
-        jedisPool = Mockito.mock(JedisPool.class);
-        Mockito.when(jedisPool.getResource()).thenReturn(jedis);
+
     }
 
     private synchronized Long mockIncrBy(String key, long value) {
