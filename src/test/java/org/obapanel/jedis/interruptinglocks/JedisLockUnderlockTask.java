@@ -3,6 +3,7 @@ package org.obapanel.jedis.interruptinglocks;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.utils.JedisPoolAdapter;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -65,9 +66,9 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLockSc() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        JedisLockSc jedisLock1 = new JedisLockSc(mockOfJedis.getJedis(), lockName);
+        JedisLock jedisLock1 = new JedisLock(JedisPoolAdapter.poolFromJedis(mockOfJedis.getJedis()), lockName);
         jedisLock1.underLock(() -> result1.set(true));
-        JedisLockSc jedisLock2 = new JedisLockSc(mockOfJedis.getJedis(), lockName);
+        JedisLock jedisLock2 = new JedisLock(JedisPoolAdapter.poolFromJedis(mockOfJedis.getJedis()), lockName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
