@@ -16,9 +16,11 @@ import java.util.function.Function;
 
 /**
  * This class creates a new 'pool' of redis connections
- * from only one existing connection
+ * from only one existing connection.
+ *
  * This fake pool will return the same connection again
  * and again
+ *
  * In reality it will return a proxy that will execute
  * all the opetations except close.
  * Close operation on the returned jedis connection will do nothing
@@ -26,8 +28,12 @@ import java.util.function.Function;
  * the pool.
  * And I do not like to cut connection when closed when it comes from pool, from example
  * in a try-with-resources
+ *
  * Closing the pool will nullify the connection inside the pool making it unusable but
  * it will not change the original connection
+ *
+ * This class is not, in any way, thread safe.
+ * Use with caution
  */
 public class JedisPoolAdapter extends JedisPool {
 

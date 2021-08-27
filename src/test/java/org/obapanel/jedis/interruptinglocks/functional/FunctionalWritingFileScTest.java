@@ -31,8 +31,8 @@ public class FunctionalWritingFileScTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalWritingFileScTest.class);
 
-    private Jedis jedis;
-    private JedisPool jedisPool;
+    private final List<Jedis> jedisList = new ArrayList<>();
+    private final List<JedisPool> jedisPoolList = new ArrayList<>();
     private String lockName;
     private final List<IJedisLock> lockList = new ArrayList<>();
     private final AtomicBoolean otherError = new AtomicBoolean(false);
@@ -48,20 +48,24 @@ public class FunctionalWritingFileScTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
         if (!functionalTestEnabled()) return;
-        jedis = createJedisClient();
-        jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-
     }
 
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            jedisPool.close();
-        }
-        jedis.close();
+        jedisPoolList.forEach(JedisPool::close);
+        jedisList.forEach(Jedis::close);
     }
+
+    JedisPool createJedisPoolAdapter() {
+        Jedis jedis = createJedisClient();
+        jedisList.add(jedis);
+        JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
+        jedisPoolList.add(jedisPool);
+        return jedisPool;
+    }
+
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
@@ -105,6 +109,7 @@ public class FunctionalWritingFileScTest {
         @Override
         public void run() {
             try  {
+                JedisPool jedisPool = createJedisPoolAdapter();
                 jedisLock = new JedisLock(jedisPool, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
