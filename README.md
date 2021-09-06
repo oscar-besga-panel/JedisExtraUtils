@@ -1,7 +1,11 @@
 # InterruptingJedisLocks
 
-[![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://github.com/tterb/atomic-design-ui/blob/master/LICENSEs)
+[![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/oscar-besga-panel/InterruptingJedisLocks.svg?branch=master)](https://travis-ci.org/oscar-besga-panel/InterruptingJedisLocks)
+![Top languaje](https://img.shields.io/github/languages/top/oscar-besga-panel/InterruptingJedisLocks)
+![Issues](https://img.shields.io/github/issues/oscar-besga-panel/InterruptingJedisLocks)
+[![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+
 
 ## Basics
 

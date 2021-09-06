@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.obapanel.jedis'
-version '1.6.1'
+version '1.6.2'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -31,6 +31,13 @@ dependencies {
     // testCompile 'com.github.fppt:jedis-mock:0.1.14' 
 }
 
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled false
+    }
+}
+
 publishing {
     repositories {
         maven {
@@ -49,21 +56,3 @@ publishing {
     }
 }
 
-task codeCoverageReport(type: JacocoReport) {
-    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
-
-    subprojects.each {
-        sourceSets it.sourceSets.main
-    }
-
-    reports {
-        xml.enabled true
-        xml.destination file("${buildDir}/reports/jacoco/report.xml")
-        html.enabled false
-        csv.enabled false
-    }
-}
-
-codeCoverageReport.dependsOn {
-    subprojects*.test
-}
