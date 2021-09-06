@@ -47,7 +47,7 @@ public final class TransactionOrder<T> extends Builder<T> {
         return result;
     }
 
-    public Response getResponse(){
+    public Response<T> getResponse(){
         return response;
     }
 }

@@ -1,16 +1,17 @@
-package org.obapanel.jedis.interruptinglocks;
+package org.obapanel.jedis.utils;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.Assert.*;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.obapanel.jedis.utils.MockOfJedis.unitTestEnabled;
 
 public class MockOfJedisTest {
 
@@ -54,6 +55,15 @@ public class MockOfJedisTest {
     }
 
     @Test
+    public void testExists() {
+        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
+        assertNull(mockOfJedis.getCurrentData().get("b"));
+        assertTrue( mockOfJedis.getJedis().exists("a"));
+        assertFalse( mockOfJedis.getJedis().exists("b"));
+    }
+
+    @Test
     public void testDataInsertion() throws InterruptedException {
         mockOfJedis.getJedis().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
@@ -72,14 +82,39 @@ public class MockOfJedisTest {
     }
 
     @Test
-    public void testEval() {
-        mockOfJedis.getJedis().set("a", "A1", new SetParams());
-        assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
-        List<String> keys = Collections.singletonList("a");
-        List<String> values = Collections.singletonList("A1");
-        Object response = mockOfJedis.getJedis().eval(JedisLock.UNLOCK_LUA_SCRIPT, keys, values);
-        assertNull( mockOfJedis.getCurrentData().get("a"));
-        assertEquals(1,response);
+    public void testDataGetSetIncrDel() {
+        mockOfJedis.getJedis().set("a", "5", new SetParams().nx());
+        assertEquals("5", mockOfJedis.getCurrentData().get("a"));
+        mockOfJedis.getJedis().set("a", "7", new SetParams().nx());
+        assertEquals("5", mockOfJedis.getCurrentData().get("a"));
+        assertEquals("5", mockOfJedis.getJedis().get("a"));
+        assertEquals(Long.valueOf(1L), mockOfJedis.getJedis().del("a"));
+        assertNull(mockOfJedis.getCurrentData().get("a"));
     }
+
+    @Test
+    public void testDataScan() throws InterruptedException {
+        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        mockOfJedis.getJedis().set("a", "A2", new SetParams());
+        mockOfJedis.getJedis().set("b", "B1", new SetParams().nx());
+        mockOfJedis.getJedis().set("c", "C1", new SetParams().nx().px(500));
+        ScanParams scanParams = new ScanParams();
+        scanParams.match("*");
+        ScanResult<String> scanResult1 =  mockOfJedis.getJedis().scan("0",scanParams);
+        assertEquals(3, scanResult1.getResult().size());
+        assertTrue(scanResult1.getResult().contains("a"));
+        assertTrue(scanResult1.getResult().contains("b"));
+        assertTrue(scanResult1.getResult().contains("c"));
+        Thread.sleep(1000);
+        assertNull(mockOfJedis.getCurrentData().get("c"));
+        ScanResult<String> scanResult2 =  mockOfJedis.getJedis().scan("0",scanParams);
+        assertEquals(2, scanResult2.getResult().size());
+        assertTrue(scanResult2.getResult().contains("a"));
+        assertTrue(scanResult2.getResult().contains("b"));
+
+    }
+
+
+
 
 }

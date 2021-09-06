@@ -14,7 +14,7 @@ public class TTL extends TimerTask {
     }
 
 
-    private Runnable runnable;
+    private final Runnable runnable;
 
     public TTL(Runnable runnable) {
         this.runnable = runnable;

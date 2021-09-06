@@ -4,8 +4,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
+import org.obapanel.jedis.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
@@ -14,40 +16,48 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*;
 
 
-public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
+public class FunctionalLocksScOnCriticalZoneTest {
 
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FunctionalLocksScOnCriticalZoneTest.class);
 
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean otherError = new AtomicBoolean(false);
-
-    private JedisPool jedisPool;
     private String lockName;
-    private final List<JedisLock> lockList = new ArrayList<>();
+    private final List<Lock> lockList = new ArrayList<>();
+    private final List<Jedis> jedisList = new ArrayList<>();
+    private final List<JedisPool> jedisPoolList = new ArrayList<>();
+
 
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
         if (!functionalTestEnabled()) return;
-        jedisPool = JedisTestFactory.createJedisPool();
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
         if (!functionalTestEnabled()) return;
-        if (jedisPool != null) jedisPool.close();
+        jedisPoolList.forEach(JedisPool::close);
+        jedisList.forEach(Jedis::close);
+    }
+
+    JedisPool createJedisPoolAdapter() {
+        Jedis jedis = createJedisClient();
+        jedisList.add(jedis);
+        JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
+        jedisPoolList.add(jedisPool);
+        return jedisPool;
     }
 
     @Test
@@ -72,17 +82,23 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
             t3.join();
             assertFalse(errorInCriticalZone.get());
             assertFalse(otherError.get());
-            assertFalse(lockList.stream().anyMatch(il -> il != null && il.isLocked()));
+            assertFalse(lockList.stream().anyMatch(il -> il != null && ((org.obapanel.jedis.interruptinglocks.Lock) il).isLocked()));
         }
     }
 
     private void accesLockOfCriticalZone(int sleepTime) {
-        JedisLock jedisLock = new JedisLock(jedisPool,lockName);
-        lockList.add(jedisLock);
-        jedisLock.lock();
-        checkLock(jedisLock);
-        accessCriticalZone(sleepTime);
-        jedisLock.unlock();
+        try {
+            JedisPool jedisPool = createJedisPoolAdapter();
+            Lock lock = new JedisLock(jedisPool, lockName).asConcurrentLock();
+            lockList.add(lock);
+            lock.lock();
+            checkLock(lock);
+            accessCriticalZone(sleepTime);
+            lock.unlock();
+        } catch (Exception e) {
+            log.error("Other error ", e);
+            otherError.set(true);
+        }
     }
 
     private void accessCriticalZone(int sleepTime){
@@ -94,9 +110,8 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
         try {
             Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
         } catch (InterruptedException e) {
-            //NOPE
+            // NOPE
         }
         intoCriticalZone.set(false);
     }
-
 }

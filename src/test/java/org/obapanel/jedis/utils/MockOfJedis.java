@@ -1,17 +1,21 @@
-package org.obapanel.jedis.countdownlatch;
+package org.obapanel.jedis.utils;
 
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Protocol;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -37,21 +41,31 @@ public class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private final Jedis jedis;
     private final JedisPool jedisPool;
+    private final Jedis jedis;
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
     public MockOfJedis() {
         timer = new Timer();
 
-
         jedis = Mockito.mock(Jedis.class);
         jedisPool = Mockito.mock(JedisPool.class);
         Mockito.when(jedisPool.getResource()).thenReturn(jedis);
+
+        Mockito.when(jedis.exists(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            return mockExist(key);
+        });
         Mockito.when(jedis.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);
+        });
+        Mockito.when(jedis.set(anyString(), anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            String value = ioc.getArgument(1);
+            return mockSet(key, value, null);
+
         });
         Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
@@ -63,13 +77,26 @@ public class MockOfJedis {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
-        Mockito.when(jedis.decr(anyString())).thenAnswer(ioc -> {
-            String key = ioc.getArgument(0);
-            return mockDecr(key);
+        Mockito.when(jedis.scan(anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+            String cursor = ioc.getArgument(0);
+            ScanParams scanParams = ioc.getArgument(1);
+            return mockScan(cursor, scanParams);
         });
 
     }
 
+    private boolean mockExist(String key) {
+        return data.containsKey(key);
+    }
+
+
+    private ScanResult<String> mockScan(String cursor, ScanParams scanParams) {
+        String pattern = extractPatternFromScanParams(scanParams);
+        List<String> keys = data.keySet().stream().
+                filter( k -> k.matches(pattern) ).
+                collect(Collectors.toList());
+        return new ScanResult<>("0", keys);
+    }
 
     private synchronized String mockGet(String key) {
         return data.get(key);
@@ -102,23 +129,11 @@ public class MockOfJedis {
         }
     }
 
-    private synchronized Long mockDecr(String key) {
-        if (data.containsKey(key)) {
-            long count = data.containsKey(key) ? Long.parseLong(data.get(key)) : -1;
-            count--;
-            data.put(key, String.valueOf(count));
-            return count;
-        } else {
-            return null;
-        }
-    }
-
-
     public Jedis getJedis(){
         return jedis;
     }
 
-    public JedisPool getJedisPool() {
+    public JedisPool getJedisPool(){
         return jedisPool;
     }
 
@@ -133,21 +148,36 @@ public class MockOfJedis {
 
     boolean isSetParamsNX(SetParams setParams) {
         boolean result = false;
-        for(byte[] b: setParams.getByteParams()){
-            String s = new String(b);
-            if ("nx".equalsIgnoreCase(s)){
-                result = true;
+        if (setParams != null) {
+            for (byte[] b : setParams.getByteParams()) {
+                String s = new String(b);
+                if ("nx".equalsIgnoreCase(s)) {
+                    result = true;
+                    break;
+                }
             }
         }
         return result;
     }
 
     Long getExpireTimePX(SetParams setParams) {
-        return setParams.getParam("px");
+        return setParams != null ? setParams.getParam("px") : null;
     }
 
+    public static String extractPatternFromScanParams(ScanParams scanParams) {
+        boolean nextIsPattern = false;
+        String pattern = "";
+        for(byte[] p : scanParams.getParams()) {
+            String s = new String(p).intern();
+            if (nextIsPattern) {
+                pattern = s;
+            }
+            nextIsPattern = Protocol.Keyword.MATCH.name().equalsIgnoreCase(s);
+        }
+        if (pattern.equals("*")) {
+            pattern = ".*";
+        }
+        return pattern;
+    }
 
-
-
-
-}
+ }

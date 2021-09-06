@@ -42,7 +42,7 @@ public class JedisCountDownLatchTest {
         final AtomicBoolean awaitDone = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
@@ -53,7 +53,7 @@ public class JedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
@@ -72,7 +72,7 @@ public class JedisCountDownLatchTest {
             e.printStackTrace();
         }
         assertTrue(awaitDone.get());
-        assertTrue( 0L ==  new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).getCount());
+        assertTrue( 0L ==  new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).getCount());
     }
 
     @Test
@@ -80,7 +80,7 @@ public class JedisCountDownLatchTest {
         final AtomicBoolean awaitDone = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
@@ -91,7 +91,7 @@ public class JedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 Thread.sleep(2500);
                 jedisCountDownLatch2.countDown();
@@ -110,7 +110,7 @@ public class JedisCountDownLatchTest {
             e.printStackTrace();
         }
         assertFalse(awaitDone.get());
-        assertTrue( 1L ==  new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).getCount());
+        assertTrue( 1L ==  new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).getCount());
     }
 
     @Test
@@ -119,7 +119,7 @@ public class JedisCountDownLatchTest {
         final AtomicBoolean awaitZero = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 boolean reachedZero = jedisCountDownLatch1.await(1000, TimeUnit.MILLISECONDS);
                 awaitZero.set(reachedZero);
@@ -131,7 +131,7 @@ public class JedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
@@ -151,7 +151,7 @@ public class JedisCountDownLatchTest {
         }
         assertTrue(awaitDone.get());
         assertTrue(awaitZero.get());
-        assertTrue( 0L ==  new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).getCount());
+        assertTrue( 0L ==  new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).getCount());
     }
 
     @Test
@@ -160,7 +160,7 @@ public class JedisCountDownLatchTest {
         final AtomicBoolean awaitZero = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 boolean reachedZero = jedisCountDownLatch1.await(500, TimeUnit.MILLISECONDS);
                 awaitZero.set(reachedZero);
@@ -172,7 +172,7 @@ public class JedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 Thread.sleep(5000);
                 jedisCountDownLatch2.countDown();
@@ -192,7 +192,7 @@ public class JedisCountDownLatchTest {
         }
         assertTrue(awaitDone.get());
         assertFalse(awaitZero.get());
-        assertTrue( 1L ==  new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).getCount());
+        assertTrue( 1L ==  new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).getCount());
     }
 
     @Test
@@ -201,7 +201,7 @@ public class JedisCountDownLatchTest {
         final AtomicBoolean awaitZero = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 boolean reachedZero = jedisCountDownLatch1.await(1500, TimeUnit.MILLISECONDS);
                 awaitZero.set(reachedZero);
@@ -213,7 +213,7 @@ public class JedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).
                         withWaitingTimeMilis(100);
                 Thread.sleep(5000);
                 jedisCountDownLatch2.countDown();
@@ -233,12 +233,12 @@ public class JedisCountDownLatchTest {
         }
         assertFalse(awaitDone.get());
         assertFalse(awaitZero.get());
-        assertTrue( 1L ==  new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,1).getCount());
+        assertTrue( 1L ==  new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,1).getCount());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void badInit(){
-        new JedisCountDownLatch(mockOfJedis.getJedis(),countDownLatch,-1);
+        new JedisCountDownLatch(mockOfJedis.getJedisPool(),countDownLatch,-1);
     }
 
 

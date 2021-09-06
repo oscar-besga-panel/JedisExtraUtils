@@ -7,6 +7,7 @@ import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.concurrent.TimeUnit;
 
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.createJedisPool;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
 
 
@@ -23,20 +25,21 @@ public class FunctionalInterruptingLocksTest {
 
 
     private String lockName;
-    private Jedis jedis;
+    private JedisPool jedisPool;
 
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
         if (!functionalTestEnabled()) return;
-        jedis = JedisTestFactory.createJedisClient();
+        jedisPool = createJedisPool();
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
-        if (jedis != null) jedis.quit();
+        if (!functionalTestEnabled()) return;
+        if (jedisPool != null) jedisPool.close();
     }
 
     @Test
@@ -64,7 +67,7 @@ public class FunctionalInterruptingLocksTest {
     private boolean wasInterrupted(int sleepSeconds){
         boolean wasInterrupted = false;
         boolean wasLocked = false;
-        InterruptingJedisJedisLockBase interruptingJedisLock = new InterruptingJedisJedisLockBase(jedis,lockName, 5, TimeUnit.SECONDS);
+        InterruptingJedisJedisLockBase interruptingJedisLock = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5, TimeUnit.SECONDS);
         interruptingJedisLock.lock();
         wasLocked = checkLock(interruptingJedisLock);
         try {

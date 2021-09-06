@@ -4,9 +4,11 @@ package org.obapanel.jedis.semaphore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,27 +46,27 @@ public class JedisSemaphore {
             "    return 'false'; "+ "\n" +
             "end ";
 
-    private final Jedis jedis;
+    private final JedisPool jedisPool;
     private final String name;
     private long waitingMilis = 150;
 
     /**
      * Creates a semaphore with one initial permit
-     * @param jedis Jedis connection
+     * @param jedisPool Jedis connection pool
      * @param name Name of the semaphore
      */
-    public JedisSemaphore(Jedis jedis, String name) {
-        this(jedis, name, 1);
+    public JedisSemaphore(JedisPool jedisPool, String name) {
+        this(jedisPool, name, 1);
     }
 
     /**
      * Creates a semaphore with one permit
-     * @param jedis Jedis connection
+     * @param jedisPool Jedis connection pool
      * @param name Name of the semaphore
      * @param initialPermits Initial permits of the semaphore
      */
-    public JedisSemaphore(Jedis jedis, String name, int initialPermits) {
-        this.jedis = jedis;
+    public JedisSemaphore(JedisPool jedisPool, String name, int initialPermits) {
+        this.jedisPool = jedisPool;
         this.name = name;
         init(initialPermits);
     }
@@ -87,7 +89,9 @@ public class JedisSemaphore {
         if (initialPermits < 0) {
             throw new IllegalArgumentException("initial permit on semaphore must be always equal or more than zero");
         }
-        jedis.set(name, String.valueOf(initialPermits), new SetParams().nx());
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.set(name, String.valueOf(initialPermits), new SetParams().nx());
+        }
     }
 
     /**
@@ -168,9 +172,11 @@ public class JedisSemaphore {
         if (permits <= 0){
             throw new IllegalArgumentException("permits to acquire on semaphore must be always more than zero");
         }
-        Object oresult = jedis.eval(SEMAPHORE_LUA_SCRIPT, Arrays.asList(name), Arrays.asList(String.valueOf(permits)));
-        String result = (String) oresult;
-        return Boolean.parseBoolean(result);
+        try (Jedis jedis = jedisPool.getResource()) {
+            Object oresult = jedis.eval(SEMAPHORE_LUA_SCRIPT, Arrays.asList(name), Collections.singletonList(String.valueOf(permits)));
+            String result = (String) oresult;
+            return Boolean.parseBoolean(result);
+        }
     }
 
 
@@ -186,10 +192,12 @@ public class JedisSemaphore {
      * @param permits permits to release
      */
     public void release(int permits) {
-        if (permits <= 0){
+        if (permits <= 0) {
             throw new IllegalArgumentException("permit to release on semaphore must be always more than zero");
         }
-        jedis.incrBy(name,permits);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.incrBy(name, permits);
+        }
     }
 
     /**
@@ -198,7 +206,10 @@ public class JedisSemaphore {
      * @return number of permits
      */
     public int availablePermits() {
-        String permits = jedis.get(name);
+        String permits;
+        try (Jedis jedis = jedisPool.getResource()) {
+            permits = jedis.get(name);
+        }
         if (permits == null || permits.isEmpty()) {
             return -1;
         } else {
@@ -213,10 +224,9 @@ public class JedisSemaphore {
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
     public void destroy(){
-        jedis.del(name);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.del(name);
+        }
     }
-
-
-
 
 }

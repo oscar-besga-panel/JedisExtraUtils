@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.semaphore.JedisSemaphore;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.io.IOException;
 
@@ -17,7 +18,7 @@ import static org.obapanel.jedis.semaphore.functional.JedisTestFactory.functiona
 public class FunctionalSemaphoreNumberPermitsTest {
 
 
-    private Jedis jedis;
+    private JedisPool jedisPool;
     private String semaphoreName;
 
 
@@ -25,16 +26,18 @@ public class FunctionalSemaphoreNumberPermitsTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
         if (!functionalTestEnabled()) return;
-        jedis = JedisTestFactory.createJedisClient();
+        jedisPool = JedisTestFactory.createJedisPool();
         semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
         if (!functionalTestEnabled()) return;
-        if (jedis != null) {
-            jedis.del(semaphoreName);
-            jedis.close();
+        if (jedisPool != null) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                jedis.del(semaphoreName);
+            }
+            jedisPool.close();
         }
     }
 
@@ -42,7 +45,7 @@ public class FunctionalSemaphoreNumberPermitsTest {
 
     @Test
     public void testNumOfPermits(){
-        JedisSemaphore jedisSemaphore = new JedisSemaphore(jedis,semaphoreName,3);
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(jedisPool,   semaphoreName,3);
         assertEquals(3, jedisSemaphore.availablePermits());
         assertFalse( jedisSemaphore.tryAcquire(5));
         assertEquals(3, jedisSemaphore.availablePermits());
