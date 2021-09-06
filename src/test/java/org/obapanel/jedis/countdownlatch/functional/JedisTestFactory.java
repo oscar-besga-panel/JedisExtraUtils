@@ -1,15 +1,8 @@
 package org.obapanel.jedis.countdownlatch.functional;
 
-import org.obapanel.jedis.interruptinglocks.IJedisLock;
-import org.obapanel.jedis.interruptinglocks.JedisLock;
-import org.obapanel.jedis.interruptinglocks.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.Protocol;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
 import java.time.Duration;
@@ -24,7 +17,7 @@ public class JedisTestFactory {
     static final int FUNCTIONAL_TEST_CYCLES = 0;
 
     public static final String HOST = "127.0.0.1";
-    public static final int PORT = 6379;
+    public static final int PORT = 32770;
     public static final String PASS = "";
 
 

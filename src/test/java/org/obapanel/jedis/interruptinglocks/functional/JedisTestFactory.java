@@ -3,6 +3,7 @@ package org.obapanel.jedis.interruptinglocks.functional;
 import org.obapanel.jedis.interruptinglocks.IJedisLock;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.obapanel.jedis.interruptinglocks.Lock;
+import org.obapanel.jedis.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.*;
@@ -68,7 +69,7 @@ public class JedisTestFactory {
         return jedis;
     }
 
-    public static JedisPool testPoolConnection(JedisPool jedisPool){
+    public static void testPoolConnection(JedisPool jedisPool){
         Jedis jedis = jedisPool.getResource();
         String val = "test:" + System.currentTimeMillis();
         jedis.set(val,val,new SetParams().px(5000));
@@ -76,7 +77,6 @@ public class JedisTestFactory {
         jedis.del(val);
         if (!val.equalsIgnoreCase(check)) throw new IllegalStateException("Jedis connection not ok");
         jedis.close();
-        return jedisPool;
     }
 
 
@@ -113,22 +113,23 @@ public class JedisTestFactory {
 
     public static void main(String[] args) {
         Jedis jedis = JedisTestFactory.createJedisClient();
+        JedisPoolAdapter jedisPoolAdapter = JedisPoolAdapter.poolFromJedis(jedis);
         testConnection(jedis);
-        Lock jedisLock = new JedisLock(jedis,"jedisLock").asConcurrentLock();
+        Lock jedisLock = new JedisLock(jedisPoolAdapter,"jedisLockSc").asConcurrentLock();
         boolean locked = jedisLock.tryLock();
         boolean reallyLocked = jedisLock.isLocked();
         jedisLock.unlock();
+        jedisPoolAdapter.close();
         jedis.close();
         System.out.println("JEDISLOCK " + locked + " " + reallyLocked);
 
         JedisPool jedisPool = JedisTestFactory.createJedisPool();
         testPoolConnection(jedisPool);
-        Jedis jedisFromPool = jedisPool.getResource();
-        Lock jedisPoolLock = new JedisLock(jedisFromPool,"jedisPoolLock").asConcurrentLock();
+        Lock jedisPoolLock = new JedisLock(jedisPool,"jedisPoolLock").asConcurrentLock();
         boolean plocked = jedisPoolLock.tryLock();
         boolean preallyLocked = jedisPoolLock.isLocked();
         jedisPoolLock.unlock();
-        jedisFromPool.close();
+        jedisPool.close();
         System.out.println("JEDISPOOLLOCK " + plocked + " " + preallyLocked);
 
     }

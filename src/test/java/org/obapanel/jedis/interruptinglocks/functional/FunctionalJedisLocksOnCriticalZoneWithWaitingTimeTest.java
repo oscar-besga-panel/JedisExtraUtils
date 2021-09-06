@@ -7,6 +7,7 @@ import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.createJedisPool;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
 
 
@@ -26,23 +28,29 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
     private static final Logger log = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest.class);
 
 
-    private AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
-    private AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
-    private AtomicBoolean otherError = new AtomicBoolean(false);
+    private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
+    private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
+    private final AtomicBoolean otherError = new AtomicBoolean(false);
 
     private String lockName;
-    private List<JedisLock> lockList = new ArrayList<>();
+    private JedisPool jedisPool;
+    private final List<JedisLock> lockList = new ArrayList<>();
 
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
+        if (!functionalTestEnabled()) return;
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        jedisPool = createJedisPool();
     }
 
     @After
     public void after() {
-
+        if (!functionalTestEnabled()) return;
+        if (jedisPool != null) {
+            jedisPool.close();
+        }
     }
 
     @Test
@@ -74,7 +82,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
             Jedis jedis = JedisTestFactory.createJedisClient();
-            JedisLock jedisLock = new JedisLock(jedis, lockName);
+            JedisLock jedisLock = new JedisLock(jedisPool, lockName);
             lockList.add(jedisLock);
             try {
                 boolean locked = jedisLock.tryLockForAWhile(3, TimeUnit.SECONDS);
@@ -101,7 +109,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
         try {
             Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
         } catch (InterruptedException e) {
-
+            //NOPE
         }
         intoCriticalZone.set(false);
     }

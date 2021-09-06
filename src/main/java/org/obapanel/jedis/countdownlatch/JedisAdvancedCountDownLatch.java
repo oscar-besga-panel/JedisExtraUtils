@@ -3,12 +3,14 @@ package org.obapanel.jedis.countdownlatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.params.SetParams;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -44,19 +46,19 @@ public class JedisAdvancedCountDownLatch {
             "return latch;";
 
 
-    private final Jedis jedis;
+    private final JedisPool jedisPool;
     private final String name;
     private final String channelName;
     private JedisPubSub jedisPubSub;
-    private AtomicBoolean waiting = new AtomicBoolean(false);
-    private AtomicBoolean interruptedSockedManually = new AtomicBoolean(false);
+    private final AtomicBoolean waiting = new AtomicBoolean(false);
+    private final AtomicBoolean interruptedSockedManually = new AtomicBoolean(false);
 
-    public JedisAdvancedCountDownLatch(Jedis jedis, String name) {
-        this(jedis, name, 1);
+    public JedisAdvancedCountDownLatch(JedisPool jedisPool, String name) {
+        this(jedisPool, name, 1);
     }
 
-    public JedisAdvancedCountDownLatch(Jedis jedis, String name, long count) {
-        this.jedis = jedis;
+    public JedisAdvancedCountDownLatch(JedisPool jedisPool, String name, long count) {
+        this.jedisPool = jedisPool;
         this.name = name;
         this.channelName = JEDIS_COUNTDOWNLATCH_CHANNEL_PREFIX + name;
         init(count);
@@ -66,7 +68,9 @@ public class JedisAdvancedCountDownLatch {
         if (count <= 0) {
             throw new IllegalArgumentException("initial count on countdownlatch must be always more than zero");
         }
-        jedis.set(name, String.valueOf(count), new SetParams().nx());
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.set(name, String.valueOf(count), new SetParams().nx());
+        }
     }
 
     public void await() {
@@ -75,7 +79,9 @@ public class JedisAdvancedCountDownLatch {
                 waiting.set(true);
                 jedisPubSub = new CountDownLatchPubSub();
                 LOG.info("await go subscribe");
-                jedis.subscribe(jedisPubSub, channelName);
+                try (Jedis jedis = jedisPool.getResource()) {
+                    jedis.subscribe(jedisPubSub, channelName);
+                }
             } catch (JedisConnectionException jce){
                 //LOG.error("Exception ", jce);
                 checkIfInterruptedManually(jce);
@@ -107,21 +113,26 @@ public class JedisAdvancedCountDownLatch {
         if (waiting.get()){
             throw new IllegalStateException("CountDownLatch is already waiting, no other operations allowed");
         }
-        Object oresult = jedis.eval(COUNTDOWNLATCH_LUA_SCRIPT, Arrays.asList(name, channelName), Arrays.asList(ZERO));
-        LOG.info("oresult {}", oresult);
-    }
-
-    private void countDownWithoutScript() {
-        if (waiting.get()){
-            throw new IllegalStateException("CountDownLatch is already waiting, no other operations allowed");
-        }
-        jedis.decr(name);
-        if (getCount() == 0) {
-            jedis.publish(channelName,ZERO);
+        try (Jedis jedis = jedisPool.getResource()) {
+            Object oresult = jedis.eval(COUNTDOWNLATCH_LUA_SCRIPT, Arrays.asList(name, channelName), Collections.singletonList(ZERO));
+            LOG.info("oresult {}", oresult);
         }
     }
 
-    public void countDownAndWait() throws InterruptedException {
+    //TODO REMOVE
+//    private void countDownWithoutScript() {
+//        if (waiting.get()){
+//            throw new IllegalStateException("CountDownLatch is already waiting, no other operations allowed");
+//        }
+//        try (Jedis jedis = jedisPool.getResource()) {
+//            jedis.decr(name);
+//            if (getCount() == 0) {
+//                jedis.publish(channelName, ZERO);
+//            }
+//        }
+//    }
+
+    public void countDownAndWait() {
         countDown();
         await();
     }
@@ -130,16 +141,18 @@ public class JedisAdvancedCountDownLatch {
         if (waiting.get()){
             throw new IllegalStateException("CountDownLatch is already waiting, no other operations allowed");
         }
-        String value = jedis.get(name);
-        if (value != null && !value.isEmpty()) {
-            return Long.parseLong(value);
-        } else {
-            return LONG_NULL_VALUE;
+        try (Jedis jedis = jedisPool.getResource()) {
+            String value = jedis.get(name);
+            if (value != null && !value.isEmpty()) {
+                return Long.parseLong(value);
+            } else {
+                return LONG_NULL_VALUE;
+            }
         }
     }
 
     public void interruptWaiting() {
-        try {
+        try (Jedis jedis = jedisPool.getResource()) {
             if (waiting.get()) {
                 interruptedSockedManually.set(true);
                 jedis.getClient().getSocket().close();
@@ -164,7 +177,9 @@ public class JedisAdvancedCountDownLatch {
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
     public void destroy(){
-        jedis.del(name);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.del(name);
+        }
     }
 
 }

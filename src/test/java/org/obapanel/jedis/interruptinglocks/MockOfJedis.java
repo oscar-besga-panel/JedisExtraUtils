@@ -4,8 +4,8 @@ import org.mockito.Mockito;
 import org.obapanel.jedis.common.test.TransactionOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Builder;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.SetParams;
@@ -13,7 +13,6 @@ import redis.clients.jedis.params.SetParams;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -73,15 +72,17 @@ public class MockOfJedis {
         }
     }
 
-    private Jedis jedis;
-    private Transaction transaction;
-    private List<TransactionOrder> transactionActions = new ArrayList<>();
-    private Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
-    private Timer timer;
+    private final Jedis jedis;
+    private final JedisPool jedisPool;
+    private final Transaction transaction;
+    private final List<TransactionOrder<String>> transactionActions = new ArrayList<>();
+    private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
+    private final Timer timer;
 
     public MockOfJedis() {
         timer = new Timer();
         jedis = Mockito.mock(Jedis.class);
+        jedisPool = Mockito.mock(JedisPool.class);
         transaction = Mockito.mock(Transaction.class);
         Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
@@ -90,6 +91,7 @@ public class MockOfJedis {
             return mockSet(key, value, setParams);
 
         });
+        Mockito.when(jedisPool.getResource()).thenReturn(jedis);
         Mockito.when(jedis.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);
@@ -172,6 +174,10 @@ public class MockOfJedis {
         return jedis;
     }
 
+    public JedisPool getJedisPool(){
+        return jedisPool;
+    }
+
     public synchronized void clearData(){
         data.clear();
         transactionActions.clear();
@@ -188,22 +194,21 @@ public class MockOfJedis {
             String s = new String(b);
             if ("nx".equalsIgnoreCase(s)){
                 result = true;
+                break;
             }
         }
         return result;
     }
 
     Long getExpireTimePX(SetParams setParams) {
-        return (Long) setParams.getParam("px");
+        return setParams.getParam("px");
     }
 
 
     public static String getJedisLockValue(JedisLock jedisLock) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method privateMethod = JedisLock.class.getDeclaredMethod("getValue", null);
         privateMethod.setAccessible(true);
-        String returnValue = (String) privateMethod.invoke(jedisLock, null);
-        return returnValue;
+        return (String) privateMethod.invoke(jedisLock, null);
     }
-
 
 }

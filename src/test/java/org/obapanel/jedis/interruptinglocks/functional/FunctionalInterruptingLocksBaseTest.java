@@ -7,11 +7,17 @@ import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.createJedisClient;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
 
 
 public class FunctionalInterruptingLocksBaseTest {
@@ -20,19 +26,22 @@ public class FunctionalInterruptingLocksBaseTest {
 
 
     private String lockName;
-
+    private JedisPool jedisPool;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
         if (!functionalTestEnabled()) return;
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        jedisPool = JedisTestFactory.createJedisPool();
+
     }
 
     @After
     public void after() {
-
+        if (jedisPool != null) jedisPool.close();
     }
+
 
     @Test
     public void testIfInterruptedFor5SecondsLock() {
@@ -63,7 +72,7 @@ public class FunctionalInterruptingLocksBaseTest {
     private boolean wasInterrupted(int sleepSeconds){
         boolean wasInterrupted = false;
         Jedis jedis = createJedisClient();
-        InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(jedis, lockName, 5, TimeUnit.SECONDS);
+        InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5, TimeUnit.SECONDS);
         interruptingJedisJedisLockBase.lock();
         checkLock(interruptingJedisJedisLockBase);
         try {

@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +14,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.MockOfJedis.*;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.UNIT_TEST_CYCLES;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.checkLock;
+import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
 
 public class JedisLocksOnCriticalZoneTest {
@@ -24,11 +25,11 @@ public class JedisLocksOnCriticalZoneTest {
     private static final Logger log = LoggerFactory.getLogger(JedisLocksOnCriticalZoneTest.class);
 
 
-    private AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
-    private AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
-    private AtomicBoolean otherErrors = new AtomicBoolean(false);
+    private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
+    private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
+    private final AtomicBoolean otherErrors = new AtomicBoolean(false);
     private String lockName;
-    private List<JedisLock> lockList = new ArrayList<>();
+    private final List<JedisLock> lockList = new ArrayList<>();
     private MockOfJedis mockOfJedis;
 
 
@@ -42,7 +43,10 @@ public class JedisLocksOnCriticalZoneTest {
 
     @After
     public void after() {
-        if (mockOfJedis != null) mockOfJedis.clearData();
+        if (mockOfJedis != null) {
+            mockOfJedis.getJedisPool().close();
+            mockOfJedis.clearData();
+        }
     }
 
     @Test
@@ -76,14 +80,12 @@ public class JedisLocksOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            Jedis jedis = mockOfJedis.getJedis();
-            JedisLock jedisLock = new JedisLock(jedis, lockName);
+            JedisLock jedisLock = new JedisLock(mockOfJedis.getJedisPool(), lockName);
             lockList.add(jedisLock);
             jedisLock.lock();
             checkLock(jedisLock);
             accessCriticalZone(sleepTime);
             jedisLock.unlock();
-            jedis.quit();
         } catch (Exception e){
             otherErrors.set(true);
             log.error("Other error ", e);

@@ -10,6 +10,8 @@ It contains the next distributed synchronization classes:
 - Locks
 - Semaphores
 - CountDownLatch
+- 
+All this classes use a Jedis pool connection to make them thread-safe and more efficient.
 
 All classes have tests, unit and functional ones. You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.
 

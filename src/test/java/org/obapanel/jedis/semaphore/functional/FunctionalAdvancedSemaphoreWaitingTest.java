@@ -4,7 +4,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.semaphore.JedisAdvancedSemaphore;
-import org.obapanel.jedis.semaphore.JedisSemaphore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -45,13 +44,15 @@ public class FunctionalAdvancedSemaphoreWaitingTest {
     public void after() throws IOException {
         if (!functionalTestEnabled()) return;
         if (jedis1 != null) {
-            jedis1.del(semaphoreName);
             jedis1.close();
         }
         if (jedis2 != null) {
             jedis2.close();
         }
         if (jedisPool != null) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                jedis.del(semaphoreName);
+            }
             jedisPool.close();
         }
     }

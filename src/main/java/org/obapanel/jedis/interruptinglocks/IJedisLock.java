@@ -28,6 +28,11 @@ public interface IJedisLock extends AutoCloseable {
      */
     TimeUnit getTimeUnit();
 
+    /**
+     * Moment when the lock was captured in this object, -1 if no locked
+     * @return leaseMoment
+     */
+    long getLeaseMoment();
 
     /**
      * Attempts to get the lock, It will try one time and return

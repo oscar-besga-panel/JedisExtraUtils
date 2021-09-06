@@ -1,4 +1,4 @@
-package org.obapanel.jedis.semaphore.functional;
+package org.obapanel.jedis.utils.functional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
