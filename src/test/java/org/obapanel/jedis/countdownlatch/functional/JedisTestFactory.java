@@ -17,7 +17,7 @@ public class JedisTestFactory {
     static final int FUNCTIONAL_TEST_CYCLES = 0;
 
     public static final String HOST = "127.0.0.1";
-    public static final int PORT = 32770;
+    public static final int PORT = 6379;
     public static final String PASS = "";
 
 
