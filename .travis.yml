@@ -1,1 +1,11 @@
 language: java
+jdk: openjdk8
+before_script:
+  - chmod +x gradlew
+  - ./gradlew assemble
+script:
+  - ./gradlew build
+  #  - ./gradlew build --scan -s
+  - ./gradlew codeCoverageReport
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
