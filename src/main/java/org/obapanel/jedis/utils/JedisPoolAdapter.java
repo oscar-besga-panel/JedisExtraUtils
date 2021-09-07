@@ -65,6 +65,7 @@ public class JedisPoolAdapter extends JedisPool {
         }
     }
 
+
     @Override
     public Jedis getResource() {
         checkJedis();
@@ -72,12 +73,12 @@ public class JedisPoolAdapter extends JedisPool {
     }
 
     @Override
-    protected void returnBrokenResource(Jedis resource) {
+    public void returnBrokenResource(Jedis resource) {
         // NOPE
     }
 
     @Override
-    protected void returnResource(Jedis resource) {
+    public void returnResource(Jedis resource) {
         // NOPE
     }
 
@@ -91,10 +92,6 @@ public class JedisPoolAdapter extends JedisPool {
         return jedis == null || !jedis.isConnected();
     }
 
-    @Override
-    public void initPool(GenericObjectPoolConfig poolConfig, PooledObjectFactory<Jedis> factory) {
-        // NOPE
-    }
 
     @Override
     protected void returnResourceObject(Jedis resource) {

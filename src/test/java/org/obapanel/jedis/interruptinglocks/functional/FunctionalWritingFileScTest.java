@@ -51,13 +51,25 @@ public class FunctionalWritingFileScTest {
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
-
     @After
     public void after() {
         if (!functionalTestEnabled()) return;
-        jedisPoolList.forEach(JedisPool::close);
-        jedisList.forEach(Jedis::close);
+        jedisPoolList.forEach( this::doCloseJedisPool);
+        jedisList.forEach( this::doCloseJedis);
     }
+
+    void doCloseJedisPool(JedisPool jedisPool) {
+        if (jedisPool != null) {
+            jedisPool.close();
+        }
+    }
+
+    void doCloseJedis(Jedis jedis) {
+        if (jedis != null) {
+            jedis.close();
+        }
+    }
+
 
     JedisPool createJedisPoolAdapter() {
         Jedis jedis = createJedisClient();

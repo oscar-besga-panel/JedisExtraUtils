@@ -119,19 +119,6 @@ public class JedisAdvancedCountDownLatch {
         }
     }
 
-    //TODO REMOVE
-//    private void countDownWithoutScript() {
-//        if (waiting.get()){
-//            throw new IllegalStateException("CountDownLatch is already waiting, no other operations allowed");
-//        }
-//        try (Jedis jedis = jedisPool.getResource()) {
-//            jedis.decr(name);
-//            if (getCount() == 0) {
-//                jedis.publish(channelName, ZERO);
-//            }
-//        }
-//    }
-
     public void countDownAndWait() {
         countDown();
         await();
