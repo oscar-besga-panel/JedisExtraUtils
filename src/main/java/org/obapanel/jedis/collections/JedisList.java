@@ -1,6 +1,7 @@
 package org.obapanel.jedis.collections;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.ListPosition;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
@@ -15,7 +16,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * A Jedis-based implementation of a List interface backed on Redis list on server
  * The goal is to comply with the List interface specification by using Redis/Jedis directly and
- * getting data for server in every operation with no local data (or mininum as possible).
+ * getting data for server in every operation with no local data in the class (or mininum as possible).
  *
  * Of course, it is noted that a Redis list can change with the JedisList instance or by other instances
  * or by other commands/clients of Redis. This is assumed, and a caveat on using this class.
@@ -36,7 +37,7 @@ public final class JedisList implements List<String> {
     private static final String TO_DELETE = "TO_DELETE";
 
     // https://stackoverflow.com/questions/8899111/get-the-index-of-an-item-by-value-in-a-redis-list
-    static final String LUE_SCRIPT_INDEX_OF = "" +
+    static final String LUA_SCRIPT_INDEX_OF = "" +
             "local key = KEYS[1]\n" +
             "local obj = ARGV[1]\n" +
             "local items = redis.call('lrange', key, 0, -1)\n" +
@@ -47,7 +48,7 @@ public final class JedisList implements List<String> {
             "end \n" +
             "return -1";
 
-    static final String LUE_SCRIPT_LAST_INDEX_OF = "" +
+    static final String LUA_SCRIPT_LAST_INDEX_OF = "" +
             "local key = KEYS[1]\n" +
             "local obj = ARGV[1]\n" +
             "local poss = -1\n" +
@@ -63,7 +64,7 @@ public final class JedisList implements List<String> {
         return TO_DELETE + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt();
     }
 
-    private final Jedis jedis;
+    private final JedisPool jedisPool;
     private final String name;
 
     /**
@@ -71,11 +72,11 @@ public final class JedisList implements List<String> {
      * This constructor doesn't make any change on Redis server
      * So really, creating here a list does not generate new data on Redis; the list on the server will
      *   exists when data is inserted
-     * @param jedis Jedis connection
+     * @param jedisPool Jedis pool connection
      * @param name Name of list on server
      */
-    public JedisList(Jedis jedis, String name){
-        this.jedis = jedis;
+    public JedisList(JedisPool jedisPool, String name){
+        this.jedisPool = jedisPool;
         this.name = name;
     }
 
@@ -83,13 +84,21 @@ public final class JedisList implements List<String> {
      * Creates a new list in jedis with given name, or references an existing one
      * If the list doesn't exists, the 'from' data is stored,
      * if the list already exists, the 'from' data is added to the list
-     * @param jedis Jedis connection
+     * @param jedisPool Jedis pool connection
      * @param name Name of list on server
      * @param from Data to add to the list
      */
-    public JedisList(Jedis jedis, String name, Collection<String> from){
-        this(jedis, name);
+    public JedisList(JedisPool jedisPool, String name, Collection<String> from){
+        this(jedisPool, name);
         this.addAll(from);
+    }
+
+    /**
+     * Name of the redis list
+     * @return redis name
+     */
+    public String getName() {
+        return name;
     }
 
     /**
@@ -97,7 +106,9 @@ public final class JedisList implements List<String> {
      * @return true if there is a reference in redis namespace, false otherwise
      */
     public boolean exists() {
-        return jedis.exists(name);
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.exists(name);
+        }
     }
 
     /**
@@ -117,7 +128,9 @@ public final class JedisList implements List<String> {
      * @return list of data
      */
     public List<String> asList(){
-        return jedis.lrange(name, 0, -1);
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.lrange(name, 0, -1);
+        }
     }
 
     /**
@@ -129,7 +142,7 @@ public final class JedisList implements List<String> {
      */
     public JedisList jedisSubList(String newListName, int fromIndex, int toIndex) {
         List<String> subList = subList(fromIndex, toIndex);
-        return new JedisList(jedis, newListName, subList);
+        return new JedisList(jedisPool, newListName, subList);
     }
 
 
@@ -147,8 +160,10 @@ public final class JedisList implements List<String> {
 
     @Override
     public int size() {
-        Long l = jedis.llen(name);
-        return l != null? l.intValue() : 0;
+        try (Jedis jedis = jedisPool.getResource()) {
+            Long l = jedis.llen(name);
+            return l != null ? l.intValue() : 0;
+        }
     }
 
 
@@ -180,14 +195,18 @@ public final class JedisList implements List<String> {
 
     @Override
     public boolean add(String s) {
-        long result = jedis.rpush(name, s);
-        return result > 0;
+        try (Jedis jedis = jedisPool.getResource()) {
+            long result = jedis.rpush(name, s);
+            return result > 0;
+        }
     }
 
     @Override
     public boolean remove(Object o) {
-        long result = jedis.lrem(name, 1L, (String)o);
-        return result > 0;
+        try (Jedis jedis = jedisPool.getResource()) {
+            long result = jedis.lrem(name, 1L, (String) o);
+            return result > 0;
+        }
     }
 
     @Override
@@ -201,9 +220,11 @@ public final class JedisList implements List<String> {
 
     @Override
     public boolean addAll(Collection<? extends String> c) {
-        String[] toAdd = c.toArray(new String[0]);
-        long result = jedis.rpush(name, toAdd);
-        return result > 0;
+        try (Jedis jedis = jedisPool.getResource()) {
+            String[] toAdd = c.toArray(new String[0]);
+            long result = jedis.rpush(name, toAdd);
+            return result > 0;
+        }
     }
 
     @Override
@@ -244,56 +265,70 @@ public final class JedisList implements List<String> {
 
     @Override
     public void clear() {
-        jedis.del(name);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.del(name);
+        }
     }
 
     @Override
     public String get(int index) {
-        checkIndex(index);
-        return jedis.lindex(name, index);
+        try (Jedis jedis = jedisPool.getResource()) {
+            checkIndex(index);
+            return jedis.lindex(name, index);
+        }
     }
 
     @Override
     public String set(int index, String element) {
-        Transaction tjedis = jedis.multi();
-        Response<String> futureReplaced = tjedis.lindex(name, index);
-        tjedis.lset(name, index, element);
-        tjedis.exec();
-        return futureReplaced.get();
+        try (Jedis jedis = jedisPool.getResource()) {
+            Transaction tjedis = jedis.multi();
+            Response<String> futureReplaced = tjedis.lindex(name, index);
+            tjedis.lset(name, index, element);
+            tjedis.exec();
+            return futureReplaced.get();
+        }
     }
 
     @Override
     public void add(int index, String element) {
-        String pivot = get(index);
-        jedis.linsert(name, ListPosition.BEFORE, pivot, element);
+        try (Jedis jedis = jedisPool.getResource()) {
+            String pivot = get(index);
+            jedis.linsert(name, ListPosition.BEFORE, pivot, element);
+        }
     }
 
     @Override
     public String remove(int index) {
-        /* https://stackoverflow.com/questions/31580535/remove-element-at-specific-index-from-redis-list */
-        checkExists();
-        checkIndex(index);
-        String toDeleteTempName = generateToDelete();
-        Transaction tjedis = jedis.multi();
-        Response<String> futureDeleted = tjedis.lindex(name, index);
-        tjedis.lset(name, index, toDeleteTempName);
-        tjedis.lrem(name, 1, toDeleteTempName);
-        tjedis.exec();
-        return futureDeleted.get();
+        try (Jedis jedis = jedisPool.getResource()) {
+            /* https://stackoverflow.com/questions/31580535/remove-element-at-specific-index-from-redis-list */
+            checkExists();
+            checkIndex(index);
+            String toDeleteTempName = generateToDelete();
+            Transaction tjedis = jedis.multi();
+            Response<String> futureDeleted = tjedis.lindex(name, index);
+            tjedis.lset(name, index, toDeleteTempName);
+            tjedis.lrem(name, 1, toDeleteTempName);
+            tjedis.exec();
+            return futureDeleted.get();
+        }
     }
 
     @Override
     public int indexOf(Object o) {
-        String element = (String) o;
-        Object result = jedis.eval(LUE_SCRIPT_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
-        return ((Long)result).intValue();
+        try (Jedis jedis = jedisPool.getResource()) {
+            String element = (String) o;
+            Object result = jedis.eval(LUA_SCRIPT_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
+            return ((Long) result).intValue();
+        }
     }
 
     @Override
     public int lastIndexOf(Object o) {
-        String element = (String) o;
-        Object result = jedis.eval(LUE_SCRIPT_LAST_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
-        return ((Long)result).intValue();
+        try (Jedis jedis = jedisPool.getResource()) {
+            String element = (String) o;
+            Object result = jedis.eval(LUA_SCRIPT_LAST_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
+            return ((Long) result).intValue();
+        }
     }
 
     @Override
@@ -311,10 +346,12 @@ public final class JedisList implements List<String> {
 
     @Override
     public List<String> subList(int fromIndex, int toIndex) {
-        toIndex--;
-        checkIndex(fromIndex);
-        checkIndex(toIndex);
-        return jedis.lrange(name, fromIndex, toIndex);
+        try (Jedis jedis = jedisPool.getResource()) {
+            toIndex--;
+            checkIndex(fromIndex);
+            checkIndex(toIndex);
+            return jedis.lrange(name, fromIndex, toIndex);
+        }
     }
 
 
@@ -322,7 +359,7 @@ public final class JedisList implements List<String> {
     /**
      * Implementation of ListIterator and Iterator for JedisList
      */
-    private class JedisListIterator implements ListIterator<String> {
+    private class   JedisListIterator implements ListIterator<String> {
 
         private int currentIndex = 0;
         private int lastReturned = -1;

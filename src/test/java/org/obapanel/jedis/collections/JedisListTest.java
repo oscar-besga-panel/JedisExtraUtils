@@ -40,14 +40,14 @@ public class JedisListTest {
 
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedis(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedis(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
         jedisList.checkExists();
     }
 
@@ -67,7 +67,7 @@ public class JedisListTest {
 
     @Test
     public void basicTest() {
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedis(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
         assertFalse(jedisList.exists());
         assertTrue(jedisList.isEmpty());
         assertEquals(0L, jedisList.size());
@@ -142,7 +142,7 @@ public class JedisListTest {
 
     @Test
     public void containsIndexOf(){
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedis(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
         jedisList.addAll(Arrays.asList("a", "b", "c", "a", "d"));
         assertTrue(jedisList.contains("a"));
         assertEquals(0, jedisList.indexOf("a"));
@@ -206,7 +206,7 @@ public class JedisListTest {
         assertEquals(2, jedisList3.size());
         assertEquals("b", jedisList3.get(0));
         assertEquals("c", jedisList3.get(1));
-        JedisList jedisList4 = new JedisList(mockOfJedisForList.getJedis(), listName2);
+        JedisList jedisList4 = new JedisList(mockOfJedisForList.getJedisPool(), listName2);
         assertTrue(jedisList4.exists());
         assertEquals(2, jedisList4.size());
         assertEquals("b", jedisList4.get(0));

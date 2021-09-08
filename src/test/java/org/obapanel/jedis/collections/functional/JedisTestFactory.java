@@ -18,7 +18,7 @@ public class JedisTestFactory {
     // Zero to prevent any functional test
     // One to one pass
     // More to more passes
-    static final int FUNCTIONAL_TEST_CYCLES = 0;
+    static final int FUNCTIONAL_TEST_CYCLES = 1;
 
     public static final String HOST = "127.0.0.1";
     public static final int PORT = 6379;
@@ -70,13 +70,13 @@ public class JedisTestFactory {
     }
 
     public static JedisPool testPoolConnection(JedisPool jedisPool){
-        Jedis jedis = jedisPool.getResource();
-        String val = "test:" + System.currentTimeMillis();
-        jedis.set(val,val,new SetParams().px(5000));
-        String check = jedis.get(val);
-        jedis.del(val);
-        if (!val.equalsIgnoreCase(check)) throw new IllegalStateException("Jedis connection not ok");
-        jedis.close();
+        try (Jedis jedis = jedisPool.getResource() ) {
+            String val = "test:" + System.currentTimeMillis();
+            jedis.set(val, val, new SetParams().px(5000));
+            String check = jedis.get(val);
+            jedis.del(val);
+            if (!val.equalsIgnoreCase(check)) throw new IllegalStateException("Jedis connection not ok");
+        }
         return jedisPool;
     }
 

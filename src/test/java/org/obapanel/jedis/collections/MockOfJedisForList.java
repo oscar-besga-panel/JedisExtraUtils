@@ -5,6 +5,7 @@ import org.obapanel.jedis.common.test.TransactionOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.ListPosition;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.SetParams;
@@ -19,6 +20,7 @@ import java.util.Timer;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.obapanel.jedis.common.test.TTL.wrapTTL;
 
 /**
@@ -42,6 +44,7 @@ public class MockOfJedisForList {
     }
 
     private Jedis jedis;
+    private JedisPool jedisPool;
     private Transaction transaction;
     private Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
     private Timer timer;
@@ -51,39 +54,42 @@ public class MockOfJedisForList {
         timer = new Timer();
 
         jedis = Mockito.mock(Jedis.class);
+        jedisPool = Mockito.mock(JedisPool.class);
+        when(jedisPool.getResource()).thenReturn(jedis);
+
         transaction = Mockito.mock(Transaction.class);
 
-        Mockito.when(jedis.multi()).thenReturn(transaction);
-        Mockito.when(jedis.exists(anyString())).thenAnswer(ioc -> {
+        when(jedis.multi()).thenReturn(transaction);
+        when(jedis.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExists(key);
         });
-        Mockito.when(jedis.del(anyString())).thenAnswer(ioc -> {
+        when(jedis.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
-        Mockito.when(jedis.get(anyString())).thenAnswer(ioc -> {
+        when(jedis.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return (String)mockGet(key);
         });
-        Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+        when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = ioc.getArgument(2);
             return mockSet(key, value, setParams);
         });
 
-        Mockito.when(jedis.llen(anyString())).thenAnswer(ioc -> {
+        when(jedis.llen(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockListLlen(key);
         });
-        Mockito.when(jedis.lrange(anyString(), anyLong(), anyLong())).thenAnswer(ioc -> {
+        when(jedis.lrange(anyString(), anyLong(), anyLong())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long from = ioc.getArgument(1);
             long to = ioc.getArgument(2);
             return mockListLrange(key, from, to);
         });
-        Mockito.when(jedis.rpush(anyString(), any())).thenAnswer(ioc -> {
+        when(jedis.rpush(anyString(), any())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String[] data = null;
             if (ioc.getArguments().length > 1) {
@@ -102,42 +108,42 @@ public class MockOfJedisForList {
             }
             return mockListRpush(key, data);
         });
-        Mockito.when(jedis.lindex(anyString(), anyLong())).thenAnswer(ioc -> {
+        when(jedis.lindex(anyString(), anyLong())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long index = ioc.getArgument(1);
             return mockListLindex(key, index);
         });
-        Mockito.when(jedis.lrem(anyString(), anyLong(), anyString())).thenAnswer(ioc -> {
+        when(jedis.lrem(anyString(), anyLong(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long count = ioc.getArgument(1);
             String value = ioc.getArgument(2);
             return mockListLlrem(key, count, value);
         });
-        Mockito.when(jedis.linsert(anyString(), any(ListPosition.class), anyString(), anyString())).thenAnswer(ioc -> {
+        when(jedis.linsert(anyString(), any(ListPosition.class), anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             ListPosition listPosition = ioc.getArgument(1);
             String pivot = ioc.getArgument(2);
             String argument = ioc.getArgument(3);
             return mockListLlinsert(key, listPosition, pivot, argument);
         });
-        Mockito.when(jedis.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> {
+        when(jedis.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> {
             String script = ioc.getArgument(0);
             List<String> keys = ioc.getArgument(1);
             List<String> values = ioc.getArgument(2);
             return mockEval(script, keys, values);
         });
-        Mockito.when(transaction.lindex(anyString(), anyLong())).thenAnswer(ioc -> {
+        when(transaction.lindex(anyString(), anyLong())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long index = ioc.getArgument(1);
             return TransactionOrder.quickReponseExecuted(mockListLindex(key, index));
         });
-        Mockito.when(transaction.lset(anyString(), anyLong(), anyString())).thenAnswer(ioc -> {
+        when(transaction.lset(anyString(), anyLong(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long index = ioc.getArgument(1);
             String value = ioc.getArgument(2);
             return TransactionOrder.quickReponseExecuted(mockListLset(key, index, value));
         });
-        Mockito.when(transaction.lrem(anyString(), anyLong(), anyString())).thenAnswer(ioc -> {
+        when(transaction.lrem(anyString(), anyLong(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long count = ioc.getArgument(1);
             String value = ioc.getArgument(2);
@@ -146,15 +152,23 @@ public class MockOfJedisForList {
     }
 
 
+    Jedis getJedis(){
+        return jedis;
+    }
 
-    boolean mockExists(String key) {
+    JedisPool getJedisPool() {
+        return jedisPool;
+    }
+
+
+
+    synchronized boolean mockExists(String key) {
         return data.containsKey(key);
     }
 
     synchronized Object mockGet(String key) {
         return data.get(key);
     }
-
 
     synchronized String mockSet(final String key, String value, SetParams setParams) {
         boolean insert = true;
@@ -182,11 +196,6 @@ public class MockOfJedisForList {
         }
     }
 
-
-
-    Jedis getJedis(){
-        return jedis;
-    }
 
 
     synchronized void clearData(){
@@ -240,6 +249,9 @@ public class MockOfJedisForList {
         return dataToList(key).size();
     }
 
+
+
+
     synchronized ArrayList<String> mockListLrange(String key, long from, long to) {
         ArrayList<String> data = dataToList(key);
         if (from == 0 && to == -1) {
@@ -261,7 +273,7 @@ public class MockOfJedisForList {
         return dataToList(key).get(Long.valueOf(index).intValue());
     }
 
-    synchronized Object mockListLlrem(String key, long count, String value) {
+    synchronized Long mockListLlrem(String key, long count, String value) {
         List<String> list = dataToList(key);
         long numOfDeletes = 0;
         for(int i=0; i < count; i++){
@@ -298,16 +310,15 @@ public class MockOfJedisForList {
     Object mockListLset(String key, long index, String value) {
         ArrayList<String> data = dataToList(key);
         data.set(Long.valueOf(index).intValue(), value);
-        return "OK";
+        return CLIENT_RESPONSE_OK;
     }
-
 
     synchronized Object mockEval(String script, List<String> keys, List<String> values) {
         Object response = null;
-        if (script.equalsIgnoreCase(JedisList.LUE_SCRIPT_INDEX_OF)) {
+        if (script.equalsIgnoreCase(JedisList.LUA_SCRIPT_INDEX_OF)) {
             ArrayList<String> data = dataToList(keys.get(0));
             response = (long)data.indexOf(values.get(0));
-        } else if (script.equalsIgnoreCase(JedisList.LUE_SCRIPT_LAST_INDEX_OF)) {
+        } else if (script.equalsIgnoreCase(JedisList.LUA_SCRIPT_LAST_INDEX_OF)) {
             ArrayList<String> data = dataToList(keys.get(0));
             response = (long)data.lastIndexOf(values.get(0));
         }

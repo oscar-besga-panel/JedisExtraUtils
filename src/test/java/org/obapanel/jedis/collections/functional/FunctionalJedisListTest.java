@@ -29,7 +29,6 @@ public class FunctionalJedisListTest {
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListTest.class);
 
     private String listName;
-    private Jedis jedis;
     private JedisPool jedisPool;
 
     @Before
@@ -37,30 +36,28 @@ public class FunctionalJedisListTest {
         org.junit.Assume.assumeTrue(functionalTestEnabled());
         if (!functionalTestEnabled()) return;
         listName = "list:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedis = createJedisClient();
         jedisPool = createJedisPool();
     }
 
     @After
     public void after() {
-        if (jedis != null) {
-            jedis.del(listName);
-            jedis.close();
-        }
         if (jedisPool != null) {
+            try(Jedis jedis = jedisPool.getResource()) {
+                jedis.del(listName);
+            }
             jedisPool.close();
         }
     }
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(jedis, listName);
+        JedisList jedisList = new JedisList(jedisPool, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisList jedisList = new JedisList(jedis, listName);
+        JedisList jedisList = new JedisList(jedisPool, listName);
         jedisList.checkExists();
     }
 
@@ -80,7 +77,7 @@ public class FunctionalJedisListTest {
 
         @Test
     public void basicTest() {
-        JedisList jedisList = new JedisList(jedis, listName);
+        JedisList jedisList = new JedisList(jedisPool, listName);
         assertFalse(jedisList.exists());
         assertTrue(jedisList.isEmpty());
         assertEquals(0L, jedisList.size());
@@ -155,7 +152,7 @@ public class FunctionalJedisListTest {
 
     @Test
     public void containsIndexOf(){
-        JedisList jedisList = new JedisList(jedis, listName);
+        JedisList jedisList = new JedisList(jedisPool, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c", "a", "d"));
         assertTrue(jedisList.contains("a"));
         assertEquals(0, jedisList.indexOf("a"));
@@ -219,87 +216,14 @@ public class FunctionalJedisListTest {
         assertEquals(2, jedisList3.size());
         assertEquals("b", jedisList3.get(0));
         assertEquals("c", jedisList3.get(1));
-        JedisList jedisList4 = new JedisList(jedis, listName2);
+        JedisList jedisList4 = new JedisList(jedisPool, listName2);
         assertTrue(jedisList4.exists());
         assertEquals(2, jedisList4.size());
         assertEquals("b", jedisList4.get(0));
         assertEquals("c", jedisList4.get(1));
-        jedis.del(listName2);
-    }
-
-    @Test
-    public void listIteratorBasicTest() {
-        JedisList jedisList = createABCList();
-        try {
-            jedisList.listIterator(5);
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-            // NOOP
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.del(listName2);
         }
-        ListIterator<String> it = jedisList.listIterator(1);
-        assertTrue(it.hasNext());
-        assertEquals("b", it.next());
     }
-
-    @Test
-    public void listIteratorAdvancedTest() {
-        JedisList jedisList = createABCList();
-        ListIterator<String> listIterator = jedisList.listIterator();
-        assertTrue(listIterator.hasNext());
-        assertEquals("a", listIterator.next());
-        assertEquals(2, listIterator.nextIndex());
-        assertEquals(0, listIterator.previousIndex());
-        assertTrue(listIterator.hasNext());
-        assertEquals("b", listIterator.next());
-        assertEquals(3, listIterator.nextIndex());
-        assertEquals(1, listIterator.previousIndex());
-        assertTrue(listIterator.hasPrevious());
-        assertEquals("b", listIterator.previous());
-        assertEquals(2, listIterator.nextIndex());
-        assertEquals(0, listIterator.previousIndex());
-        assertTrue(listIterator.hasPrevious());
-        assertEquals("a", listIterator.previous());
-        assertEquals(1, listIterator.nextIndex());
-        assertEquals(-1, listIterator.previousIndex());
-        assertFalse(listIterator.hasPrevious());
-        listIterator.set("A");
-        assertTrue(listIterator.hasNext());
-        assertEquals("A", listIterator.next());
-        assertEquals(2, listIterator.nextIndex());
-        assertEquals(0, listIterator.previousIndex());
-        listIterator.add("B");
-        assertTrue(listIterator.hasNext());
-        assertEquals("B", listIterator.next());
-        assertEquals(3, listIterator.nextIndex());
-        assertEquals(1, listIterator.previousIndex());
-
-        assertTrue(listIterator.hasNext());
-        assertEquals("b", listIterator.next());
-        assertEquals(4, listIterator.nextIndex());
-        assertEquals(2, listIterator.previousIndex());
-        listIterator.remove();
-        assertTrue(listIterator.hasPrevious());
-        assertEquals("B", listIterator.previous());
-    }
-
-
-    @Test
-    public void listIteratorAdvancedTest2() {
-        List<String> data = createABCList().asList();
-        ListIterator<String> listIterator = data.listIterator();
-        assertTrue(listIterator.hasNext());
-        assertEquals("a", listIterator.next());
-        assertTrue(listIterator.hasNext());
-        assertEquals("b", listIterator.next());
-        assertTrue(listIterator.hasPrevious());
-        assertEquals("b", listIterator.previous());
-        assertTrue(listIterator.hasPrevious());
-        assertEquals("a", listIterator.previous());
-        assertFalse(listIterator.hasPrevious());
-
-
-    }
-
-
 
 }

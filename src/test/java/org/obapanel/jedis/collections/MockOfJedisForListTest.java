@@ -3,16 +3,21 @@ package org.obapanel.jedis.collections;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import redis.clients.jedis.ListPosition;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.obapanel.jedis.collections.MockOfJedisForList.CLIENT_RESPONSE_KO;
+import static org.obapanel.jedis.collections.MockOfJedisForList.CLIENT_RESPONSE_OK;
 import static org.obapanel.jedis.collections.MockOfJedisForList.unitTestEnabledForList;
 
 public class MockOfJedisForListTest {
@@ -117,8 +122,104 @@ public class MockOfJedisForListTest {
         assertEquals(1L, result23);
     }
 
+    @Test
+    public void testMockExists() {
+        mockOfJedis.put("data1","data1value");
+        assertTrue(mockOfJedis.mockExists("data1"));
+        assertFalse(mockOfJedis.mockExists("data2"));
+    }
+
+    @Test
+    public void testMockGet() {
+        mockOfJedis.put("data1","data1value");
+        assertEquals("data1value", mockOfJedis.mockGet("data1"));
+        assertNull(mockOfJedis.mockGet("data2"));
+    }
+
+    @Test
+    public void testMockSet() {
+        String result11 = mockOfJedis.mockSet("data1","data1value1", new SetParams());
+        assertEquals("data1value1", mockOfJedis.mockGet("data1"));
+        assertEquals(CLIENT_RESPONSE_OK, result11);
+        String result12 = mockOfJedis.mockSet("data1","data1value2", new SetParams());
+        assertEquals("data1value2", mockOfJedis.mockGet("data1"));
+        assertEquals(CLIENT_RESPONSE_OK, result12);
+        String result13 = mockOfJedis.mockSet("data1","data1value3", new SetParams().nx());
+        assertEquals("data1value2", mockOfJedis.mockGet("data1"));
+        assertEquals(CLIENT_RESPONSE_KO, result13);
+        String result14 = mockOfJedis.mockSet("data2","data1value3", new SetParams().nx());
+        assertEquals("data1value3", mockOfJedis.mockGet("data2"));
+        assertEquals(CLIENT_RESPONSE_OK, result14);
+        assertNull(mockOfJedis.mockGet("data3"));
+    }
+
+    @Test
+    public void testMockDel() {
+        mockOfJedis.put("data1","data1value");
+        assertEquals("data1value", mockOfJedis.mockGet("data1"));
+        mockOfJedis.mockDel("data1");
+        assertNull(mockOfJedis.mockGet("data1"));
+    }
 
 
+    @Test
+    public void testMockListLrange () {
+        mockOfJedis.put("data1", new ArrayList<>(Arrays.asList("a","b","c","d","e")));
+        List<String> result1 = mockOfJedis.mockListLrange("data1", 1,3);
+        List<String> result2 = mockOfJedis.mockListLrange("data1", 0,-1);
+        assertEquals(new ArrayList<>(Arrays.asList("b","c","d")), result1);
+        assertEquals(new ArrayList<>(Arrays.asList("a","b","c","d","e")), result2);
+    }
 
+    @Test
+    public void testMockListRpush () {
+        mockOfJedis.put("data1", new ArrayList<>(Arrays.asList("a","b","c")));
+        mockOfJedis.mockListRpush("data1",new String[]{"d","e"});
+        assertEquals(new ArrayList<>(Arrays.asList("a","b","c","d","e")), mockOfJedis.mockGet("data1"));
+    }
 
+    @Test
+    public void testMockListIndex () {
+        mockOfJedis.put("data1", new ArrayList<>(Arrays.asList("a","b","c")));
+        String a = mockOfJedis.mockListLindex("data1",0);
+        String c = mockOfJedis.mockListLindex("data1",2);
+        assertEquals("a",a);
+        assertEquals("c",c);
+    }
+
+    @Test
+    public void testMockListLlrem() {
+        mockOfJedis.put("data1", new ArrayList<>(Arrays.asList("a","b","c","d","a")));
+        long result1 = mockOfJedis.mockListLlrem("data1",2, "a");
+        mockOfJedis.put("data2", new ArrayList<>(Arrays.asList("a","b","c","d","a")));
+        long result2 = mockOfJedis.mockListLlrem("data2",1, "a");
+        assertEquals(new ArrayList<>(Arrays.asList("b","c","d")), mockOfJedis.mockGet("data1"));
+        assertEquals(2L, result1);
+        assertEquals(new ArrayList<>(Arrays.asList("b","c","d","a")), mockOfJedis.mockGet("data2"));
+        assertEquals(1L, result2);
+    }
+
+    @Test
+    public void testMockListLset() {
+        mockOfJedis.put("data1", new ArrayList<>(Arrays.asList("a","b","c","d")));
+        mockOfJedis.mockListLset("data1",2,"x");
+        assertEquals(new ArrayList<>(Arrays.asList("a","b","x","d")), mockOfJedis.mockGet("data1"));
+    }
+
+    @Test
+    public void testMockEval() {
+        mockOfJedis.put("data1", new ArrayList<>(Arrays.asList("a","b","c","d","b")));
+        Object result1 = mockOfJedis.mockEval(JedisList.LUA_SCRIPT_INDEX_OF, Collections.singletonList("data1"), Collections.singletonList("b"));
+        Object result2 = mockOfJedis.mockEval(JedisList.LUA_SCRIPT_LAST_INDEX_OF, Collections.singletonList("data1"), Collections.singletonList("b"));
+        assertEquals(Long.valueOf(1), (Long) result1);
+        assertEquals(Long.valueOf(4), (Long) result2);
+    }
+
+    @Test
+    public void testMockListLlinsert() {
+        mockOfJedis.put("data1", new ArrayList<>(Arrays.asList("a","b","c","d")));
+        mockOfJedis.mockListLlinsert("data1", ListPosition.BEFORE, "b", "x");
+        mockOfJedis.mockListLlinsert("data1", ListPosition.AFTER, "c", "y");
+        assertEquals(new ArrayList<>(Arrays.asList("a","x","b","c","y","d")), mockOfJedis.mockGet("data1"));
+    }
 }
