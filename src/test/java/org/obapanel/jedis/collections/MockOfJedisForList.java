@@ -43,11 +43,11 @@ public class MockOfJedisForList {
         return UNIT_TEST_CYCLES_LIST > 0;
     }
 
-    private Jedis jedis;
-    private JedisPool jedisPool;
-    private Transaction transaction;
-    private Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
-    private Timer timer;
+    private final Jedis jedis;
+    private final JedisPool jedisPool;
+    private final Transaction transaction;
+    private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
+    private final Timer timer;
 
 
     public MockOfJedisForList() {
