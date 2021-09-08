@@ -55,6 +55,14 @@ public class MockOfJedisForMap {
             String key = ioc.getArgument(0);
             return mockExists(key);
         });
+        when(jedis.del(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            return mockDelete(key);
+        });
+        when(jedis.hlen(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            return mockHlen(key);
+        });
         when(jedis.hget(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String name = ioc.getArgument(1);
@@ -66,6 +74,11 @@ public class MockOfJedisForMap {
             String value = ioc.getArgument(2);
             return mockHset(key, name, value);
         });
+        when(jedis.hdel(anyString(), anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            String name = ioc.getArgument(1);
+            return mockHdel(key, name);
+        });
         when(transaction.hget(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String name = ioc.getArgument(1);
@@ -76,6 +89,11 @@ public class MockOfJedisForMap {
             String name = ioc.getArgument(1);
             String value = ioc.getArgument(2);
             return mockTransactionHset(key, name, value);
+        });
+        when(transaction.hdel(anyString(), anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            String name = ioc.getArgument(1);
+            return mockTransactionHdel(key, name);
         });
     }
 
@@ -106,6 +124,17 @@ public class MockOfJedisForMap {
         return data.containsKey(key);
     }
 
+    synchronized Long mockDelete(String key) {
+        Object previous =  data.remove(key);
+        return previous != null ? 1L : 0L;
+    }
+
+    synchronized Long mockHlen(String key) {
+        Map<String, String> map = (Map<String, String>) data.get(key);
+        return map != null ? map.size() : 0L;
+    }
+
+
     synchronized String mockHget(String key, String name) {
         Map<String, String> map = (Map<String, String>) data.get(key);
         return map != null ? map.get(name) : null;
@@ -125,6 +154,21 @@ public class MockOfJedisForMap {
 
     synchronized Response<Long> mockTransactionHset(String key, String name, String value) {
         Long data = mockHset(key, name, value);
+        return quickReponseExecuted(data);
+    }
+
+    synchronized Long mockHdel(String key, String name) {
+        Map<String, String> map = (Map<String, String>) data.get(key);
+        if (map != null) {
+            String previous = map.remove(name);
+            return previous != null ? 1L : 0L;
+        } else {
+            return 0L;
+        }
+    }
+
+    synchronized Response<Long> mockTransactionHdel(String key, String name) {
+        Long data = mockHdel(key, name);
         return quickReponseExecuted(data);
     }
 

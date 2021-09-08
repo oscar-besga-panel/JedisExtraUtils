@@ -33,6 +33,19 @@ public class MockOfJedisForMapTest {
     }
 
     @Test
+    public void testDataSize() throws InterruptedException {
+        mockOfJedis.mockHset("map1","a1","11");
+        long result1 = mockOfJedis.mockHlen("map1");
+        mockOfJedis.mockHset("map1","a2","12");
+        mockOfJedis.mockHset("map1","a3","13");
+        long result2 = mockOfJedis.mockHlen("map1");
+        assertEquals(1L, result1);
+        assertEquals(3L, result2);
+    }
+
+
+
+    @Test
     public void testDataInsertion() throws InterruptedException {
         long result = mockOfJedis.mockHset("map1","a1","11");
         boolean exists1 = mockOfJedis.mockExists("map1");
@@ -48,6 +61,11 @@ public class MockOfJedisForMapTest {
         assertEquals("11", result1);
         assertNull(result2);
         assertNull(result3);
+        long resultd1 = mockOfJedis.mockDelete("map1");
+        long resultd2 = mockOfJedis.mockDelete("map2");
+        assertEquals(1L, resultd1);
+        assertEquals(0L, resultd2);
+        assertNull(mockOfJedis.getCurrentData().get("map1"));
     }
 
     @Test
@@ -66,6 +84,28 @@ public class MockOfJedisForMapTest {
         assertEquals("11", result1.get());
         assertNull(result2.get());
         assertNull(result3.get());
+    }
 
+
+    @Test
+    public void testDataDeletion() throws InterruptedException {
+        mockOfJedis.mockHset("map1","a1","11");
+        mockOfJedis.mockHset("map3","a3","33");
+        Long result11 = mockOfJedis.mockHdel("map1","a1");
+        Long result12 = mockOfJedis.mockHdel("map1","a2");
+        Long result13 = mockOfJedis.mockHdel("map1","a1");
+        Long result14 = mockOfJedis.mockHdel("map2","a1");
+        Response<Long> result21 = mockOfJedis.mockTransactionHdel("map3", "a3");
+        Response<Long> result22 = mockOfJedis.mockTransactionHdel("map3", "a4");
+        Response<Long> result23 = mockOfJedis.mockTransactionHdel("map3", "a3");
+        Response<Long> result24 = mockOfJedis.mockTransactionHdel("map4", "a3");
+        assertEquals(Long.valueOf(1L), result11);
+        assertEquals(Long.valueOf(0L), result12);
+        assertEquals(Long.valueOf(0L), result13);
+        assertEquals(Long.valueOf(0L), result14);
+        assertEquals(Long.valueOf(1L), result21.get());
+        assertEquals(Long.valueOf(0L), result22.get());
+        assertEquals(Long.valueOf(0L), result23.get());
+        assertEquals(Long.valueOf(0L), result24.get());
     }
 }
