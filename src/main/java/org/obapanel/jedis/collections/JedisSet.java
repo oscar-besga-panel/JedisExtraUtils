@@ -1,10 +1,28 @@
 package org.obapanel.jedis.collections;
 
+import redis.clients.jedis.JedisPool;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
 public class JedisSet implements Set<String> {
+
+    private final JedisPool jedisPool;
+    private final String name;
+
+    public JedisSet(JedisPool jedisPool, String name){
+        this.jedisPool = jedisPool;
+        this.name = name;
+    }
+
+    /**
+     * Name of the redis set
+     * @return redis name
+     */
+    public String getName() {
+        return name;
+    }
 
 
     @Override
