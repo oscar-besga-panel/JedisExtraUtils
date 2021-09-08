@@ -18,7 +18,7 @@ public class JedisTestFactory {
     // Zero to prevent any functional test
     // One to one pass
     // More to more passes
-    static final int FUNCTIONAL_TEST_CYCLES = 1;
+    static final int FUNCTIONAL_TEST_CYCLES = 0;
 
     public static final String HOST = "127.0.0.1";
     public static final int PORT = 6379;
