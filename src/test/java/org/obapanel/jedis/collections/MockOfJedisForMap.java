@@ -7,13 +7,18 @@ import redis.clients.jedis.Builder;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.obapanel.jedis.common.test.TransactionOrder.quickReponseExecuted;
@@ -79,6 +84,23 @@ public class MockOfJedisForMap {
             String name = ioc.getArgument(1);
             return mockHdel(key, name);
         });
+        when(jedis.hexists(anyString(), anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            String name = ioc.getArgument(1);
+            return mockHexists(key, name);
+        });
+        when(jedis.hscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            String cursor = ioc.getArgument(1);
+            ScanParams scanParams = ioc.getArgument(2);
+            return mockHscan(key, cursor, scanParams);
+        });
+        when(jedis.hscan(anyString(), anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            String cursor = ioc.getArgument(1);
+            ScanParams scanParams = new ScanParams();
+            return mockHscan(key, cursor, scanParams);
+        });
         when(transaction.hget(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String name = ioc.getArgument(1);
@@ -107,6 +129,10 @@ public class MockOfJedisForMap {
         return jedisPool;
     }
 
+    private synchronized Map<String, String> getStringStringMap(String key) {
+        return (Map<String, String>) data.computeIfAbsent(key, k -> new HashMap<String, String>());
+    }
+
     synchronized void clearData(){
         data.clear();
     }
@@ -130,13 +156,17 @@ public class MockOfJedisForMap {
     }
 
     synchronized Long mockHlen(String key) {
-        Map<String, String> map = (Map<String, String>) data.get(key);
+        Map<String, String> map = getStringStringMap(key);
         return map != null ? map.size() : 0L;
     }
 
+    synchronized Boolean mockHexists(String key, String name) {
+        Map<String, String> map = getStringStringMap(key);
+        return map != null && map.containsKey(name);
+    }
 
     synchronized String mockHget(String key, String name) {
-        Map<String, String> map = (Map<String, String>) data.get(key);
+        Map<String, String> map = getStringStringMap(key);
         return map != null ? map.get(name) : null;
     }
 
@@ -147,7 +177,7 @@ public class MockOfJedisForMap {
 
 
     synchronized Long mockHset(String key, String name, String value) {
-        Map<String, String> map = (Map<String, String>) data.computeIfAbsent(key, k->new HashMap<String, String>());
+        Map<String, String> map = getStringStringMap(key);
         map.put(name, value);
         return 1L;
     }
@@ -158,7 +188,7 @@ public class MockOfJedisForMap {
     }
 
     synchronized Long mockHdel(String key, String name) {
-        Map<String, String> map = (Map<String, String>) data.get(key);
+        Map<String, String> map = getStringStringMap(key);
         if (map != null) {
             String previous = map.remove(name);
             return previous != null ? 1L : 0L;
@@ -172,5 +202,10 @@ public class MockOfJedisForMap {
         return quickReponseExecuted(data);
     }
 
+    synchronized ScanResult<Map.Entry<String, String>> mockHscan(String key, String cursor, ScanParams scanParams) {
+        Map<String, String> map = getStringStringMap(key);
+        List<Map.Entry<String, String>> results = new ArrayList<>(map.entrySet());
+        return new ScanResult<Map.Entry<String, String>>(ScanParams.SCAN_POINTER_START, results);
+    }
 
 }

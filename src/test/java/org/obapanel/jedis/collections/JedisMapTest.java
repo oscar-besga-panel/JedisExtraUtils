@@ -4,8 +4,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -65,6 +68,13 @@ public class JedisMapTest {
     }
 
     @Test
+    public void basicTestContainsKey() {
+        JedisMap jedisMap = createABCMap();
+        assertTrue(jedisMap.containsKey("a"));
+        assertFalse(jedisMap.containsKey("d"));
+    }
+
+    @Test
     public void basicTestSize() {
         JedisMap jedisMap = createABCMap();
         int size1 = jedisMap.size();
@@ -120,6 +130,48 @@ public class JedisMapTest {
         assertEquals("2", jedisMap.get("b"));
         assertEquals("99", jedisMap.get("z"));
         assertEquals("97", jedisMap.get("x"));
+    }
+
+    @Test
+    public void testEntrySet() {
+        JedisMap jedisMap = createABCMap();
+        Set<Map.Entry<String, String>> entries = jedisMap.entrySet();
+        assertEquals(3, entries.size());
+        assertEquals(jedisMap.size(), entries.size());
+        assertTrue(entries.contains(new AbstractMap.SimpleImmutableEntry<>("a","1")));
+        assertTrue(entries.contains(new AbstractMap.SimpleImmutableEntry<>("b","2")));
+        assertTrue(entries.contains(new AbstractMap.SimpleImmutableEntry<>("c","3")));
+        jedisMap.clear();
+        entries = jedisMap.entrySet();
+        assertTrue(entries.isEmpty());
+    }
+
+    @Test
+    public void testKeySet() {
+        JedisMap jedisMap = createABCMap();
+        Set<String> keys = jedisMap.keySet();
+        assertEquals(3, keys.size());
+        assertEquals(jedisMap.size(), keys.size());
+        assertTrue(keys.contains("a"));
+        assertTrue(keys.contains("b"));
+        assertTrue(keys.contains("c"));
+        jedisMap.clear();
+        keys = jedisMap.keySet();
+        assertTrue(keys.isEmpty());
+    }
+
+    @Test
+    public void testValues() {
+        JedisMap jedisMap = createABCMap();
+        Collection<String> values = jedisMap.values();
+        assertEquals(3, values.size());
+        assertEquals(jedisMap.size(), values.size());
+        assertTrue(values.contains("1"));
+        assertTrue(values.contains("2"));
+        assertTrue(values.contains("3"));
+        jedisMap.clear();
+        values = jedisMap.values();
+        assertTrue(values.isEmpty());
     }
 
 }

@@ -3,11 +3,16 @@ package org.obapanel.jedis.collections;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class JedisMap implements Map<String, String> {
 
@@ -15,9 +20,30 @@ public class JedisMap implements Map<String, String> {
     private final JedisPool jedisPool;
     private final String name;
 
+    /**
+     * Creates a new list in jedis with given name, or references an existing one
+     * This constructor doesn't affect the redis server
+     * So really, creating here a list does not generate new data on Redis; the list on the server will
+     *   exists when data is inserted
+     * @param jedisPool Jedis pool connection
+     * @param name Name of list on server
+     */
     public JedisMap(JedisPool jedisPool, String name){
         this.jedisPool = jedisPool;
         this.name = name;
+    }
+
+    /**
+     * Creates a new map in jedis with given name, or references an existing one
+     * If the map doesn't exists, the 'from' data is stored,
+     * if the map already exists, the 'from' data is added to the map
+     * @param jedisPool Jedis pool connection
+     * @param name Name of list on server
+     * @param from Data to add to the map
+     */
+    public JedisMap(JedisPool jedisPool, String name, Map<String, String> from){
+        this(jedisPool, name);
+        putAll(from);
     }
 
     /**
@@ -49,6 +75,22 @@ public class JedisMap implements Map<String, String> {
         }
     }
 
+
+    /**
+     * Returns a mapa in java memory with the data of the mapa on redis
+     * It copies the redis data in java process
+     * (currect implementation is an Hashmap, this may change)
+     * @return map of data
+     */
+    //TODO test
+    public Map<String, String> asMap(){
+        Map<String, String> data = new HashMap<>();
+        // I prefer to have more control here
+        // data.putAll(this);
+        entrySet().forEach( es -> data.put(es.getKey(), es.getValue()));
+        return data;
+    }
+
     @Override
     public int size() {
         try (Jedis jedis = jedisPool.getResource()) {
@@ -63,14 +105,15 @@ public class JedisMap implements Map<String, String> {
 
     @Override
     public boolean containsKey(Object key) {
-        //TODO
-        return false;
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.hexists(name, (String) key);
+        }
     }
 
     @Override
     public boolean containsValue(Object value) {
-        //TODO
-        return false;
+        // Could be lua optimized ?
+        return values().contains(value);
     }
 
     @Override
@@ -132,19 +175,41 @@ public class JedisMap implements Map<String, String> {
 
     @Override
     public Set<String> keySet() {
-        //TODO
-        return null;
+        // I was thinking in using hkeys,
+        // but I don't want to block the main thread
+        Set<Entry<String, String>> keyValues = doHscan();
+        return keyValues.stream().
+                map(Entry::getKey).
+                collect(Collectors.toSet());
     }
 
     @Override
     public Collection<String> values() {
-        //TODO
-        return null;
+        // I was thinking in using hvals,
+        // but I don't want to block the main thread
+        Set<Entry<String, String>> keyValues = doHscan();
+        return keyValues.stream().
+                map(Entry::getValue).
+                collect(Collectors.toList());
     }
 
     @Override
     public Set<Entry<String, String>> entrySet() {
-        //TODO
-        return null;
+        return doHscan();
     }
+
+    private Set<Entry<String, String>> doHscan() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            Set<Entry<String, String>> keyValues = new HashSet<>();
+            ScanParams scanParams = new ScanParams(); // Scan on two-by-two responses
+            String cursor = ScanParams.SCAN_POINTER_START;
+            do {
+                ScanResult<Entry<String, String>> partialResult =  jedis.hscan(name, cursor, scanParams);
+                cursor = partialResult.getCursor();
+                keyValues.addAll(partialResult.getResult());
+            }  while(!cursor.equals(ScanParams.SCAN_POINTER_START));
+            return keyValues;
+        }
+    }
+
 }

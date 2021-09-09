@@ -4,7 +4,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
+
+import java.util.AbstractMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -50,6 +54,9 @@ public class MockOfJedisForMapTest {
         long result = mockOfJedis.mockHset("map1","a1","11");
         boolean exists1 = mockOfJedis.mockExists("map1");
         boolean exists2 = mockOfJedis.mockExists("map2");
+        boolean hexists1 = mockOfJedis.mockHexists("map1", "a1");
+        boolean hexists2 = mockOfJedis.mockHexists("map1", "a2");
+        boolean hexists3 = mockOfJedis.mockHexists("map2", "a2");
         String result1 = mockOfJedis.mockHget("map1", "a1");
         String result2 = mockOfJedis.mockHget("map1", "b1");
         String result3 = mockOfJedis.mockHget("map2", "a1");
@@ -58,6 +65,9 @@ public class MockOfJedisForMapTest {
         assertNull(mockOfJedis.getCurrentData().get("map2"));
         assertTrue(exists1);
         assertFalse(exists2);
+        assertTrue(hexists1);
+        assertFalse(hexists2);
+        assertFalse(hexists3);
         assertEquals("11", result1);
         assertNull(result2);
         assertNull(result3);
@@ -108,4 +118,19 @@ public class MockOfJedisForMapTest {
         assertEquals(Long.valueOf(0L), result23.get());
         assertEquals(Long.valueOf(0L), result24.get());
     }
+
+    @Test
+    public void testScan() {
+        mockOfJedis.mockHset("map1","a1","11");
+        mockOfJedis.mockHset("map1","a2","12");
+        mockOfJedis.mockHset("map1","a3","13");
+        ScanResult<Map.Entry<String, String>> result =  mockOfJedis.mockHscan("map1", ScanParams.SCAN_POINTER_START,new ScanParams());
+        assertEquals( ScanParams.SCAN_POINTER_START, result.getCursor());
+        assertEquals(3 , result.getResult().size());
+        assertTrue(mockOfJedis.mockHlen("map1") == result.getResult().size());
+        assertTrue(result.getResult().contains(new AbstractMap.SimpleImmutableEntry<>("a1","11")));
+        assertTrue(result.getResult().contains(new AbstractMap.SimpleImmutableEntry<>("a2","12")));
+        assertTrue(result.getResult().contains(new AbstractMap.SimpleImmutableEntry<>("a3","13")));
+    }
+
 }
