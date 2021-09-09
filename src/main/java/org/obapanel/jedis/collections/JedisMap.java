@@ -77,9 +77,9 @@ public class JedisMap implements Map<String, String> {
 
 
     /**
-     * Returns a mapa in java memory with the data of the mapa on redis
+     * Returns a map in java memory with the data of the map on redis
      * It copies the redis data in java process
-     * (currect implementation is an Hashmap, this may change)
+     * (current implementation is an Hashmap, this may change)
      * @return map of data
      */
     //TODO test

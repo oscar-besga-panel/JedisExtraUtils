@@ -56,13 +56,12 @@ public class MockOfJedisForMapTest {
         boolean exists2 = mockOfJedis.mockExists("map2");
         boolean hexists1 = mockOfJedis.mockHexists("map1", "a1");
         boolean hexists2 = mockOfJedis.mockHexists("map1", "a2");
-        boolean hexists3 = mockOfJedis.mockHexists("map2", "a2");
+        boolean hexists3 = mockOfJedis.mockHexists("map3", "a2");
         String result1 = mockOfJedis.mockHget("map1", "a1");
         String result2 = mockOfJedis.mockHget("map1", "b1");
-        String result3 = mockOfJedis.mockHget("map2", "a1");
+        String result3 = mockOfJedis.mockHget("map4", "a1");
         assertEquals(1L, result);
         assertNotNull(mockOfJedis.getCurrentData().get("map1"));
-        assertNull(mockOfJedis.getCurrentData().get("map2"));
         assertTrue(exists1);
         assertFalse(exists2);
         assertTrue(hexists1);
@@ -85,7 +84,7 @@ public class MockOfJedisForMapTest {
         boolean exists2 = mockOfJedis.mockExists("map2");
         Response<String> result1 = mockOfJedis.mockTransactionHget("map1", "a1");
         Response<String> result2 = mockOfJedis.mockTransactionHget("map1", "b1");
-        Response<String> result3 = mockOfJedis.mockTransactionHget("map2", "a1");
+        Response<String> result3 = mockOfJedis.mockTransactionHget("map3", "a1");
         assertEquals(Long.valueOf(1L), result.get());
         assertNotNull(mockOfJedis.getCurrentData().get("map1"));
         assertNull(mockOfJedis.getCurrentData().get("map2"));
