@@ -48,6 +48,7 @@ public class FunctionalJedisSetIteratorTest {
 
     @Test
     public void testIterator() {
+        LOG.debug("TEST ITERATOR --\n-");
         List<String> data = new ArrayList<>(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
         JedisSet jedisSet = new JedisSet(jedisPool, setName);
         jedisSet.addAll(data);
@@ -64,6 +65,7 @@ public class FunctionalJedisSetIteratorTest {
 
     @Test
     public void testIteratorOne() {
+        LOG.debug("TEST ITERATOR --\n-");
         List<String> data = new ArrayList<>(Collections.singletonList("a"));
         JedisSet jedisSet = new JedisSet(jedisPool, setName);
         jedisSet.addAll(data);
@@ -80,6 +82,7 @@ public class FunctionalJedisSetIteratorTest {
 
     @Test
     public void testIteratorNone() {
+        LOG.debug("TEST ITERATOR --\n-");
         List<String> data = new ArrayList<>();
         JedisSet jedisSet = new JedisSet(jedisPool, setName);
         jedisSet.addAll(data);
@@ -95,6 +98,7 @@ public class FunctionalJedisSetIteratorTest {
 
     @Test
     public void testIteratorRemove() {
+        LOG.debug("TEST ITERATOR --\n-");
         List<String> todel = new ArrayList<>(Arrays.asList("a", "d", "g"));
         List<String> data = new ArrayList<>(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
         JedisSet jedisSet = new JedisSet(jedisPool, setName);

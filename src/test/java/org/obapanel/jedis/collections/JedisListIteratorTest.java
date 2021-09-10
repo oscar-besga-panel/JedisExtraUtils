@@ -1,12 +1,8 @@
-package org.obapanel.jedis.collections.functional;
+package org.obapanel.jedis.collections;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.obapanel.jedis.collections.JedisList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,34 +14,32 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.obapanel.jedis.collections.functional.JedisTestFactory.createJedisPool;
-import static org.obapanel.jedis.collections.functional.JedisTestFactory.functionalTestEnabled;
+import static org.obapanel.jedis.collections.MockOfJedisForList.unitTestEnabledForList;
 
 
-public class FunctionalJedisListIteratorTest {
+public class JedisListIteratorTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
 
     private String listName;
-    private JedisPool jedisPool;
+    private MockOfJedisForList mockOfJedisForList;
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabledForList());
+        if (!unitTestEnabledForList()) return;
         listName = "list:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = createJedisPool();
+        mockOfJedisForList = new MockOfJedisForList();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            jedisPool.close();
-        }
+        if (mockOfJedisForList != null) mockOfJedisForList.clearData();
     }
 
+
+
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
@@ -139,7 +133,7 @@ public class FunctionalJedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest2() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
@@ -156,7 +150,7 @@ public class FunctionalJedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest3() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
             String s = it.next();

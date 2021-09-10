@@ -1,11 +1,14 @@
 package org.obapanel.jedis.collections;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -15,6 +18,9 @@ import java.util.Queue;
 import java.util.Set;
 
 public class JedisSet implements Set<String> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisSet.class);
+
 
     private final JedisPool jedisPool;
     private final String name;
@@ -193,6 +199,7 @@ public class JedisSet implements Set<String> {
         private final Queue<String> nextValues = new LinkedList<>();
         private ScanResult<String> currentResult;
         private String next;
+        private final Set<String> alreadyRecoveredData = new HashSet<>();
 
         @Override
         public boolean hasNext() {
@@ -209,22 +216,29 @@ public class JedisSet implements Set<String> {
             } else {
                 currentCursor = currentResult.getCursor();
             }
-//            System.out.println("Peticion con currentCursor " + currentCursor);
+            LOGGER.debug("Petition with currentCursor " + currentCursor);
             try (Jedis jedis = jedisPool.getResource()) {
                 currentResult = jedis.sscan(name, currentCursor, SCANPARAMS_ONE_COUNT);
             }
-//            if (currentResult.getResult().isEmpty()) {
-//                System.out.println("Datos de lista EMPTY con cursor " + currentResult.getCursor());
-//            } else {
-//                System.out.println("Datos de lista " + currentResult.getResult() + " con cursor " + currentResult.getCursor());
-//            }
-            return currentResult.getResult();
+            LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
+            return filterResultToAvoidDuplicated(currentResult.getResult());
+        }
+
+        List<String> filterResultToAvoidDuplicated(List<String> currentData) {
+            List<String> filteredData = new ArrayList<>();
+            for(String s: currentData) {
+                if (s != null && !s.isEmpty() &&
+                        alreadyRecoveredData.add(s)) {
+                    filteredData.add(s);
+                }
+            }
+            return filteredData;
         }
 
         @Override
         public String next() {
             next =  nextValues.poll();
-            System.out.println("Datos next " + next);
+            LOGGER.debug("Data next {} ", next);
             return next;
         }
 

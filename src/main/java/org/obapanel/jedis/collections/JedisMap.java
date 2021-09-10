@@ -1,5 +1,7 @@
 package org.obapanel.jedis.collections;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 
 public class JedisMap implements Map<String, String> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisMap.class);
 
     private final JedisPool jedisPool;
     private final String name;

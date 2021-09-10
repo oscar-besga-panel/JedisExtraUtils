@@ -1,5 +1,7 @@
 package org.obapanel.jedis.collections;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.ListPosition;
@@ -32,6 +34,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * But helpers on Redis lists is not the goal of this class, rather than have a list object backed by Redis
  */
 public final class JedisList implements List<String> {
+
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisList.class);
 
 
     private static final String TO_DELETE = "TO_DELETE";
@@ -152,8 +157,9 @@ public final class JedisList implements List<String> {
      * @throws IndexOutOfBoundsException if index is less than zero or more_or_equal to list size
      */
     public void checkIndex(int index) {
-        if (index < 0 || index >= size()) {
-            throw new IndexOutOfBoundsException("Current index out of bounds, value: " + index + " and list size " + size());
+        int size = size();
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Current index out of bounds, value: " + index + " and list size " + size + " (size 0 is Jedis non existen list)");
         }
     }
 
@@ -179,7 +185,6 @@ public final class JedisList implements List<String> {
 
     @Override
     public Iterator<String> iterator() {
-        checkExists();
         return new JedisListIterator();
     }
 
@@ -301,7 +306,6 @@ public final class JedisList implements List<String> {
     public String remove(int index) {
         try (Jedis jedis = jedisPool.getResource()) {
             /* https://stackoverflow.com/questions/31580535/remove-element-at-specific-index-from-redis-list */
-            checkExists();
             checkIndex(index);
             String toDeleteTempName = generateToDelete();
             Transaction tjedis = jedis.multi();
@@ -359,7 +363,7 @@ public final class JedisList implements List<String> {
     /**
      * Implementation of ListIterator and Iterator for JedisList
      */
-    private class   JedisListIterator implements ListIterator<String> {
+    private class JedisListIterator implements ListIterator<String> {
 
         private int currentIndex = 0;
         private int lastReturned = -1;
