@@ -199,15 +199,15 @@ public class JedisSet implements Set<String> {
             } else {
                 currentCursor = currentResult.getCursor();
             }
-            System.out.println("Peticion con currentCursor " + currentCursor);
+//            System.out.println("Peticion con currentCursor " + currentCursor);
             try (Jedis jedis = jedisPool.getResource()) {
                 currentResult = jedis.sscan(name, currentCursor, SCANPARAMS_ONE_COUNT);
             }
-            if (currentResult.getResult().isEmpty()) {
-                System.out.println("Datos de lista EMPTY con cursor " + currentResult.getCursor());
-            } else {
-                System.out.println("Datos de lista " + currentResult.getResult() + " con cursor " + currentResult.getCursor());
-            }
+//            if (currentResult.getResult().isEmpty()) {
+//                System.out.println("Datos de lista EMPTY con cursor " + currentResult.getCursor());
+//            } else {
+//                System.out.println("Datos de lista " + currentResult.getResult() + " con cursor " + currentResult.getCursor());
+//            }
             return currentResult.getResult();
         }
 
