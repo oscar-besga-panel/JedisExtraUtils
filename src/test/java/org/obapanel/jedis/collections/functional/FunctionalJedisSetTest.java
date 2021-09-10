@@ -49,6 +49,20 @@ public class FunctionalJedisSetTest {
         return jedisSet;
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void basicTestWithErrorExists() {
+        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        jedisSet.checkExists();
+    }
+
+
+    @Test
+    public void basicTestExists() {
+        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        jedisSet.add("a");
+        assertTrue(jedisSet.exists());
+    }
+
     @Test
     public void basicTest() {
         JedisSet jedisSet = createABCSet();

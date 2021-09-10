@@ -44,6 +44,16 @@ public class JedisSet implements Set<String> {
     }
 
     /**
+     * Checks if set exist in Redis namespace
+     * @throws IllegalStateException if there is not a reference in redis namespace
+     */
+    public void checkExists() {
+        if (!exists()) {
+            throw new IllegalStateException("Current set  " + name + " not found in redis server");
+        }
+    }
+
+    /**
      * Returns a set in java memory with the data of the set on redis
      * It copies the redis data in java process
      * (current implementation is an Hashset, this may change)

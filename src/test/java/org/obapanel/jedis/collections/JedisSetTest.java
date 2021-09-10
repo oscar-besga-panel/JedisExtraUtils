@@ -36,6 +36,20 @@ public class JedisSetTest {
         return jedisSet;
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void basicTestWithErrorExists() {
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        jedisSet.checkExists();
+    }
+
+
+    @Test
+    public void basicTestExists() {
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        jedisSet.add("a");
+        assertTrue(jedisSet.exists());
+    }
+
     @Test
     public void basicTest() {
         JedisSet jedisSet = createABCSet();
