@@ -58,6 +58,13 @@ public class FunctionalJedisMapTest {
         return jedisMap;
     }
 
+    @Test
+    public void basicForEachMap(){
+        StringBuilder sb = new StringBuilder();
+        JedisMap jedisMap = createABCMap();
+        jedisMap.forEach( (k, v) -> sb.append(k).append(v));
+        assertEquals("a1b2c3", sb.toString());
+    }
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
