@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.interruptinglocks.IJedisLock;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.obapanel.jedis.utils.JedisPoolAdapter;
@@ -25,11 +26,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLocks.*;
 
 public class FunctionalWritingFileScTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalWritingFileScTest.class);
+
+    private JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private final List<Jedis> jedisList = new ArrayList<>();
     private final List<JedisPool> jedisPoolList = new ArrayList<>();
@@ -46,14 +49,14 @@ public class FunctionalWritingFileScTest {
 
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         jedisPoolList.forEach( this::doCloseJedisPool);
         jedisList.forEach( this::doCloseJedis);
     }
@@ -72,7 +75,7 @@ public class FunctionalWritingFileScTest {
 
 
     JedisPool createJedisPoolAdapter() {
-        Jedis jedis = createJedisClient();
+        Jedis jedis = jtfTest.createJedisClient();
         jedisList.add(jedis);
         JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
         jedisPoolList.add(jedisPool);
@@ -82,7 +85,7 @@ public class FunctionalWritingFileScTest {
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
-        for (int i = 0; i < FUNCTIONAL_TEST_CYCLES; i ++) {
+        for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
             line = 0;
             File tempFile = folder.newFile(getClass().getName() + "." + System.currentTimeMillis() + ".txt");
             log.info("Temp file is " + tempFile.getAbsolutePath());

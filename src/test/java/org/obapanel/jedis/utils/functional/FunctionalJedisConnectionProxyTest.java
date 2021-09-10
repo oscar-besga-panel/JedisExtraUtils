@@ -3,6 +3,7 @@ package org.obapanel.jedis.utils.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,14 +15,12 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.utils.functional.JedisTestFactory.createJedisClient;
-import static org.obapanel.jedis.utils.functional.JedisTestFactory.createJedisPool;
-import static org.obapanel.jedis.utils.functional.JedisTestFactory.functionalTestEnabled;
 
 public class FunctionalJedisConnectionProxyTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisConnectionProxyTest.class);
 
+    private JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private Jedis jedis;
@@ -29,16 +28,16 @@ public class FunctionalJedisConnectionProxyTest {
 
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
-        jedisPool = createJedisPool();
-        jedis = createJedisClient();
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedisPool = jtfTest.createJedisPool();
+        jedis = jtfTest.createJedisClient();
         varName = "scan:" + this.getClass().getName() + ":" + System.currentTimeMillis() + "_";
     }
 
     @After
     public void after() throws IOException {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.del(varName + "a");

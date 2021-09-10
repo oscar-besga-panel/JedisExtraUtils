@@ -3,6 +3,7 @@ package org.obapanel.jedis.interruptinglocks.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.obapanel.jedis.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
@@ -15,12 +16,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.*;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLocks.*;
 
 
 public class FunctionalJedisLocksScOnCriticalZoneTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalJedisLocksScOnCriticalZoneTest.class);
+
+    private JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
@@ -36,14 +39,14 @@ public class FunctionalJedisLocksScOnCriticalZoneTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         lockList.stream().
                 filter(Objects::nonNull).
                 forEach(il -> {
@@ -52,12 +55,16 @@ public class FunctionalJedisLocksScOnCriticalZoneTest {
                     }
                     il.unlock();
         });
-        jedisPoolList.forEach(JedisPool::close);
-        jedisList.forEach(Jedis::close);
+        jedisPoolList.forEach( jedisPool -> {
+            if (jedisPool!= null) jedisPool.close();
+        });
+        jedisList.forEach(jedis -> {
+            if (jedis != null) jedis.close();
+        });
     }
 
     JedisPool createJedisPoolAdapter() {
-        Jedis jedis = createJedisClient();
+        Jedis jedis = jtfTest.createJedisClient();
         jedisList.add(jedis);
         JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
         jedisPoolList.add(jedisPool);
@@ -67,7 +74,7 @@ public class FunctionalJedisLocksScOnCriticalZoneTest {
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
-        for(int i = 0; i < FUNCTIONAL_TEST_CYCLES; i++) {
+        for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
             intoCriticalZone.set(false);
             errorInCriticalZone.set(false);
             otherError.set(false);

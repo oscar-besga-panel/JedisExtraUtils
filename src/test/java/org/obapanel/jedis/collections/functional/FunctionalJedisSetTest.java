@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.collections.JedisSet;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -15,22 +16,23 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.collections.functional.JedisTestFactory.createJedisPool;
-import static org.obapanel.jedis.collections.functional.JedisTestFactory.functionalTestEnabled;
+
 
 public class FunctionalJedisSetTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListTest.class);
+
+    private JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String setName;
     private JedisPool jedisPool;
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
         setName = "set:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = createJedisPool();
+        jedisPool = jtfTest.createJedisPool();
     }
 
     @After

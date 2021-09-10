@@ -3,6 +3,7 @@ package org.obapanel.jedis.interruptinglocks.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.obapanel.jedis.interruptinglocks.JedisLockUtils;
@@ -13,9 +14,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
 
 public class FunctionalJedisLockUnderlockTask {
+
+    private JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String keyName;
@@ -23,16 +25,16 @@ public class FunctionalJedisLockUnderlockTask {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
-        jedisPool = JedisTestFactory.createJedisPool();
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedisPool = jtfTest.createJedisPool();
         keyName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
 
     @After
     public void tearDown() {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.del(keyName);

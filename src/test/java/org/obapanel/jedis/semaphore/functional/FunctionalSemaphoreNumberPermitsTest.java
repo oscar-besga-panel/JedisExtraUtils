@@ -3,6 +3,7 @@ package org.obapanel.jedis.semaphore.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.semaphore.JedisSemaphore;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -12,11 +13,11 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.semaphore.functional.JedisTestFactory.functionalTestEnabled;
 
 
 public class FunctionalSemaphoreNumberPermitsTest {
 
+    private JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String semaphoreName;
@@ -24,15 +25,15 @@ public class FunctionalSemaphoreNumberPermitsTest {
 
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
-        jedisPool = JedisTestFactory.createJedisPool();
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedisPool = jtfTest.createJedisPool();
         semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.del(semaphoreName);

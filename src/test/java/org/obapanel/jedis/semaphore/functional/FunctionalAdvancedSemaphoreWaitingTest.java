@@ -3,6 +3,7 @@ package org.obapanel.jedis.semaphore.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.semaphore.JedisAdvancedSemaphore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.semaphore.functional.JedisTestFactory.functionalTestEnabled;
 
 /**
  * Test to see that JedisAdvancedSemaphore works fine
@@ -25,6 +25,8 @@ public class FunctionalAdvancedSemaphoreWaitingTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalAdvancedSemaphoreWaitingTest.class);
 
+    private JedisTestFactory jtfTest = JedisTestFactory.get();
+
     private Jedis jedis1, jedis2;
     private JedisPool jedisPool;
     private String semaphoreName;
@@ -32,17 +34,17 @@ public class FunctionalAdvancedSemaphoreWaitingTest {
 
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
-        jedis1 = JedisTestFactory.createJedisClient();
-        jedis2 = JedisTestFactory.createJedisClient();
-        jedisPool = JedisTestFactory.createJedisPool();
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedis1 = jtfTest.createJedisClient();
+        jedis2 = jtfTest.createJedisClient();
+        jedisPool = jtfTest.createJedisPool();
         semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         if (jedis1 != null) {
             jedis1.close();
         }

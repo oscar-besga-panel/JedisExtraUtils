@@ -3,6 +3,7 @@ package org.obapanel.jedis.countdownlatch.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.countdownlatch.JedisCountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,14 +15,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.countdownlatch.functional.JedisTestFactory.createJedisClient;
-import static org.obapanel.jedis.countdownlatch.functional.JedisTestFactory.createJedisPool;
-import static org.obapanel.jedis.countdownlatch.functional.JedisTestFactory.functionalTestEnabled;
+
 
 
 public class FunctionalJedisCountDownLatchTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisCountDownLatchTest.class);
+
+    private JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String countDownLatch;
     private Jedis jedis;
@@ -29,16 +30,16 @@ public class FunctionalJedisCountDownLatchTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
         countDownLatch = "countDownLatch:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedis = createJedisClient();
-        jedisPool = createJedisPool();
+        jedis = jtfTest.createJedisClient();
+        jedisPool = jtfTest.createJedisPool();
     }
 
     @After
     public void after() {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         if (jedis != null) jedis.close();
         if (jedisPool != null) jedisPool.close();
     }

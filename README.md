@@ -25,9 +25,11 @@ The implementations are
 - JedisMap for java Map
 - JedisSet for java Set
 
+As java collections, you also can rely on iterator and streams to operate (be aware that under the hood there is a redis connection)
+
 All classes have tests, unit and functional ones.   
 You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
-There are more than 200 working test, so the code is pretty secure.
+There are more than 250 working test, so the code is pretty secure.
 
 
 See the [wiki](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki) for more documentation
@@ -41,8 +43,11 @@ Made with
 - Intellij
 - Mackdown editor https://pandao.github.io/editor.md/en.html 
 - Draw io https://app.diagrams.net/
-- Help from Stackoveflow
-- Help for forums https://groups.google.com/g/jedis_redis
+- Help from Stackoveflow, forums like https://groups.google.com/g/jedis_redis
+
+See also
+- Awesome-redis https://github.com/JamzyWang/awesome-redis
+- And redis/jedis tutorial made by me https://github.com/oscar-besga-panel/YaitRedisAndJedis
 
 
 

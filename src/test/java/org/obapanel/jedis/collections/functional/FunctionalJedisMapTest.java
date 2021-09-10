@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.collections.JedisMap;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -20,23 +21,23 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.collections.functional.JedisTestFactory.createJedisPool;
-import static org.obapanel.jedis.collections.functional.JedisTestFactory.functionalTestEnabled;
 
 public class FunctionalJedisMapTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisMapTest.class);
+
+    private JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String mapName, mapName2;
     private JedisPool jedisPool;
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
         mapName = "map:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mapName2 = "map2:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = createJedisPool();
+        jedisPool = jtfTest.createJedisPool();
     }
 
     @After
