@@ -6,8 +6,6 @@ import org.junit.Test;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 
-import java.awt.event.KeyEvent;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -100,6 +98,24 @@ public class MockOfJedisForSetTest {
         assertTrue(scanResult.getResult().contains("a"));
         assertTrue(scanResult.getResult().contains("b"));
         assertTrue(scanResult.getResult().contains("c"));
+    }
+
+    @Test
+    public void testMockSRem() {
+        mockOfJedis.mockSadd("set5", new String[]{"a", "b", "c", "d", "e", "f", "g"});
+        assertEquals( Long.valueOf(7L), mockOfJedis.mockScard("set5"));
+        Long result1 = mockOfJedis.mockSrem("set5", "a");
+        assertEquals(Long.valueOf(1L), result1);
+        assertEquals( Long.valueOf(6L), mockOfJedis.mockScard("set5"));
+        Long result2 = mockOfJedis.mockSrem("set5", new String[]{"b", "c"});
+        assertEquals(Long.valueOf(2L), result2);
+        assertEquals( Long.valueOf(4L), mockOfJedis.mockScard("set5"));
+        Long result3 = mockOfJedis.mockSrem("set5", new String[]{"d", "a", "b"});
+        assertEquals(Long.valueOf(1L), result3);
+        assertEquals( Long.valueOf(3L), mockOfJedis.mockScard("set5"));
+        Long result4 = mockOfJedis.mockSrem("set5", new String[]{"c", "a", "b"});
+        assertEquals(Long.valueOf(0L), result4);
+        assertEquals( Long.valueOf(3L), mockOfJedis.mockScard("set5"));
     }
 
 }

@@ -4,10 +4,14 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.Transaction;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 public class JedisSet implements Set<String> {
@@ -45,11 +49,8 @@ public class JedisSet implements Set<String> {
      * (current implementation is an Hashset, this may change)
      * @return map of data
      */
-    //TODO test
     public Set<String> asSet(){
-        Set<String> data = new HashSet<>();
-        data.addAll(doSscan());
-        return data;
+        return new HashSet<>(doSscan());
     }
 
     @Override
@@ -73,7 +74,7 @@ public class JedisSet implements Set<String> {
 
     @Override
     public Iterator<String> iterator() {
-        return null;
+        return new JedisSetIterator();
     }
 
     @Override
@@ -96,7 +97,10 @@ public class JedisSet implements Set<String> {
 
     @Override
     public boolean remove(Object o) {
-        return false;
+        try (Jedis jedis = jedisPool.getResource()) {
+            Long result = jedis.srem(name, (String) o);
+            return result != 0L;
+        }
     }
 
     @Override
@@ -113,21 +117,41 @@ public class JedisSet implements Set<String> {
 
     @Override
     public boolean addAll(Collection<? extends String> values) {
-        String[] arrayValues = values.toArray(new String[0]);
-        try (Jedis jedis = jedisPool.getResource()) {
-            Long result = jedis.sadd(name, arrayValues);
-            return result != 0L;
+        if (values == null) {
+            throw new IllegalArgumentException("values is null");
+        } else if (values.isEmpty()) {
+            return false;
+        } else {
+            String[] arrayValues = values.toArray(new String[0]);
+            try (Jedis jedis = jedisPool.getResource()) {
+                Long result = jedis.sadd(name, arrayValues);
+                return result != 0L;
+            }
         }
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        return false;
+        try (Jedis jedis = jedisPool.getResource()) {
+            Set<String> retained = new HashSet<>(doSscan());
+            boolean result = retained.retainAll(c);
+            if (result) {
+                Transaction t = jedis.multi();
+                t.del(name);
+                retained.forEach( s -> t.sadd(name, s));
+                t.exec();
+            }
+            return result;
+        }
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        return false;
+        try (Jedis jedis = jedisPool.getResource()) {
+            String[] a = c.toArray(new String[0]);
+            Long result = jedis.srem(name, a);
+            return result != 0L;
+        }
     }
 
     @Override
@@ -151,21 +175,179 @@ public class JedisSet implements Set<String> {
         }
     }
 
+    private static final ScanParams SCANPARAMS_ONE_COUNT = new ScanParams().count(1);
+
+
     private class JedisSetIterator implements Iterator<String> {
+
+        private final Queue<String> nextValues = new LinkedList<>();
+        private ScanResult<String> currentResult;
+        private String next;
 
         @Override
         public boolean hasNext() {
-            return false;
+            if (nextValues.isEmpty()) {
+                nextValues.addAll(moreValues());
+            }
+            return !nextValues.isEmpty();
+        }
+
+        List<String> moreValues() {
+            String currentCursor;
+            if (currentResult == null) {
+                currentCursor = ScanParams.SCAN_POINTER_START;
+            } else {
+                currentCursor = currentResult.getCursor();
+            }
+            System.out.println("Peticion con currentCursor " + currentCursor);
+            try (Jedis jedis = jedisPool.getResource()) {
+                currentResult = jedis.sscan(name, currentCursor, SCANPARAMS_ONE_COUNT);
+            }
+            if (currentResult.getResult().isEmpty()) {
+                System.out.println("Datos de lista EMPTY con cursor " + currentResult.getCursor());
+            } else {
+                System.out.println("Datos de lista " + currentResult.getResult() + " con cursor " + currentResult.getCursor());
+            }
+            return currentResult.getResult();
         }
 
         @Override
         public String next() {
-            return null;
+            next =  nextValues.poll();
+            System.out.println("Datos next " + next);
+            return next;
+        }
+
+        public void remove() {
+            if (next != null) {
+                try (Jedis jedis = jedisPool.getResource()) {
+                    jedis.srem(name, next);
+                }
+            } else {
+                throw new IllegalStateException("Next not called or other error");
+            }
+        }
+    }
+
+}
+/*
+
+
+    private class JedisSetIterator2 implements Iterator<String> {
+
+        private ScanResult<String> currentResult;
+        private String nextValue;
+
+        @Override
+        public boolean hasNext() {
+            boolean hasNextValue = currentResult == null || !ScanParams.SCAN_POINTER_START.equals(currentResult.getCursor());
+            if (hasNextValue) {
+                String currentCursor;
+                if (currentResult == null) {
+                    currentCursor = ScanParams.SCAN_POINTER_START;
+                } else {
+                    currentCursor = currentResult.getCursor();
+                }
+                try (Jedis jedis = jedisPool.getResource()) {
+                    currentResult = jedis.sscan(name, currentCursor, SCANPARAMS_ONE_COUNT);
+                }
+                List<String> list = currentResult.getResult();
+                //if (list.isEmpty() || list.size() > 1) {
+                if (list.isEmpty()) {
+                    System.out.println("Problemones");
+                } else {
+                    nextValue = list.get(0);
+                    System.out.println("Datos " + nextValue + " de lista " + list);
+                }
+            }
+            return hasNextValue;
+        }
+
+        @Override
+        public String next() {
+            return nextValue;
+        }
+
+    }
+
+    private class JedisSetIterator1 implements Iterator<String> {
+
+        private ScanResult<String> currentResult;
+        private boolean hasNextValue = true;
+        private Jedis currentJedis;
+
+        @Override
+        public boolean hasNext() {
+            return hasNextValue;
+        }
+
+        @Override
+        public String next() {
+            String nextValue = null;
+            if (hasNextValue) {
+                String currentCursor;
+                if (currentResult == null) {
+                    currentCursor = ScanParams.SCAN_POINTER_START;
+                } else {
+                    currentCursor = currentResult.getCursor();
+                }
+
+                if (currentJedis == null) {
+                    currentJedis = jedisPool.getResource();
+                }
+                currentResult = currentJedis.sscan(name, currentCursor, new ScanParams().count(1));
+//                try (Jedis jedis = jedisPool.getResource()) {
+//                    currentResult = jedis.sscan(name, currentCursor, SCANPARAMS_ONE_COUNT);
+//                }
+
+                hasNextValue = !ScanParams.SCAN_POINTER_START.equals(currentResult.getCursor());
+                System.out.println("hasNextValue " + hasNextValue);
+                List<String> list = currentResult.getResult();
+                //if (list.isEmpty() || list.size() > 1) {
+                if (list.isEmpty()) {
+                    System.out.println("Problemones");
+                } else {
+                    nextValue = list.get(0);
+                    System.out.println("Datos " + nextValue + " de lista " + list);
+                }
+
+
+                if (!hasNextValue && currentJedis!= null) {
+                    currentJedis.close();
+                }
+
+
+            }
+            return nextValue;
+        }
+    }
+
+     // this iteraror takes a copy on memory of the remote jedis set
+     // I dont like it, I let this here as a draft version
+
+    private class BaseJedisSetIterator implements Iterator<String> {
+
+        Iterator<String> backgroundIterator;
+
+        BaseJedisSetIterator() {
+            backgroundIterator = doSscan().iterator();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return backgroundIterator.hasNext();
+        }
+
+        @Override
+        public String next() {
+            return backgroundIterator.next();
         }
 
         @Override
         public void remove() {
-
+            backgroundIterator.remove();
         }
     }
-}
+
+
+*/

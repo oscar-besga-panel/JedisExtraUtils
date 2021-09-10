@@ -89,5 +89,50 @@ public class JedisSetTest {
         assertFalse(jedisSet.containsAll(Arrays.asList("a","e","i","o","u")));
     }
 
+    @Test
+    public void testDataRemove() {
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        jedisSet.addAll(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
+        assertEquals(Integer.valueOf(7), Integer.valueOf(jedisSet.size()));
+        assertTrue(jedisSet.remove("b"));
+        assertFalse(jedisSet.contains("b"));
+        assertEquals(Integer.valueOf(6), Integer.valueOf(jedisSet.size()));
+        assertTrue(jedisSet.remove("f"));
+        assertFalse(jedisSet.contains("f"));
+        assertEquals(Integer.valueOf(5), Integer.valueOf(jedisSet.size()));
+        assertFalse(jedisSet.remove("x"));
+        assertFalse(jedisSet.contains("x"));
+        assertEquals(Integer.valueOf(5), Integer.valueOf(jedisSet.size()));
+    }
 
+
+    @Test
+    public void testDataRemoveAll() {
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        jedisSet.addAll(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
+        assertEquals(Integer.valueOf(7), Integer.valueOf(jedisSet.size()));
+        assertTrue(jedisSet.removeAll(Arrays.asList("b","c")));
+        assertEquals(Integer.valueOf(5), Integer.valueOf(jedisSet.size()));
+        assertTrue(jedisSet.removeAll(Arrays.asList("b","d")));
+        assertEquals(Integer.valueOf(4), Integer.valueOf(jedisSet.size()));
+        assertFalse(jedisSet.removeAll(Arrays.asList("c","b")));
+        assertEquals(Integer.valueOf(4), Integer.valueOf(jedisSet.size()));
+        assertTrue(jedisSet.removeAll(Arrays.asList("e","f","g")));
+        assertEquals(Integer.valueOf(1), Integer.valueOf(jedisSet.size()));
+    }
+
+
+    @Test
+    public void testDataRetainAll() {
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        jedisSet.addAll(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
+        boolean result1 = jedisSet.retainAll(Arrays.asList("a", "b", "c", "x", "y"));
+        assertEquals(Integer.valueOf(3), Integer.valueOf(jedisSet.size()));
+        assertTrue(jedisSet.contains("a"));
+        assertTrue(jedisSet.contains("b"));
+        assertTrue(jedisSet.contains("c"));
+        assertTrue(result1);
+        boolean result2 = jedisSet.retainAll(Arrays.asList("a", "b", "c", "x", "y"));
+        assertFalse(result2);
+    }
 }
