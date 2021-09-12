@@ -8,11 +8,17 @@ import javax.cache.spi.CachingProvider;
 public class Prueba {
 
     public void x() {
-        CachingProvider provider = Caching.getCachingProvider();
+        RedisCachingProvider redisCachingProvider = new RedisCachingProvider();
+        CachingProvider provider = Caching.getCachingProvider(RedisCachingProvider.class.getName());
         CacheManager manager = provider.getCacheManager();
         Configuration<String, String> configuration = new RedisCacheConfiguration();
         RedisCache redisCache = (RedisCache) manager.createCache("redisCache",configuration);
 
 
     }
+
+    public static void main(String[] args) {
+        new Prueba().x();
+    }
+
 }

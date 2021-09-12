@@ -11,6 +11,10 @@ public class RedisCacheManager implements CacheManager {
 
     RedisCachingProvider redisCachingProvider;
 
+    RedisCacheManager(RedisCachingProvider redisCachingProvider) {
+        this.redisCachingProvider = redisCachingProvider;
+    }
+
     @Override
     public CachingProvider getCachingProvider() {
         return redisCachingProvider;

@@ -9,21 +9,32 @@ import java.util.Properties;
 
 public class RedisCachingProvider implements CachingProvider {
 
-    public static final String NAME_URL ="org.obapanel.jedis.cache";
+
+
+
     private static final URI BASE_URI;
 
     static {
         try {
-            BASE_URI = new URI("cache://" + NAME_URL);
+            BASE_URI = new URI(RedisCachingProvider.class.getName());
         } catch (URISyntaxException e) {
             throw new IllegalStateException("Bad URI for cache",e);
         }
     }
 
-    String defaultUriName = NAME_URL;
-    URI defaultUri = BASE_URI;
-    Properties defaultProperties;
-    RedisCacheManager defaultRedisCacheManager;
+
+
+    private URI defaultUri = BASE_URI;
+    private Properties defaultProperties;
+    private RedisCacheManager defaultRedisCacheManager;
+
+    public RedisCachingProvider() {
+        defaultRedisCacheManager = new RedisCacheManager(this);
+    }
+
+    public RedisCachingProvider(RedisCacheManager redisCacheManager) {
+        defaultRedisCacheManager = redisCacheManager;
+    }
 
     @Override
     public CacheManager getCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
@@ -57,7 +68,7 @@ public class RedisCachingProvider implements CachingProvider {
 
     @Override
     public void close() {
-        //NOPE
+        defaultRedisCacheManager.close();
     }
 
     @Override
