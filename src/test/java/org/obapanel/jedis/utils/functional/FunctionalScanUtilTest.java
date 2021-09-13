@@ -3,6 +3,7 @@ package org.obapanel.jedis.utils.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.utils.ScanUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,30 +16,28 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.utils.functional.JedisTestFactory.createJedisPool;
-import static org.obapanel.jedis.utils.functional.JedisTestFactory.functionalTestEnabled;
 
 
 public class FunctionalScanUtilTest {
 
-
-
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalScanUtilTest.class);
+
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String varName;
 
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
-        jedisPool = createJedisPool();
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedisPool = jtfTest.createJedisPool();
         varName = "scan:" + this.getClass().getName() + ":" + System.currentTimeMillis() + "_";
     }
 
     @After
     public void after() throws IOException {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.del(varName + "a");

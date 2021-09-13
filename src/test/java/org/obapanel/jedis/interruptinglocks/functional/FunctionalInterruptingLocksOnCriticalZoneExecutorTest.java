@@ -3,6 +3,7 @@ package org.obapanel.jedis.interruptinglocks.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,11 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.createJedisPool;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.testConnection;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLocks.checkLock;
 
 
 public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
@@ -30,6 +27,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksOnCriticalZoneExecutorTest.class);
 
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
@@ -43,17 +41,16 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
-        jedisPool = createJedisPool();
-        testConnection(jedisPool.getResource());
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedisPool = jtfTest.createJedisPool();
         executorService = Executors.newFixedThreadPool(4);
         lockName = "flock:" + this.getClass().getName() + ":lockT" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         if (executorService != null) executorService.shutdown();
         interruptingLockBaseList.stream().
                 filter(il ->  il != null ).
@@ -68,7 +65,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
-        for (int i = 0; i < FUNCTIONAL_TEST_CYCLES; i ++) {
+        for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
             errorInCriticalZone.set(false);
             otherError.set(false);
             intoCriticalZone.set(false);

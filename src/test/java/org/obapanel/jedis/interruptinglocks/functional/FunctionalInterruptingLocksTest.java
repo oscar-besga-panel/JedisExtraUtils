@@ -3,26 +3,24 @@ package org.obapanel.jedis.interruptinglocks.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.createJedisPool;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLocks.checkLock;
 
 
 public class FunctionalInterruptingLocksTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksTest.class);
 
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String lockName;
     private JedisPool jedisPool;
@@ -30,21 +28,21 @@ public class FunctionalInterruptingLocksTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
-        jedisPool = createJedisPool();
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedisPool = jtfTest.createJedisPool();
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) jedisPool.close();
     }
 
     @Test
     public void testIfInterruptedFor5SecondsLock() {
-        for(int i = 0; i < FUNCTIONAL_TEST_CYCLES; i++) {
+        for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
             log.info("_\n");
             log.info("i {}", i);
             boolean wasInterruptedFor3Seconds = wasInterrupted(3);

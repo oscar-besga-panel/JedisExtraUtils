@@ -3,6 +3,7 @@ package org.obapanel.jedis.semaphore.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.semaphore.JedisSemaphore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,13 +16,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.semaphore.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
-import static org.obapanel.jedis.semaphore.functional.JedisTestFactory.functionalTestEnabled;
 
 
 public class FunctionalSemaphoreOnCriticalZoneTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalSemaphoreOnCriticalZoneTest.class);
+
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
@@ -31,7 +32,7 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
@@ -42,7 +43,7 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
-        for(int i = 0; i < FUNCTIONAL_TEST_CYCLES; i++) {
+        for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
             intoCriticalZone.set(false);
             errorInCriticalZone.set(false);
             otherError.set(false);
@@ -67,7 +68,7 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPool jedisPool = JedisTestFactory.createJedisPool();
+            JedisPool jedisPool = jtfTest.createJedisPool();
             JedisSemaphore semaphore = new JedisSemaphore(jedisPool, semaphoreName, 1);
             semaphore.acquire();
             accessCriticalZone(sleepTime);

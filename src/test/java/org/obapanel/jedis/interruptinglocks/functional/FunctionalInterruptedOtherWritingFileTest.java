@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.interruptinglocks.IJedisLock;
 import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.slf4j.Logger;
@@ -23,13 +24,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.FUNCTIONAL_TEST_CYCLES;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.checkLock;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactory.functionalTestEnabled;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLocks.checkLock;
 
 public class FunctionalInterruptedOtherWritingFileTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptedOtherWritingFileTest.class);
+
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String lockName;
@@ -43,23 +44,23 @@ public class FunctionalInterruptedOtherWritingFileTest {
 
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(functionalTestEnabled());
-        if (!functionalTestEnabled()) return;
-        jedisPool = JedisTestFactory.createJedisPool();
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedisPool = jtfTest.createJedisPool();
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
 
     }
 
     @After
     public void after() {
-        if (!functionalTestEnabled()) return;
+        if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) jedisPool.close();
     }
 
 
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
-        for (int i = 0; i < FUNCTIONAL_TEST_CYCLES; i ++) {
+        for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
             line = 0;
             File tempFile = folder.newFile(getClass().getName() + "." + System.currentTimeMillis() + ".txt");
             log.info("Temp file is " + tempFile.getAbsolutePath());
