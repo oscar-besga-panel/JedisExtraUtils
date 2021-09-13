@@ -24,7 +24,7 @@ public class FunctionalJedisListIteratorTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String listName;
     private JedisPool jedisPool;

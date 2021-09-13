@@ -22,7 +22,7 @@ public class FunctionalInterruptingLocksBaseTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksBaseTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String lockName;
     private JedisPool jedisPool;

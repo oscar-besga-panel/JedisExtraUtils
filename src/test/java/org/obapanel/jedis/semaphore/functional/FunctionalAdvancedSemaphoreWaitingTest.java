@@ -25,7 +25,7 @@ public class FunctionalAdvancedSemaphoreWaitingTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalAdvancedSemaphoreWaitingTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private Jedis jedis1, jedis2;
     private JedisPool jedisPool;

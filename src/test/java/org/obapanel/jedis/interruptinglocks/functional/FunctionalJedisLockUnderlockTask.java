@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalJedisLockUnderlockTask {
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String keyName;

@@ -38,6 +38,8 @@ public class JedisTestFactory {
     private int port = 6379;
     private String pass = "";
 
+    private boolean testConnectionOk = true;
+
     public JedisTestFactory() {
         load();
     }
@@ -50,8 +52,15 @@ public class JedisTestFactory {
         if (properties!=null) {
             assignProperties(properties);
         }
-        testConnection();
-        testPoolConnection();
+        try {
+            if (functionalTestEnabled()) {
+                testConnection();
+                testPoolConnection();
+            }
+        } catch (Exception e) {
+            testConnectionOk = false;
+            LOGGER.error("ERROR testing jedis connnections ",e);
+        }
     }
 
     private Properties readFromFile() {
@@ -86,7 +95,7 @@ public class JedisTestFactory {
     }
 
     public boolean functionalTestEnabled(){
-        return functionalTestCycles > 0;
+        return testConnectionOk && functionalTestCycles > 0;
     }
 
     public int getFunctionalTestCycles() {
@@ -122,8 +131,9 @@ public class JedisTestFactory {
     }
 
     public void testConnection() {
-        Jedis jedis = createJedisClient();
-        testConnection(jedis);
+        try (Jedis jedis = createJedisClient()) {
+            testConnection(jedis);
+        }
     }
     public void testConnection(Jedis jedis){
         String val = "test:" + System.currentTimeMillis();
@@ -137,12 +147,12 @@ public class JedisTestFactory {
     }
 
     public void testPoolConnection() {
-        JedisPool jedisPool = createJedisPool();
-        testPoolConnection(jedisPool);
+        try (JedisPool jedisPool = createJedisPool()){
+            testPoolConnection(jedisPool);
+        }
     }
 
     public void testPoolConnection(JedisPool jedisPool){
-
         try (Jedis jedis = jedisPool.getResource() ) {
             String val = "test:" + System.currentTimeMillis();
             jedis.set(val, val, new SetParams().px(5000));

@@ -205,6 +205,8 @@ public class MockOfJedis {
     }
 
 
+    // To allow deeper testing
+    @SuppressWarnings("All")
     public static String getJedisLockValue(JedisLock jedisLock) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method privateMethod = JedisLock.class.getDeclaredMethod("getValue", null);
         privateMethod.setAccessible(true);

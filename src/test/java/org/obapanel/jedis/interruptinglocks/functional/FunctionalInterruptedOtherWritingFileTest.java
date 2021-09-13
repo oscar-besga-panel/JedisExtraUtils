@@ -30,7 +30,7 @@ public class FunctionalInterruptedOtherWritingFileTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptedOtherWritingFileTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String lockName;

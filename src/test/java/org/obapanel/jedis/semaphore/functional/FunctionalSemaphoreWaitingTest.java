@@ -22,7 +22,7 @@ public class FunctionalSemaphoreWaitingTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalSemaphoreWaitingTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String semaphoreName;

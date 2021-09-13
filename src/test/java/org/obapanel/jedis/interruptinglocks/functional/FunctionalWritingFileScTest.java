@@ -32,7 +32,7 @@ public class FunctionalWritingFileScTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalWritingFileScTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private final List<Jedis> jedisList = new ArrayList<>();
     private final List<JedisPool> jedisPoolList = new ArrayList<>();

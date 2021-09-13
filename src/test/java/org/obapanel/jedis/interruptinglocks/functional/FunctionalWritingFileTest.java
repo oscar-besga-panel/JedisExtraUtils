@@ -30,7 +30,7 @@ public class FunctionalWritingFileTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalWritingFileTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String lockName;

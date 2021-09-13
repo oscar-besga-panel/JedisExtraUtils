@@ -22,7 +22,7 @@ public class FunctionalJedisCountDownLatchTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisCountDownLatchTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String countDownLatch;
     private Jedis jedis;
