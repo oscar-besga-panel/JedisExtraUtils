@@ -26,7 +26,7 @@ public class FunctionalJedisMapTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisMapTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String mapName, mapName2;
     private JedisPool jedisPool;

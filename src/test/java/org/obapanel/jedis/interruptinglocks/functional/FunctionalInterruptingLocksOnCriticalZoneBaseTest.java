@@ -24,7 +24,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksOnCriticalZoneBaseTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);

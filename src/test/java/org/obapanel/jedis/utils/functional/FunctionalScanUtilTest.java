@@ -22,7 +22,7 @@ public class FunctionalScanUtilTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalScanUtilTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String varName;

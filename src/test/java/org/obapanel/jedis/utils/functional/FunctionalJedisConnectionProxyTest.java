@@ -20,7 +20,7 @@ public class FunctionalJedisConnectionProxyTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisConnectionProxyTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private Jedis jedis;

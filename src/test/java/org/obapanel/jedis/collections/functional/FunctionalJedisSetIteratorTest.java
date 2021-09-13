@@ -24,7 +24,7 @@ public class FunctionalJedisSetIteratorTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisSetIteratorTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String setName;
     private JedisPool jedisPool;

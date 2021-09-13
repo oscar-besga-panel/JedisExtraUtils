@@ -21,7 +21,7 @@ import static org.obapanel.jedis.interruptinglocks.MockOfJedis.getJedisLockValue
 
 public class FunctionalJedisLockTest {
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private JedisPool jedisPool;
     private String keyName;

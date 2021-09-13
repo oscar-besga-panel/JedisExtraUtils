@@ -21,7 +21,7 @@ public class FunctionalInterruptingLocksWithExecutorTest {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksWithExecutorTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String lockName;
     private JedisPool jedisPool;

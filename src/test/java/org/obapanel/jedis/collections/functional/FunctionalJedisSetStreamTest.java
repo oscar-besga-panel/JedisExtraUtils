@@ -21,7 +21,7 @@ public class FunctionalJedisSetStreamTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisSetStreamTest.class);
 
-    private JedisTestFactory jtfTest = JedisTestFactory.get();
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String setName;
     private JedisPool jedisPool;
