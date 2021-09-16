@@ -41,20 +41,25 @@ https://github.com/xetorthio/jedis
 
 Made with
 - Intellij
-- Mackdown editor https://pandao.github.io/editor.md/en.html 
-- Draw io https://app.diagrams.net/
-- Help from Stackoveflow, forums like https://groups.google.com/g/jedis_redis
+- Mackdown editor [Editor.md](https://pandao.github.io/editor.md/en.html) 
+- Diagrams with [Draw io](https://app.diagrams.net/)
+- Bages from [awesome-badges](https://github.com/badges/awesome-badges) and [badgen](https://badgen.net/) and [open-source-badges](https://github.com/ellerbrock/open-source-badges/) 
+- Help from Stackoveflow, forums like [Jedis redis forum](https://groups.google.com/g/jedis_redis)
 
 See also
-- Awesome-redis https://github.com/JamzyWang/awesome-redis
-- And redis/jedis tutorial made by me https://github.com/oscar-besga-panel/YaitRedisAndJedis
+- [Awesome-redis](https://github.com/JamzyWang/awesome-redis)
+- And redis/jedis tutorial made by me [YaitRedisAndJedis](https://github.com/oscar-besga-panel/YaitRedisAndJedis)
 
 
 
-## TODO
+## TODOs
 
 On branch ``develop/mapper`` I'm trying to make a POJO <-> RedisObject mapper to store objects in Redis directly.  
 It's barely working, so it is not production ready.
+
+On branch ``cache`` I want to implement a javax.cache (JSR107 API and SPI 1.0.0 API) class based on redis; with the most simple 
+and straigthforward implementation  
+
 
 
 Help, suggestions, critics and tests will be greatly appreciated.
