@@ -1,4 +1,4 @@
-package org.obapanel.jedis.cache;
+package org.obapanel.jedis.cache.javaxcache;
 
 import javax.cache.configuration.Configuration;
 

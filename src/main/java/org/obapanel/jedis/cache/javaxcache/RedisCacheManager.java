@@ -1,18 +1,27 @@
-package org.obapanel.jedis.cache;
+package org.obapanel.jedis.cache.javaxcache;
+
+import redis.clients.jedis.JedisPool;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 public class RedisCacheManager implements CacheManager {
 
     RedisCachingProvider redisCachingProvider;
+    Map<String, RedisCache> redisCacheMap = new HashMap<>();
 
     RedisCacheManager(RedisCachingProvider redisCachingProvider) {
         this.redisCachingProvider = redisCachingProvider;
+    }
+
+    public JedisPool getJedisPool() {
+        return redisCachingProvider.getJedisPool();
     }
 
     @Override
@@ -35,9 +44,13 @@ public class RedisCacheManager implements CacheManager {
         return redisCachingProvider.getDefaultProperties();
     }
 
+    @SuppressWarnings("ALL")
     @Override
     public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration) throws IllegalArgumentException {
-        return null;
+        // Yes, it can have class cast exceptions
+        return (Cache) redisCacheMap.computeIfAbsent(cacheName, name ->
+                new RedisCache(name, (RedisCacheConfiguration) configuration, this)
+        );
     }
 
     @Override

@@ -1,4 +1,6 @@
-package org.obapanel.jedis.cache;
+package org.obapanel.jedis.cache.javaxcache;
+
+import redis.clients.jedis.JedisPool;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
@@ -24,16 +26,17 @@ public class RedisCachingProvider implements CachingProvider {
 
 
 
+    private JedisPool jedisPool;
     private URI defaultUri = BASE_URI;
     private Properties defaultProperties;
     private RedisCacheManager defaultRedisCacheManager;
 
-    public RedisCachingProvider() {
+    public RedisCachingProvider(JedisPool jedisPool) {
         defaultRedisCacheManager = new RedisCacheManager(this);
     }
 
-    public RedisCachingProvider(RedisCacheManager redisCacheManager) {
-        defaultRedisCacheManager = redisCacheManager;
+    public JedisPool getJedisPool() {
+        return jedisPool;
     }
 
     @Override

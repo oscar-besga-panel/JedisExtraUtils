@@ -1,1 +1,1 @@
-org.obapanel.jedis.cache.RedisCachingProvider
+org.obapanel.jedis.cache.javaxcache.RedisCachingProvider
