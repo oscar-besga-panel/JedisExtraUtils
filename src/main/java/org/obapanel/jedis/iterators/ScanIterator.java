@@ -60,18 +60,23 @@ public class ScanIterator implements Iterator<String> {
         }
 
         private List<String> scanForMoreValues() {
-            String currentCursor;
-            if (currentResult == null) {
-                currentCursor = ScanParams.SCAN_POINTER_START;
+            if (currentResult == null || !currentResult.isCompleteIteration()) {
+                String currentCursor;
+                if (currentResult == null) {
+                    currentCursor = ScanParams.SCAN_POINTER_START;
+                } else {
+                    currentCursor = currentResult.getCursor();
+                }
+                LOGGER.debug("Petition with currentCursor " + currentCursor);
+                try (Jedis jedis = jedisPool.getResource()) {
+                    currentResult = jedis.scan(currentCursor, scanParams);
+                }
+                LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
+                return currentResult.getResult();
             } else {
-                currentCursor = currentResult.getCursor();
+                LOGGER.debug("Recovered data list is EMPTY  with complete current iteration ");
+                return Collections.emptyList();
             }
-            LOGGER.debug("Petition with currentCursor " + currentCursor);
-            try (Jedis jedis = jedisPool.getResource()) {
-                currentResult = jedis.scan(currentCursor, scanParams);
-            }
-            LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
-            return currentResult.getResult();
         }
 
         public void remove() {

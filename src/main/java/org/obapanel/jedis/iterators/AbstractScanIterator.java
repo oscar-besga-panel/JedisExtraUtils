@@ -12,9 +12,8 @@ import java.util.function.Consumer;
 
 /**
  * Iterator scan for the keys of the redis database
- *
  */
-public abstract class AbstractScanIterator<K> implements Iterator<K> {
+abstract class AbstractScanIterator<K> implements Iterator<K> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractScanIterator.class);
@@ -27,7 +26,7 @@ public abstract class AbstractScanIterator<K> implements Iterator<K> {
     private ScanResult<K> currentResult;
     private K next;
 
-    public AbstractScanIterator(JedisPool jedisPool){
+    public AbstractScanIterator(JedisPool jedisPool) {
         this.jedisPool = jedisPool;
         this.scanParams = generateScanParams();
     }
@@ -35,23 +34,23 @@ public abstract class AbstractScanIterator<K> implements Iterator<K> {
     abstract ScanParams generateScanParams();
 
 
-
     @Override
     public K next() {
-        next =  nextValues.poll();
+        next = nextValues.poll();
         LOGGER.debug("Data next {} ", next);
         return next;
     }
 
-        @Override
-        public boolean hasNext() {
-            if (nextValues.isEmpty()) {
-                nextValues.addAll(scanForMoreValues());
-            }
-            return !nextValues.isEmpty();
+    @Override
+    public boolean hasNext() {
+        if (nextValues.isEmpty()) {
+            nextValues.addAll(scanForMoreValues());
         }
+        return !nextValues.isEmpty();
+    }
 
-        private List<K> scanForMoreValues() {
+    private List<K> scanForMoreValues() {
+        if (currentResult == null || !currentResult.isCompleteIteration()) {
             String currentCursor;
             if (currentResult == null) {
                 currentCursor = ScanParams.SCAN_POINTER_START;
@@ -60,29 +59,31 @@ public abstract class AbstractScanIterator<K> implements Iterator<K> {
             }
             LOGGER.debug("Petition with currentCursor " + currentCursor);
             try (Jedis jedis = jedisPool.getResource()) {
-                //currentResult = jedis.scan(currentCursor, scanParams);
                 currentResult = doScan(jedis, currentCursor, scanParams);
             }
             LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
             return currentResult.getResult();
+        } else {
+            LOGGER.debug("Recovered data list is EMPTY  with complete current iteration ");
+            return Collections.emptyList();
         }
+    }
 
-        abstract ScanResult<K> doScan(Jedis jedis, String currentCursor, ScanParams scanParams);
+    abstract ScanResult<K> doScan(Jedis jedis, String currentCursor, ScanParams scanParams);
 
-        public void remove() {
-            if (next != null) {
-                try (Jedis jedis = jedisPool.getResource()) {
-                    //jedis.del(next);
-                    doRemove(jedis, next);
-                    next = null;
-                }
-            } else {
-                throw new IllegalStateException("Next not called or other error");
+    public void remove() {
+        if (next != null) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                //jedis.del(next);
+                doRemove(jedis, next);
+                next = null;
             }
+        } else {
+            throw new IllegalStateException("Next not called or other error");
         }
+    }
 
     abstract ScanResult<K> doRemove(Jedis jedis, K next);
-
 
 
 }
