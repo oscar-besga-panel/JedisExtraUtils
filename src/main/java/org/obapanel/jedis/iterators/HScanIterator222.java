@@ -9,40 +9,36 @@ import redis.clients.jedis.ScanResult;
 
 import java.util.*;
 
-/**
- * Iterator scan for the keys of the redis database
- * It is abstract so it can be applied to SCAN, HSCAN, SSCAN
- */
-abstract class AbstractScanIterator<K> implements Iterator<K> {
+public class HScanIterator222 implements Iterator<Map.Entry<String, String>> {
 
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractScanIterator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HScanIterator222.class);
 
 
     private final JedisPool jedisPool;
+    private final String name;
 
-    private final Queue<K> nextValues = new LinkedList<>();
-    private ScanResult<K> currentResult;
-    private K next;
+    private final ScanParams scanParams;
+    private final Queue<Map.Entry<String, String>> nextValues = new LinkedList<>();
+    private ScanResult<Map.Entry<String, String>> currentResult;
+    private Map.Entry<String, String> next;
 
-    /**
-     * Base constrcutor
-     * @param jedisPool Jedis pool to be used
-     */
-    public AbstractScanIterator(JedisPool jedisPool) {
-        this.jedisPool = jedisPool;
+    public HScanIterator222(JedisPool jedisPool, String name) {
+        this(jedisPool, name, "", 1);
     }
 
-    /**
-     * Retrieve scan params to use in scan
-     * @return scan params to be used
-     */
-    abstract ScanParams getScanParams();
+    public HScanIterator222(JedisPool jedisPool, String name, String pattern) {
+        this(jedisPool, name, pattern, 1);
+    }
 
-
+    public HScanIterator222(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
+        this.jedisPool = jedisPool;
+        this.name = name;
+        scanParams = new ScanParams().match(pattern).count(resultsPerScan);
+    }
 
     @Override
-    public K next() {
+    public Map.Entry<String, String> next() {
         next = nextValues.poll();
         LOGGER.debug("Data next {} ", next);
         return next;
@@ -56,11 +52,7 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
         return !nextValues.isEmpty();
     }
 
-    /**
-     * Gets the next values on the hasnext operation if needed
-     * @return List of new values, can be empty
-     */
-    private List<K> scanForMoreValues() {
+    private List<Map.Entry<String, String>> scanForMoreValues() {
         if (currentResult == null || !currentResult.isCompleteIteration()) {
             String currentCursor;
             if (currentResult == null) {
@@ -70,10 +62,9 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
             }
             LOGGER.debug("Petition with currentCursor " + currentCursor);
             try (Jedis jedis = jedisPool.getResource()) {
-                currentResult = doScan(jedis, currentCursor, getScanParams());
+                currentResult = jedis.hscan(name, currentCursor, scanParams);
             }
             LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
-
             if (currentResult.getResult().isEmpty() && !currentResult.isCompleteIteration()) {
                 LOGGER.debug("Recovered data list is empty but not exahusted, so we try another time (recursive) to not give an error");
                 return scanForMoreValues(); // RECURSIVE!! IF RESULT EMPTY BUT MORE RESULTS CAN BE EXTRACTED
@@ -86,21 +77,15 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
         }
     }
 
-    abstract ScanResult<K> doScan(Jedis jedis, String currentCursor, ScanParams scanParams);
 
     public void remove() {
         if (next != null) {
             try (Jedis jedis = jedisPool.getResource()) {
-                //jedis.del(next);
-                doRemove(jedis, next);
+                jedis.hdel(name, next.getKey());
                 next = null;
             }
         } else {
             throw new IllegalStateException("Next not called or other error");
         }
     }
-
-    abstract void doRemove(Jedis jedis, K next);
-
-
 }

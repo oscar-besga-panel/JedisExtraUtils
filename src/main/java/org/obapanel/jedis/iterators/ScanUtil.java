@@ -1,14 +1,11 @@
-package org.obapanel.jedis.utils;
+package org.obapanel.jedis.iterators;
 
+import org.obapanel.jedis.utils.JedisPoolAdapter;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -36,9 +33,10 @@ public class ScanUtil {
      * @return List of matching keys
      */
     public static List<String> retrieveListOfKeys(JedisPool jedisPool, String pattern) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return retrieveListOfKeys(jedis, pattern);
-        }
+        List<String> result = new ArrayList<>();
+        ScanIterable iterable = new ScanIterable(jedisPool, pattern);
+        iterable.forEach(result::add);
+        return result;
     }
 
     /**
@@ -50,15 +48,7 @@ public class ScanUtil {
      * @return List of matching keys
      */
     public static List<String> retrieveListOfKeys(Jedis jedis, String pattern) {
-        Set<String> listOfKeys = new HashSet<>();
-        ScanParams scanParams = new ScanParams().match(pattern); // Scan on two-by-two responses
-        String cursor = ScanParams.SCAN_POINTER_START;
-        do {
-            ScanResult<String> partialResult =  jedis.scan(cursor, scanParams);
-            cursor = partialResult.getCursor();
-            listOfKeys.addAll(partialResult.getResult());
-        }  while(!cursor.equals(ScanParams.SCAN_POINTER_START));
-        return new ArrayList<>(listOfKeys);
+        return retrieveListOfKeys( JedisPoolAdapter.poolFromJedis(jedis), pattern);
     }
 
     /**
@@ -70,9 +60,8 @@ public class ScanUtil {
      * @param action executed for each key
      */
     public static void useListOfKeys(JedisPool jedisPool, String pattern, Consumer<String> action) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            useListOfKeys(jedis, pattern, action);
-        }
+        ScanIterable iterable = new ScanIterable(jedisPool, pattern);
+        iterable.forEach(action);
     }
 
     /**
@@ -84,14 +73,7 @@ public class ScanUtil {
      * @param action executed for each key
      */
     public static void useListOfKeys(Jedis jedis, String pattern, Consumer<String> action) {
-        ScanParams scanParams = new ScanParams().match(pattern); // Scan on two-by-two responses
-        String cursor = ScanParams.SCAN_POINTER_START;
-        do {
-            ScanResult<String> partialResult =  jedis.scan(cursor, scanParams);
-            cursor = partialResult.getCursor();
-            partialResult.getResult().
-                    forEach(action);
-        }  while(!cursor.equals(ScanParams.SCAN_POINTER_START));
+        useListOfKeys( JedisPoolAdapter.poolFromJedis(jedis), pattern, action);
     }
 
 

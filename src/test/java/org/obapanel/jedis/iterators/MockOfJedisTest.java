@@ -3,13 +3,12 @@ package org.obapanel.jedis.iterators;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.obapanel.jedis.semaphore.JedisSemaphore;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.obapanel.jedis.iterators.MockOfJedis.unitTestEnabled;
@@ -86,6 +85,81 @@ public class MockOfJedisTest {
         assertTrue( result.getResult().contains("a"));
         assertTrue( result.getResult().contains("b"));
         assertTrue( result.getResult().contains("c"));
+    }
+
+    @Test
+    public void testMapDataInsertion() {
+        mockOfJedis.getJedis().hset("map1", "a", "1");
+        mockOfJedis.getJedis().hset("map1", "b", "2");
+        mockOfJedis.getJedis().hset("map1", "c", "3");
+        mockOfJedis.getJedis().hset("map2", "a", "10");
+        assertEquals("1", mockOfJedis.getJedis().hget("map1", "a"));
+        assertEquals("2", mockOfJedis.getJedis().hget("map1", "b"));
+        assertEquals("3", mockOfJedis.getJedis().hget("map1", "c"));
+        assertEquals("10", mockOfJedis.getJedis().hget("map2", "a"));
+        assertNull(mockOfJedis.getJedis().hget("map2", "b"));
+        assertNull(mockOfJedis.getJedis().hget("map3", "a"));
+        mockOfJedis.getJedis().hdel("map1", "c");
+        mockOfJedis.getJedis().hdel("map2", "c");
+        assertNull(mockOfJedis.getJedis().hget("map1", "c"));
+        assertEquals("1", mockOfJedis.getJedis().hget("map1", "a"));
+        assertEquals("10", mockOfJedis.getJedis().hget("map2", "a"));
+        mockOfJedis.getJedis().del("map2");
+        assertNull(mockOfJedis.getJedis().hget("map2", "a"));
+    }
+
+    @Test
+    public void testMapHscan() {
+        mockOfJedis.getJedis().hset("map1", "a", "1");
+        mockOfJedis.getJedis().hset("map1", "b", "2");
+        mockOfJedis.getJedis().hset("map1", "c", "3");
+        mockOfJedis.getJedis().hset("map2", "d", "10");
+        ScanResult<Map.Entry<String, String>> scanResult = mockOfJedis.getJedis().hscan("map1", ScanParams.SCAN_POINTER_START, new ScanParams());
+        Map<String, String> mapResult = new HashMap<>();
+        scanResult.getResult().forEach( entry -> mapResult.put(entry.getKey(), entry.getValue()));
+        assertEquals( ScanParams.SCAN_POINTER_START, scanResult.getCursor());
+        assertEquals("1", mockOfJedis.getJedis().hget("map1", "a"));
+        assertEquals("2", mockOfJedis.getJedis().hget("map1", "b"));
+        assertEquals("3", mockOfJedis.getJedis().hget("map1", "c"));
+        assertTrue(mapResult != null && !mapResult.isEmpty());
+        assertEquals(3, mapResult.size());
+        assertEquals("1", mapResult.get("a"));
+        assertEquals("2", mapResult.get("b"));
+        assertEquals("3", mapResult.get("c"));
+        assertNull(mapResult.get("d"));
+    }
+
+    @Test
+    public void testSetDataInsertion() {
+        mockOfJedis.getJedis().sadd("set1", "a");
+        mockOfJedis.getJedis().sadd("set1", "b");
+        mockOfJedis.getJedis().sadd("set1", "c");
+        mockOfJedis.getJedis().sadd("set2", "d");
+        assertTrue(mockOfJedis.getJedis().sismember("set1","a"));
+        assertTrue(mockOfJedis.getJedis().sismember("set1","b"));
+        assertTrue(mockOfJedis.getJedis().sismember("set1","c"));
+        assertFalse(mockOfJedis.getJedis().sismember("set1","d"));
+        assertFalse(mockOfJedis.getJedis().sismember("set2","a"));
+        assertTrue(mockOfJedis.getJedis().sismember("set2","d"));
+        assertEquals(1L, mockOfJedis.getJedis().srem("set1", "c").longValue());
+        assertEquals(0L, mockOfJedis.getJedis().srem("set2", "c").longValue());
+        assertFalse(mockOfJedis.getJedis().sismember("set1","c"));
+        mockOfJedis.getJedis().del("set2");
+        assertFalse(mockOfJedis.getJedis().sismember("set2","d"));
+    }
+
+    @Test
+    public void testSetSscan() {
+        mockOfJedis.getJedis().sadd("set1", "a");
+        mockOfJedis.getJedis().sadd("set1", "b");
+        mockOfJedis.getJedis().sadd("set1", "c");
+        mockOfJedis.getJedis().sadd("set2", "d");
+        ScanResult<String> scanResult = mockOfJedis.getJedis().sscan("set1", ScanParams.SCAN_POINTER_START, new ScanParams());
+        assertEquals(ScanParams.SCAN_POINTER_START, scanResult.getCursor());
+        assertTrue( scanResult.getResult().contains("a"));
+        assertTrue( scanResult.getResult().contains("b"));
+        assertTrue( scanResult.getResult().contains("c"));
+        assertEquals( 3, scanResult.getResult().size());
     }
 
 

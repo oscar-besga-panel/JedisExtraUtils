@@ -2,33 +2,37 @@ package org.obapanel.jedis.iterators;
 
 import redis.clients.jedis.JedisPool;
 
+import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
-public class ScanIterable implements Iterable<String> {
+public class SScanIterable implements Iterable<String> {
+
 
     private final JedisPool jedisPool;
+    private final String name;
     private final String pattern;
     private final int resultsPerScan;
 
-    public ScanIterable(JedisPool jedisPool){
-        this(jedisPool,"", 1);
+    public SScanIterable(JedisPool jedisPool, String name){
+        this(jedisPool, name, "", 1);
     }
 
-    public ScanIterable(JedisPool jedisPool, String pattern){
-        this(jedisPool, pattern, 1);
+    public SScanIterable(JedisPool jedisPool, String name, String pattern){
+        this(jedisPool, name, pattern, 1);
     }
 
-    public ScanIterable(JedisPool jedisPool, String pattern, int resultsPerScan){
+    public SScanIterable(JedisPool jedisPool, String name, String pattern, int resultsPerScan){
         this.jedisPool = jedisPool;
+        this.name = name;
         this.pattern = pattern;
         this.resultsPerScan = resultsPerScan;
     }
 
 
     @Override
-    public ScanIterator iterator() {
-        return new ScanIterator(jedisPool, pattern, resultsPerScan);
+    public Iterator<String> iterator() {
+        return new SScanIterator(jedisPool, name, pattern, resultsPerScan);
     }
 
     @Override
@@ -40,5 +44,4 @@ public class ScanIterable implements Iterable<String> {
     public Spliterator<String> spliterator() {
         return Iterable.super.spliterator();
     }
-
 }

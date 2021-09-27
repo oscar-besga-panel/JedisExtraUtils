@@ -13,11 +13,16 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class JedisTestFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisTestFactory.class);
+
+    private static final String ABC = "abcdefhijklmnopqrstuvwxyz";
 
     public static final String TEST_PROPERTIES_FILE = "jedis.test.properties";
     public static final String TEST_PROPERTIES_PATH = "./src/test/resources/" + TEST_PROPERTIES_FILE;
@@ -163,6 +168,15 @@ public class JedisTestFactory {
             if (!jedis.ping().equalsIgnoreCase("PONG"))
                 throw new IllegalStateException("Jedis connection not pong");
         }
+    }
+
+    public List<String> randomSizedListOfChars() {
+        int size = ThreadLocalRandom.current().nextInt(5, ABC.length());
+        List<String> result = new ArrayList<>(size);
+        for(int i=0; i < size ; i++) {
+            result.add(String.valueOf(ABC.toCharArray()[i]));
+        }
+        return result;
     }
 
 

@@ -1,14 +1,11 @@
-package org.obapanel.jedis.iterators.functional;
+package org.obapanel.jedis.iterators;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.obapanel.jedis.common.test.JedisTestFactory;
-import org.obapanel.jedis.iterators.ScanIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -16,44 +13,46 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.obapanel.jedis.iterators.MockOfJedis.unitTestEnabled;
 
-public class FunctionalScanIterableTest {
+public class ScanIterableTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalScanIterableTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ScanIterableTest.class);
+
 
     private static AtomicInteger count = new AtomicInteger(0);
 
-    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String scanitName;
     private List<String> letters;
-    private JedisPool jedisPool;
+    private MockOfJedis mockOfJedis;
+
 
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
-        if (!jtfTest.functionalTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         scanitName = "scanIterable:" + this.getClass().getName() + ":" + System.currentTimeMillis() + ":" + count.incrementAndGet();
-        jedisPool = jtfTest.createJedisPool();
-        letters = jtfTest.randomSizedListOfChars();
+        mockOfJedis = new MockOfJedis();
+        letters = mockOfJedis.randomSizedListOfChars();
         LOG.debug("before count {} for name {} with letters {}", count.get(), scanitName, letters );
     }
 
     @After
     public void after() {
-        try(Jedis jedis = jedisPool.getResource()) {
+        try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
             letters.forEach( letter -> {
                 jedis.del(scanitName + ":" + letter);
             });
         }
-        if (jedisPool != null) {
-            jedisPool.close();
+        if (mockOfJedis != null) {
+            mockOfJedis.clearData();
         }
     }
 
     void createABCData() {
-        try(Jedis jedis = jedisPool.getResource()) {
+        try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
             letters.forEach( letter -> {
                 jedis.set(scanitName + ":" + letter, letter);
             });
@@ -63,7 +62,7 @@ public class FunctionalScanIterableTest {
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
         Iterator<String> iterator =  scanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -80,7 +79,7 @@ public class FunctionalScanIterableTest {
     public void iteratorWithResultsTest() {
         int num = 0;
         createABCData();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
         Iterator<String> iterator =  scanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -98,10 +97,10 @@ public class FunctionalScanIterableTest {
     @Test
     public void iteratorWithResultKeysTest() {
         createABCData();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
         Iterator<String> iterator =  scanIterable.iterator();
         while(iterator.hasNext()) {
-            try(Jedis jedis = jedisPool.getResource()) {
+            try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
                 assertTrue( jedis.exists(iterator.next()));
             }
         }
@@ -112,7 +111,7 @@ public class FunctionalScanIterableTest {
         AtomicInteger num = new AtomicInteger(0);
         StringBuilder sb = new StringBuilder();
         createABCData();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
         scanIterable.forEach( key -> {
             num.incrementAndGet();
             sb.append(key);
@@ -127,9 +126,9 @@ public class FunctionalScanIterableTest {
     @Test
     public void iteratorWithResultKeysForEachTest() {
         createABCData();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
         scanIterable.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
+            try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
                 assertTrue( jedis.exists(key));
             }
         });
@@ -140,14 +139,14 @@ public class FunctionalScanIterableTest {
     public void iteratorRemoveForEachTest() {
         createABCData();
         List<String> deleted = new ArrayList<>();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
-        Iterator<String> iterator = scanIterable.iterator();
+        ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
+        Iterator iterator = scanIterable.iterator();
         while (iterator.hasNext()) {
-            deleted.add( iterator.next());
+            deleted.add((String) iterator.next());
             iterator.remove();
         }
-        deleted.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
+        scanIterable.forEach( key -> {
+            try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
                 assertFalse( jedis.exists(key));
             }
         });
