@@ -18,7 +18,7 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
     private final ScanParams scanParams;
 
     public HScanIterator(JedisPool jedisPool, String name) {
-        this(jedisPool, name, "", 1);
+        this(jedisPool, name, null, 1);
     }
 
     public HScanIterator(JedisPool jedisPool, String name, String pattern) {
@@ -28,7 +28,7 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
     public HScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
         super(jedisPool);
         this.name = name;
-        this.scanParams = new ScanParams().match(pattern).count(resultsPerScan);
+        this.scanParams = generateNewScanParams(pattern, resultsPerScan);
     }
 
     @Override

@@ -5,10 +5,13 @@ import org.junit.Before;
 import org.junit.Test;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.Tuple;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 import static org.obapanel.jedis.iterators.MockOfJedis.unitTestEnabled;
@@ -160,6 +163,47 @@ public class MockOfJedisTest {
         assertTrue( scanResult.getResult().contains("b"));
         assertTrue( scanResult.getResult().contains("c"));
         assertEquals( 3, scanResult.getResult().size());
+    }
+
+    @Test
+    public void testZSetDataInsertion() {
+        mockOfJedis.getJedis().zadd("zset1", 1.0, "a");
+        mockOfJedis.getJedis().zadd("zset1", 2.0, "b");
+        mockOfJedis.getJedis().zadd("zset1", 3.0, "c");
+        mockOfJedis.getJedis().zadd("zset2", 4.0, "d");
+        assertEquals(Double.valueOf(1.0), mockOfJedis.getJedis().zscore("zset1", "a"));
+        assertEquals(Double.valueOf(2.0), mockOfJedis.getJedis().zscore("zset1", "b"));
+        assertEquals(Double.valueOf(3.0), mockOfJedis.getJedis().zscore("zset1", "c"));
+        assertNull( mockOfJedis.getJedis().zscore("zset1", "d"));
+        assertEquals(Double.valueOf(4.0), mockOfJedis.getJedis().zscore("zset2", "d"));
+        assertNull( mockOfJedis.getJedis().zscore("zset2", "a"));
+        mockOfJedis.getJedis().zrem("zset1","b");
+        assertNull( mockOfJedis.getJedis().zscore("zset1", "b"));
+        mockOfJedis.getJedis().del("zset2");
+        assertNull( mockOfJedis.getJedis().zscore("zset2", "d"));
+    }
+
+    @Test
+    public void testZSetZscan() {
+        mockOfJedis.getJedis().zadd("zset1", 1.0, "a");
+        mockOfJedis.getJedis().zadd("zset1", 2.0, "b");
+        mockOfJedis.getJedis().zadd("zset1", 3.0, "c");
+        mockOfJedis.getJedis().zadd("zset2", 4.0, "d");
+        ScanResult<Tuple> scanResult = mockOfJedis.getJedis().zscan("zset1", ScanParams.SCAN_POINTER_START, new ScanParams());
+        assertEquals(ScanParams.SCAN_POINTER_START, scanResult.getCursor());
+        AtomicInteger count = new AtomicInteger(0);
+        AtomicReference<Double> score = new AtomicReference<>(Double.valueOf(0.0));
+        StringBuilder result = new StringBuilder();
+        scanResult.getResult().forEach( tuple -> {
+            count.incrementAndGet();
+            score.accumulateAndGet(tuple.getScore(), (x,y) -> x + y);
+            result.append(tuple.getElement());
+        });
+        assertTrue( result.indexOf("a") >= 0);
+        assertTrue( result.indexOf("b") >= 0);
+        assertTrue( result.indexOf("c") >= 0);
+        assertEquals( 3, count.get());
+        assertEquals( Double.valueOf(6.0), score.get());
     }
 
 

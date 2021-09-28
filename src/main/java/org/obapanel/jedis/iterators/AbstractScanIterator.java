@@ -39,6 +39,23 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
      */
     abstract ScanParams getScanParams();
 
+    /**
+     * Generates a new ScanParams object
+     * @param pattern Patter to use, can be null (ignored in that case)
+     * @param resultsPerScan (ignored if 0 or less)
+     * @return Newver null ScanParams object
+     */
+    public static ScanParams generateNewScanParams(String pattern, int resultsPerScan ) {
+        if (pattern == null && resultsPerScan <= 0) {
+            return new ScanParams();
+        } else if (pattern == null) {
+            return new ScanParams().count(resultsPerScan);
+        } else if (resultsPerScan <= 0) {
+            return new ScanParams().match(pattern);
+        } else {
+            return new ScanParams().match(pattern).count(resultsPerScan);
+        }
+    }
 
 
     @Override

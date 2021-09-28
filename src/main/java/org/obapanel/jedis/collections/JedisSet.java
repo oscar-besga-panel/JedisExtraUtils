@@ -1,5 +1,6 @@
 package org.obapanel.jedis.collections;
 
+import org.obapanel.jedis.iterators.SScanIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -90,7 +91,7 @@ public class JedisSet implements Set<String> {
 
     @Override
     public Iterator<String> iterator() {
-        return new JedisSetIterator();
+        return new SScanIterator(jedisPool, name);
     }
 
     @Override
@@ -178,79 +179,12 @@ public class JedisSet implements Set<String> {
     }
 
     private Set<String> doSscan() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Set<String> keyValues = new HashSet<>();
-            ScanParams scanParams = new ScanParams(); // Scan on two-by-two responses
-            String cursor = ScanParams.SCAN_POINTER_START;
-            do {
-                ScanResult<String> partialResult =  jedis.sscan(name, cursor, scanParams);
-                cursor = partialResult.getCursor();
-                keyValues.addAll(partialResult.getResult());
-            }  while(!cursor.equals(ScanParams.SCAN_POINTER_START));
-            return keyValues;
+        Set<String> values = new HashSet<>();
+        SScanIterator sScanIterator = new SScanIterator(jedisPool, name);
+        while(sScanIterator.hasNext()){
+            values.add(sScanIterator.next());
         }
-    }
-
-    private static final ScanParams SCANPARAMS_ONE_COUNT = new ScanParams().count(1);
-
-
-    private class JedisSetIterator implements Iterator<String> {
-
-        private final Queue<String> nextValues = new LinkedList<>();
-        private ScanResult<String> currentResult;
-        private String next;
-        private final Set<String> alreadyRecoveredData = new HashSet<>();
-
-        @Override
-        public boolean hasNext() {
-            if (nextValues.isEmpty()) {
-                nextValues.addAll(moreValues());
-            }
-            return !nextValues.isEmpty();
-        }
-
-        List<String> moreValues() {
-            String currentCursor;
-            if (currentResult == null) {
-                currentCursor = ScanParams.SCAN_POINTER_START;
-            } else {
-                currentCursor = currentResult.getCursor();
-            }
-            LOGGER.debug("Petition with currentCursor " + currentCursor);
-            try (Jedis jedis = jedisPool.getResource()) {
-                currentResult = jedis.sscan(name, currentCursor, SCANPARAMS_ONE_COUNT);
-            }
-            LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
-            return filterResultToAvoidDuplicated(currentResult.getResult());
-        }
-
-        List<String> filterResultToAvoidDuplicated(List<String> currentData) {
-            List<String> filteredData = new ArrayList<>();
-            for(String s: currentData) {
-                if (s != null && !s.isEmpty() &&
-                        alreadyRecoveredData.add(s)) {
-                    filteredData.add(s);
-                }
-            }
-            return filteredData;
-        }
-
-        @Override
-        public String next() {
-            next =  nextValues.poll();
-            LOGGER.debug("Data next {} ", next);
-            return next;
-        }
-
-        public void remove() {
-            if (next != null) {
-                try (Jedis jedis = jedisPool.getResource()) {
-                    jedis.srem(name, next);
-                }
-            } else {
-                throw new IllegalStateException("Next not called or other error");
-            }
-        }
+        return values;
     }
 
 }

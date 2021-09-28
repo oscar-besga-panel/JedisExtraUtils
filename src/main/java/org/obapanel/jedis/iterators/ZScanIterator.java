@@ -14,7 +14,7 @@ public class ZScanIterator extends AbstractScanIterator<Tuple>  {
 
 
     public ZScanIterator(JedisPool jedisPool, String name) {
-        this(jedisPool, name, "", 1);
+        this(jedisPool, name, null, 1);
     }
 
     public ZScanIterator(JedisPool jedisPool, String name, String pattern) {
@@ -24,7 +24,7 @@ public class ZScanIterator extends AbstractScanIterator<Tuple>  {
     public ZScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
         super(jedisPool);
         this.name = name;
-        this.scanParams = new ScanParams().match(pattern).count(resultsPerScan);
+        this.scanParams = generateNewScanParams(pattern, resultsPerScan);
     }
 
 

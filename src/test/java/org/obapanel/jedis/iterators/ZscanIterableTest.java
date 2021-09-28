@@ -1,14 +1,11 @@
-package org.obapanel.jedis.iterators.functional;
+package org.obapanel.jedis.iterators;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.obapanel.jedis.common.test.JedisTestFactory;
-import org.obapanel.jedis.iterators.ZScanIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Tuple;
 
 import java.util.ArrayList;
@@ -17,20 +14,19 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.obapanel.jedis.iterators.MockOfJedis.unitTestEnabled;
 
-public class FunctionalZscanIterableTest {
+public class ZscanIterableTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalZscanIterableTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZscanIterableTest.class);
 
 
 
     private static AtomicInteger count = new AtomicInteger(0);
 
-    private final JedisTestFactory jtfTest = JedisTestFactory.get();
-
+    private MockOfJedis mockOfJedis;
     private String zscanitName;
     private List<String> letters;
-    private JedisPool jedisPool;
 
 
     static double valueFromChar(String s) {
@@ -43,26 +39,24 @@ public class FunctionalZscanIterableTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
-        if (!jtfTest.functionalTestEnabled()) return;
+        org.junit.Assume.assumeTrue(unitTestEnabled());
+        if (!unitTestEnabled()) return;
         zscanitName = "zscanIterable:" + this.getClass().getName() + ":" + System.currentTimeMillis() + ":" + count.incrementAndGet();
-        jedisPool = jtfTest.createJedisPool();
-        letters = jtfTest.randomSizedListOfChars();
+        mockOfJedis = new MockOfJedis();
+        letters = mockOfJedis.randomSizedListOfChars();
         LOG.debug("before count {} for name {} with letters {}", count.get(), zscanitName, letters );
     }
 
     @After
     public void after() {
-        try(Jedis jedis = jedisPool.getResource()) {
+        try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
             jedis.del(zscanitName);
         }
-        if (jedisPool != null) {
-            jedisPool.close();
-        }
+        mockOfJedis.clearData();
     }
 
     void createABCData() {
-        try(Jedis jedis = jedisPool.getResource()) {
+        try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
             letters.forEach( letter -> {
                 jedis.zadd(zscanitName, valueFromChar(letter), letter);
             });
@@ -72,7 +66,7 @@ public class FunctionalZscanIterableTest {
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName,  "*");
         Iterator<Tuple> iterator =  zscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -90,7 +84,7 @@ public class FunctionalZscanIterableTest {
     public void iteratorWithResultsTest() {
         int num = 0;
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName,  "*");
         Iterator<Tuple> iterator =  zscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -109,15 +103,15 @@ public class FunctionalZscanIterableTest {
     @Test
     public void iteratorWithResultKeysTest() {
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName,  "*");
         Iterator<Tuple> iterator =  zscanIterable.iterator();
         while(iterator.hasNext()) {
-            try(Jedis jedis = jedisPool.getResource()) {
+            try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
                 assertTrue( jedis.exists(zscanitName));
                 assertNotNull( jedis.zscore(zscanitName, iterator.next().getElement()));
             }
         }
-        try(Jedis jedis = jedisPool.getResource()) {
+        try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
             assertNull(jedis.zscore(zscanitName, "x0x"));
         }
     }
@@ -127,7 +121,7 @@ public class FunctionalZscanIterableTest {
         AtomicInteger num = new AtomicInteger(0);
         StringBuilder sb = new StringBuilder();
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName,  "*");
         zscanIterable.forEach( element -> {
             num.incrementAndGet();
             sb.append(element.getElement() + ":" + element.getScore());
@@ -142,14 +136,14 @@ public class FunctionalZscanIterableTest {
     @Test
     public void iteratorWithResultKeysForEachTest() {
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName,  "*");
         zscanIterable.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
+            try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
                 assertTrue( jedis.exists(zscanitName));
                 assertNotNull( jedis.zscore(zscanitName, key.getElement()));
             }
         });
-        try(Jedis jedis = jedisPool.getResource()) {
+        try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
             assertNull(jedis.zscore(zscanitName, "a0b"));
         }
     }
@@ -158,18 +152,18 @@ public class FunctionalZscanIterableTest {
     @Test
     public void iteratorRemoveForEach1Test() {
         createABCData();
-        try(Jedis jedis = jedisPool.getResource()) {
+        try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
             jedis.zadd(zscanitName, 1.1, "extra");
         }
         List<String> deleted = new ArrayList<>();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName,  "*");
         Iterator<Tuple> iterator = zscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next().getElement());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
+            try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
                 assertNull(jedis.zscore(zscanitName, key));
             }
         });
@@ -179,14 +173,14 @@ public class FunctionalZscanIterableTest {
     public void iteratorRemoveForEach2Test() {
         createABCData();
         List<String> deleted = new ArrayList<>();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName,  "*");
         Iterator<Tuple> iterator = zscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next().getElement());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
+            try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
                 assertNull(jedis.zscore(zscanitName, key));
             }
         });

@@ -3,17 +3,14 @@ package org.obapanel.jedis.iterators;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.obapanel.jedis.common.test.TTL.wrapTTL;
 
 /**
@@ -44,6 +41,7 @@ public class MockOfJedis {
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Map<String,String>> hdata = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Set<String>> sdata = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Set<Tuple>> zdata = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
     public MockOfJedis() {
@@ -145,6 +143,75 @@ public class MockOfJedis {
             ScanParams scanParams = new ScanParams();
             return mockSScan(name, pattern, scanParams);
         });
+        Mockito.when(jedis.zadd(anyString(), anyDouble(), anyString())).thenAnswer(ioc -> {
+            String name = ioc.getArgument(0);
+            double score = ioc.getArgument(1);
+            String value = ioc.getArgument(2);
+            return mockZAdd(name, score, value);
+        });
+        Mockito.when(jedis.zrem(anyString(), any())).thenAnswer(ioc -> {
+            String name = ioc.getArgument(0);
+            Object value = ioc.getArgument(1);
+            if (value instanceof  String) {
+                return mockZRem(name, new String[]{(String)value});
+            } else if (value instanceof  String[]) {
+                return mockZRem(name, (String[])value);
+            } else {
+                throw new IllegalArgumentException("Bad argument for mock zrem " +  ioc.getArgument(1));
+            }
+        });
+        Mockito.when(jedis.zscore(anyString(), anyString())).thenAnswer(ioc -> {
+            String name = ioc.getArgument(0);
+            String value = ioc.getArgument(1);
+            return mockZScore(name, value);
+        });
+        Mockito.when(jedis.zscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+            String name = ioc.getArgument(0);
+            String pattern = ioc.getArgument(1);
+            ScanParams scanParams = ioc.getArgument(2);
+            return mockZScan(name, pattern, scanParams);
+        });
+        Mockito.when(jedis.zscan(anyString(), anyString())).thenAnswer(ioc -> {
+            String name = ioc.getArgument(0);
+            String pattern = ioc.getArgument(1);
+            ScanParams scanParams = new ScanParams();
+            return mockZScan(name, pattern, scanParams);
+        });
+    }
+
+    private Long mockZAdd(String name, double score, String value) {
+        Set<Tuple> set = zdata.computeIfAbsent(name, k -> new HashSet<>());
+        return set.add(new Tuple(value, score)) ? 1L : 0L;
+    }
+
+    private Long mockZRem(String name, String[] values) {
+        Set<Tuple> set = zdata.computeIfAbsent(name, k -> new HashSet<>());
+        AtomicLong result = new AtomicLong(0);
+        for(String value: Arrays.asList(values)) {
+            set.stream().
+                    filter( tuple -> tuple.getElement().equals(value)).
+                    findFirst().
+                    ifPresent( toDel -> {
+                        if (set.remove(toDel)) {
+                            result.incrementAndGet();
+                        }
+                    });
+        }
+        return result.get();
+    }
+
+    private Double mockZScore(String name, String value) {
+        Set<Tuple> set = zdata.computeIfAbsent(name, k -> new HashSet<>());
+        Optional<Tuple> result = set.stream().
+                filter( t -> value.equals(t.getElement())).
+                findFirst();
+        return result.isPresent() ? result.get().getScore() : null;
+    }
+
+    private ScanResult<Tuple> mockZScan(String name, String pattern, ScanParams scanParams) {
+        Set<Tuple> set = zdata.computeIfAbsent(name, k -> new HashSet<>());
+        List<Tuple> results = new ArrayList<>(set);
+        return new ScanResult<>(ScanParams.SCAN_POINTER_START, results);
     }
 
     private Long mockSAdd(String name, String value) {
@@ -201,9 +268,7 @@ public class MockOfJedis {
         return new ScanResult<String>(ScanParams.SCAN_POINTER_START, results);
     }
 
-    private synchronized boolean mockExists(String key) {
-        return data.containsKey(key);
-    }
+
 
     private synchronized String mockGet(String key) {
         return data.get(key);
@@ -226,8 +291,6 @@ public class MockOfJedis {
         }
     }
 
-
-
     private synchronized Long mockDel(String key) {
         if (data.containsKey(key)) {
             data.remove(key);
@@ -238,9 +301,19 @@ public class MockOfJedis {
         } else if (sdata.containsKey(key)) {
             sdata.remove(key);
             return 1L;
+        } else if (zdata.containsKey(key)) {
+            zdata.remove(key);
+            return 1L;
         } else {
             return 0L;
         }
+    }
+
+    private synchronized boolean mockExists(String key) {
+        return data.containsKey(key) ||
+                hdata.containsKey(key) ||
+                sdata.containsKey(key) ||
+                zdata.containsKey(key);
     }
 
     public Jedis getJedis(){
@@ -255,8 +328,8 @@ public class MockOfJedis {
         data.clear();
         hdata.clear();
         sdata.clear();
+        zdata.clear();
     }
-
 
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);
@@ -287,4 +360,4 @@ public class MockOfJedis {
         return result;
     }
 
- }
+}
