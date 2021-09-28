@@ -33,6 +33,7 @@ public class FunctionalHscanIterableTest {
     private JedisPool jedisPool;
 
 
+
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
@@ -45,10 +46,10 @@ public class FunctionalHscanIterableTest {
 
     @After
     public void after() {
-        try(Jedis jedis = jedisPool.getResource()) {
-            jedis.del(hscanitName);
-        }
         if (jedisPool != null) {
+            try(Jedis jedis = jedisPool.getResource()) {
+                jedis.del(hscanitName);
+            }
             jedisPool.close();
         }
     }

@@ -42,12 +42,12 @@ public class FunctionalScanIterableTest {
 
     @After
     public void after() {
-        try(Jedis jedis = jedisPool.getResource()) {
-            letters.forEach( letter -> {
-                jedis.del(scanitName + ":" + letter);
-            });
-        }
         if (jedisPool != null) {
+            try(Jedis jedis = jedisPool.getResource()) {
+                letters.forEach( letter -> {
+                    jedis.del(scanitName + ":" + letter);
+                });
+            }
             jedisPool.close();
         }
     }

@@ -44,10 +44,10 @@ public class FunctionalSscanIterableTest {
 
     @After
     public void after() {
-        try(Jedis jedis = jedisPool.getResource()) {
-            jedis.del(sscanitName);
-        }
         if (jedisPool != null) {
+            try(Jedis jedis = jedisPool.getResource()) {
+                jedis.del(sscanitName);
+            }
             jedisPool.close();
         }
     }

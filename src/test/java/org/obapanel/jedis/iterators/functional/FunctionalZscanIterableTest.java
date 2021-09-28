@@ -53,10 +53,10 @@ public class FunctionalZscanIterableTest {
 
     @After
     public void after() {
-        try(Jedis jedis = jedisPool.getResource()) {
-            jedis.del(zscanitName);
-        }
         if (jedisPool != null) {
+            try(Jedis jedis = jedisPool.getResource()) {
+                jedis.del(zscanitName);
+            }
             jedisPool.close();
         }
     }
