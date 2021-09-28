@@ -121,12 +121,16 @@ public class JedisTestFactory {
         jedisPoolConfig.setMaxTotal(24); // original 128
         jedisPoolConfig.setMaxIdle(24); // original 128
         jedisPoolConfig.setMinIdle(4); // original 16
+        // High performance
+//        jedisPoolConfig.setMaxTotal(128);
+//        jedisPoolConfig.setMaxIdle(128);
+//        jedisPoolConfig.setMinIdle(16);
         jedisPoolConfig.setTestOnBorrow(true);
         jedisPoolConfig.setTestOnReturn(true);
         jedisPoolConfig.setTestWhileIdle(true);
-        jedisPoolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(60).toMillis());
-        jedisPoolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(30).toMillis());
-        jedisPoolConfig.setNumTestsPerEvictionRun(3);
+        jedisPoolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(30).toMillis());
+        jedisPoolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(10).toMillis());
+        jedisPoolConfig.setNumTestsPerEvictionRun(1);
         jedisPoolConfig.setBlockWhenExhausted(true);
         if (pass != null && !pass.trim().isEmpty()) {
             return new JedisPool(jedisPoolConfig, host, port, Protocol.DEFAULT_TIMEOUT, pass);
