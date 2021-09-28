@@ -5,7 +5,9 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -33,10 +35,10 @@ public class ScanUtil {
      * @return List of matching keys
      */
     public static List<String> retrieveListOfKeys(JedisPool jedisPool, String pattern) {
-        List<String> result = new ArrayList<>();
+        Set<String> result = new HashSet<>();
         ScanIterable iterable = new ScanIterable(jedisPool, pattern);
         iterable.forEach(result::add);
-        return result;
+        return new ArrayList<>(result);
     }
 
     /**
