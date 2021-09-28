@@ -27,9 +27,14 @@ The implementations are
 
 As java collections, you also can rely on iterator and streams to operate (be aware that under the hood there is a redis connection)
 
+
+Also you have iteators por SCAN, HSCAN, SCAN and ZSCAN operations. The iterable-iterator pair will 
+give you easy Java control and semantics over iterating an scan operation in redis.
+
+  
 All classes have tests, unit and functional ones.   
 You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
-There are more than 250 working test, so the code is pretty secure.
+There are more than 300 working tests, so the code is pretty secure.
 
 
 See the [wiki](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki) for more documentation
@@ -55,10 +60,10 @@ See also
 ## TODOs
 
 On branch ``develop/mapper`` I'm trying to make a POJO <-> RedisObject mapper to store objects in Redis directly.  
-It's barely working, so it is not production ready.
+It's barely working, so it is not production ready.  
 
 On branch ``cache`` I want to implement a javax.cache (JSR107 API and SPI 1.0.0 API) class based on redis; with the most simple 
-and straigthforward implementation  
+and straigthforward implementation. Also some simple caches for everyday use.  
 
 
 

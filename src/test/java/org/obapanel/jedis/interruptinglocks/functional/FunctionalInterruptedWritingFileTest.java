@@ -1,9 +1,6 @@
 package org.obapanel.jedis.interruptinglocks.functional;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.interruptinglocks.IJedisLock;
@@ -58,6 +55,7 @@ public class FunctionalInterruptedWritingFileTest {
     }
 
 
+    //@Ignore
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
@@ -77,8 +75,18 @@ public class FunctionalInterruptedWritingFileTest {
             Collections.shuffle(threadList);
             threadList.forEach(Thread::start);
             for(Thread tt: threadList) tt.join();
+            //pressAnyKeyToContinue();
             assertFalse(otherError.get());
             assertFalse(lockList.stream().anyMatch(il -> il != null && il.isLocked()));
+        }
+    }
+
+    private void pressAnyKeyToContinue() {
+        try {
+            System.out.println("Press Enter key to continue...");
+            System.in.read();
+        } catch(Exception e) {
+            // NOOPE
         }
     }
 
@@ -101,6 +109,8 @@ public class FunctionalInterruptedWritingFileTest {
                 jedisLock.lock();
                 checkLock(jedisLock);
                 writeTest();
+            } catch (InterruptedException ie) {
+                log.info("Closed channel by interrupt exception InterruptedException", ie);
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
                 log.info("Closed channel by interrupt exception ClosedByInterruptException", cbie);
                 Thread.interrupted();  // We clean the state
@@ -113,12 +123,15 @@ public class FunctionalInterruptedWritingFileTest {
             }
         }
 
-        private void writeTest() throws IOException {
+        private void writeTest() throws IOException, InterruptedException {
             log.info("Writing with thread " + Thread.currentThread().getName());
             while(true) {
                 line++;
                 String text = "#" + line + " " + Thread.currentThread().getName();
                 Files.write(tempFile.toPath(), Collections.singletonList(text), StandardOpenOption.APPEND);
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("writeTest interrupted");
+                }
             }
         }
     }
