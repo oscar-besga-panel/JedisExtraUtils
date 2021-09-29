@@ -5,10 +5,12 @@
 ![Top languaje](https://img.shields.io/github/languages/top/oscar-besga-panel/InterruptingJedisLocks)
 ![Issues](https://img.shields.io/github/issues/oscar-besga-panel/InterruptingJedisLocks)
 [![codecov](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks)
+[![Wiki](https://badgen.net/badge/icon/wiki?icon=wiki&label)](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki)
+[![Github Web page](https://badgen.net/badge/github/website?icon=github)](https://oscar-besga-panel.github.io/InterruptingJedisLocks)
 [![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
 
-## Basics
+## Introduction
 
 If you want to use Redis and java library Jedis to control resources and locks between threads and processes, take a look into this library.  
 It contains the next distributed synchronization classes:
@@ -36,10 +38,15 @@ All classes have tests, unit and functional ones.
 You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
 There are more than 300 working tests, so the code is pretty secure.
 
+  
+   
 
-See the [wiki](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki) for more documentation
+**See the [wiki](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki) for more documentation**
 
-## Extra
+
+
+
+## Made with
 
 Jedis is a Java library to use a Redis server with Java, at a low-level commands
 https://github.com/xetorthio/jedis
@@ -69,5 +76,4 @@ and straigthforward implementation. Also some simple caches for everyday use.
 
 Help, suggestions, critics and tests will be greatly appreciated.
 
- 
- 
+
