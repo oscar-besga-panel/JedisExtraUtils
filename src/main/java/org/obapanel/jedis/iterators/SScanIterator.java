@@ -7,6 +7,19 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 
+/**
+ * Iterator for sset entries
+ * Only one use for an instace of this class
+ *
+ * Jedis pool connection is required
+ * Name of the element on redis is required
+ * (if not exists, it acts like as called for an empty set)
+ *
+ * If no pattern is provided, all elements are retrieves interactively
+ * If no results per call to redis, it tries with 1
+ *
+ * Can return duplicated results, but is rare
+ */
 public class SScanIterator extends AbstractScanIterator<String>  {
 
 
@@ -15,15 +28,32 @@ public class SScanIterator extends AbstractScanIterator<String>  {
     private final String name;
     private final ScanParams scanParams;
 
-
+    /**
+     * Iterator for sset entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
+     */
     public SScanIterator(JedisPool jedisPool, String name) {
         this(jedisPool, name, null, 1);
     }
 
+    /**
+     * Iterator for sset entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
+     * @param pattern Pattern to be matched on the responses
+     */
     public SScanIterator(JedisPool jedisPool, String name, String pattern) {
         this(jedisPool, name, pattern, 1);
     }
 
+    /**
+     * Iterator for sset entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
+     * @param pattern Pattern to be matched on the responses
+     * @param resultsPerScan results per call to redis
+     */
     public SScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
         super(jedisPool);
         this.name = name;

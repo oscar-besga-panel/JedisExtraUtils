@@ -7,6 +7,18 @@ import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
+
+/**
+ * Iterable for zset entries (ordered set)
+ * Jedis pool connection is required
+ * Name of the element on redis is required
+ * (if not exists, it acts like as called for an empty set)
+ *
+ * If no pattern is provided, all elements are retrieves interactively
+ * If no results per call to redis, it tries with 1
+ *
+ * Can return duplicated results, but is rare
+ */
 public class ZScanIterable implements Iterable<Tuple> {
 
 
@@ -15,14 +27,32 @@ public class ZScanIterable implements Iterable<Tuple> {
     private final String pattern;
     private final int resultsPerScan;
 
+    /**
+     * Iterable for zset entries (ordered set)
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
+     */
     public ZScanIterable(JedisPool jedisPool, String name){
         this(jedisPool, name, "", 1);
     }
 
+    /**
+     * Iterable for zset entries (ordered set)
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
+     * @param pattern Pattern to be matched on the responses
+     */
     public ZScanIterable(JedisPool jedisPool, String name, String pattern){
         this(jedisPool, name, pattern, 1);
     }
 
+    /**
+     * Iterable for zset entries (ordered set)
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
+     * @param pattern Pattern to be matched on the responses
+     * @param resultsPerScan results per call to redis
+     */
     public ZScanIterable(JedisPool jedisPool, String name, String pattern, int resultsPerScan){
         this.jedisPool = jedisPool;
         this.name = name;

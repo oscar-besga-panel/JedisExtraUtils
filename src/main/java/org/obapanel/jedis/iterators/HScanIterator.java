@@ -9,6 +9,19 @@ import redis.clients.jedis.ScanResult;
 
 import java.util.Map;
 
+/**
+ * Iterator scan for the keys of a hmap
+ * Only one use for an instace of this class
+ *
+ * Jedis pool connection is required
+ * Name of the element on redis is required
+ * (if not exists, it acts like as called for an empty map)
+ *
+ * If no pattern is provided, all elements are retrieves interactively
+ * If no results per call to redis, it tries with 1
+ *
+ * Can return duplicated results, but is rare
+ */
 public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String>> {
 
 
@@ -17,14 +30,32 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
     private final String name;
     private final ScanParams scanParams;
 
+    /**
+     * Iterator for hmap entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the hmap
+     */
     public HScanIterator(JedisPool jedisPool, String name) {
         this(jedisPool, name, null, 1);
     }
 
+    /**
+     * Iterator for hmap entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the hmap
+     * @param pattern Pattern to be matched on the responses
+     */
     public HScanIterator(JedisPool jedisPool, String name, String pattern) {
         this(jedisPool, name, pattern, 1);
     }
 
+    /**
+     * Iterator for hmap entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the hmap
+     * @param pattern Pattern to be matched on the responses
+     * @param resultsPerScan results per call to redis
+     */
     public HScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
         super(jedisPool);
         this.name = name;

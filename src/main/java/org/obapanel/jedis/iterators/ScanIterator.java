@@ -9,6 +9,13 @@ import redis.clients.jedis.ScanResult;
 
 /**
  * Iterator scan for the keys of the redis database
+ * Only one use for an instace of this class
+ * Jedis pool connection is required
+ *
+ * If no pattern is provided, all elements are retrieves interactively
+ * If no results per call to redis, it tries with 1
+ *
+ * Can return duplicated results, but is rare
  */
 public final class ScanIterator extends AbstractScanIterator<String> {
 
@@ -16,15 +23,30 @@ public final class ScanIterator extends AbstractScanIterator<String> {
 
     private final ScanParams scanParams;
 
+    /**
+     * Creates a new only-one-use iterator
+     * @param jedisPool Connection pool
+     */
     public ScanIterator(JedisPool jedisPool) {
         this(jedisPool, "", 1);
     }
 
+    /**
+     * Creates a new only-one-use iterator
+     * @param jedisPool Connection pool
+     * @param pattern Patter to be used as filter
+     */
     public ScanIterator(JedisPool jedisPool, String pattern) {
         this(jedisPool, pattern, 1);
     }
 
 
+    /**
+     * Creates a new only-one-use iterator
+     * @param jedisPool Connection pool
+     * @param pattern Patter to be used as filter
+     * @param resultsPerScan Result that will return in each scan (hopefully)
+     */
     public ScanIterator(JedisPool jedisPool, String pattern, int resultsPerScan) {
         super(jedisPool);
         this.scanParams = new ScanParams().match(pattern).count(resultsPerScan);

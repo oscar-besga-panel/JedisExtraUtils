@@ -43,14 +43,27 @@ public class JedisPoolAdapter extends JedisPool {
 
     private Jedis jedis;
 
+    /**
+     * Creates a pool from a single connection
+     * @param jedis connection to redis
+     * @return pool of connection
+     */
     public static JedisPoolAdapter poolFromJedis(Jedis jedis) {
         return new JedisPoolAdapter(jedis);
     }
 
+    /**
+     * Creates a JedisPoolAdapter from a single connection
+     * @param jedis
+     */
     public JedisPoolAdapter(Jedis jedis) {
         this.jedis = jedis;
     }
 
+    /**
+     * Execute the consumer with the resource
+     * @param action Consumer of redis connection
+     */
     public void withResource(Consumer<Jedis> action) {
         checkJedis();
         try(Jedis jedis = getResource()) {
@@ -58,6 +71,12 @@ public class JedisPoolAdapter extends JedisPool {
         }
     }
 
+    /**
+     * Execute the consumer with the resource
+     * and gets the result
+     * @param action Function of redis connection
+     * @return result of function
+     */
     public <T> T withResourceFunction(Function<Jedis, T> action) {
         checkJedis();
         try(Jedis jedis = getResource()) {
@@ -148,11 +167,30 @@ public class JedisPoolAdapter extends JedisPool {
         //NOPE
     }
 
+    /**
+     * If jedis is not present, the pool is exhausted
+     */
     private void checkJedis() {
         if (jedis == null)
             throw new JedisExhaustedPoolException("Jedis pool adapter is closed");
     }
 
+    /**
+     * This will create a proxy object
+     * The intent is to have a proxy that will execute every method except close()
+     *
+     * Because close() can be called manually by the developer or automatically by the try-with-resources
+     *   and this close() will be expected to return the connection to the pool
+     *   not to close definitely the connection to redis
+     *   (and this pool will be effectively closed)
+     *   the proxy will capture the close method of the resource-returned jedis connection
+     *   and do nothing
+     *   and avoid errors.
+     *
+     *
+     * @param jedis jedis connection
+     * @return jedis proxied connection
+     */
     private static Jedis createDynamicProxyFromJedis(final Jedis jedis)  {
         try {
             ProxyFactory factory = new ProxyFactory();

@@ -41,14 +41,14 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
 
     /**
      * Generates a new ScanParams object
-     * @param pattern Patter to use, can be null (ignored in that case)
+     * @param pattern Patter to use, can be null or empty (ignored in that case)
      * @param resultsPerScan (ignored if 0 or less)
      * @return Newver null ScanParams object
      */
     public static ScanParams generateNewScanParams(String pattern, int resultsPerScan ) {
-        if (pattern == null && resultsPerScan <= 0) {
+        if ((pattern == null || pattern.isEmpty()) && resultsPerScan <= 0) {
             return new ScanParams();
-        } else if (pattern == null) {
+        } else if (pattern == null || pattern.isEmpty()) {
             return new ScanParams().count(resultsPerScan);
         } else if (resultsPerScan <= 0) {
             return new ScanParams().match(pattern);
@@ -103,6 +103,13 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
         }
     }
 
+    /**
+     * Implement this method to call jedis.scan / jedis.hscan / jedis.sscan / jedis.zscan
+     * @param jedis Jedis connection from jedisPool, it will be closed after the call
+     * @param currentCursor current cursor of call
+     * @param scanParams scan params object
+     * @return result of this call
+     */
     abstract ScanResult<K> doScan(Jedis jedis, String currentCursor, ScanParams scanParams);
 
     public void remove() {
@@ -117,6 +124,11 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
         }
     }
 
+    /**
+     * Implement this method to call jedis.del / jedis.hrem / jedis.srem / jedis.zrem
+     * @param jedis Jedis connection from jedisPool, it will be closed after the call
+     * @param next data to be deleted
+     */
     abstract void doRemove(Jedis jedis, K next);
 
 
