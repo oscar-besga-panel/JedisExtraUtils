@@ -6,9 +6,9 @@
 If you want to use Redis and java library Jedis to control resources and locks between threads and processes, take a look into this library.
 It contains the next distributed synchronization classes:
 
-- Locks  
-- Semaphores  
-- CountDownLatch  
+- :lock: Locks  
+- :traffic_light: Semaphores  
+- :construction: CountDownLatch  
 
 
 
@@ -24,9 +24,9 @@ It contains the next distributed synchronization classes:
 
 Also it contains collections that have a direct Redis storage, with no (or very little, as needed) local data. All changes and operations are made to the underlying redis collection type, but following strictly the interface contract. The implementations are
 
-- JedisList for java List
-- JedisMap for java Map
-- JedisSet for java Set
+- :repeat: JedisList for java List
+- :world_map: JedisMap for java Map
+- :repeat_one: JedisSet for java Set
 
 As java collections, you also can rely on iterator and streams to operate (be aware that under the hood there is a redis connection)
 
@@ -36,7 +36,7 @@ As java collections, you also can rely on iterator and streams to operate (be aw
   myJedisList.add("shared data");
 
 ```
-Also you have iteators por SCAN, HSCAN, SCAN and ZSCAN operations.  
+Also you have :arrow_right_hook: iteators por SCAN, HSCAN, SCAN and ZSCAN operations.  
 The iterable-iterator pair will give you easy Java control and semantics over iterating an scan operation in redis.
 
 
@@ -51,10 +51,10 @@ The iterable-iterator pair will give you easy Java control and semantics over it
 All this classes use a Jedis pool connection to make them thread-safe and more efficient.
 
 
-All in an open-source, clean-code, well-tested project avalible now !
+All in an open-source, clean-code, well-tested project available now !
 
 **Like it ?**  
-See the [code](https://github.com/oscar-besga-panel/InterruptingJedisLocks/) or the [wiki](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki) for more !
+See the :octocat: [code](https://github.com/oscar-besga-panel/InterruptingJedisLocks/) or the :scroll: [wiki](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki) for more !
 
 [![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://opensource.org/licenses/MIT)
 [![Build Status](https://app.travis-ci.com/oscar-besga-panel/InterruptingJedisLocks.svg?branch=master)](https://app.travis-ci.com/github/oscar-besga-panel/InterruptingJedisLocks)
