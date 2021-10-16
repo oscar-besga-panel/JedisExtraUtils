@@ -25,6 +25,7 @@ import java.util.function.Consumer;
  */
 public class ScanUtil {
 
+    public static final int DEFAULT_RESULTS_PER_SCAN_UTIL_ITERATORS = 10;
 
     /**
      * Scans for keys given a pattern
@@ -36,7 +37,7 @@ public class ScanUtil {
      */
     public static List<String> retrieveListOfKeys(JedisPool jedisPool, String pattern) {
         Set<String> result = new HashSet<>();
-        ScanIterable iterable = new ScanIterable(jedisPool, pattern);
+        ScanIterable iterable = new ScanIterable(jedisPool, pattern, DEFAULT_RESULTS_PER_SCAN_UTIL_ITERATORS);
         iterable.forEach(result::add);
         return new ArrayList<>(result);
     }
@@ -62,7 +63,7 @@ public class ScanUtil {
      * @param action executed for each key
      */
     public static void useListOfKeys(JedisPool jedisPool, String pattern, Consumer<String> action) {
-        ScanIterable iterable = new ScanIterable(jedisPool, pattern);
+        ScanIterable iterable = new ScanIterable(jedisPool, pattern, DEFAULT_RESULTS_PER_SCAN_UTIL_ITERATORS);
         iterable.forEach(action);
     }
 

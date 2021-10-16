@@ -34,7 +34,7 @@ public class SScanIterator extends AbstractScanIterator<String>  {
      * @param name Name of the set
      */
     public SScanIterator(JedisPool jedisPool, String name) {
-        this(jedisPool, name, null, 1);
+        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
@@ -44,7 +44,7 @@ public class SScanIterator extends AbstractScanIterator<String>  {
      * @param pattern Pattern to be matched on the responses
      */
     public SScanIterator(JedisPool jedisPool, String name, String pattern) {
-        this(jedisPool, name, pattern, 1);
+        this(jedisPool, name, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**

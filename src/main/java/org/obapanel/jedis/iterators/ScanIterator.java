@@ -28,7 +28,7 @@ public final class ScanIterator extends AbstractScanIterator<String> {
      * @param jedisPool Connection pool
      */
     public ScanIterator(JedisPool jedisPool) {
-        this(jedisPool, "", 1);
+        this(jedisPool, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
@@ -37,7 +37,7 @@ public final class ScanIterator extends AbstractScanIterator<String> {
      * @param pattern Patter to be used as filter
      */
     public ScanIterator(JedisPool jedisPool, String pattern) {
-        this(jedisPool, pattern, 1);
+        this(jedisPool, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
 

@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
+import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_PATTERN_ITERATORS;
+import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS;
+
 /**
  * Iterable for hmap entries
  * Jedis pool connection is required
@@ -30,7 +33,7 @@ public class HScanIterable implements Iterable<Map.Entry<String,String>> {
      * @param name Name of the hmap
      */
     public HScanIterable(JedisPool jedisPool, String name){
-        this(jedisPool, name, "", 1);
+        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
@@ -40,7 +43,7 @@ public class HScanIterable implements Iterable<Map.Entry<String,String>> {
      * @param pattern Pattern to be matched on the responses
      */
     public HScanIterable(JedisPool jedisPool, String name, String pattern){
-        this(jedisPool, name, pattern, 1);
+        this(jedisPool, name, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**

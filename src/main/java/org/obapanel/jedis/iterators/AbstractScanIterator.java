@@ -18,6 +18,10 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractScanIterator.class);
 
+    public static final int DEFAULT_RESULTS_PER_SCAN_ITERATORS = 1;
+
+    public static final String DEFAULT_PATTERN_ITERATORS = null;
+
 
     private final JedisPool jedisPool;
 
