@@ -24,6 +24,7 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
 
 
     private final JedisPool jedisPool;
+    private final ScanParams scanParams;
 
     private final Queue<K> nextValues = new LinkedList<>();
     private ScanResult<K> currentResult;
@@ -33,15 +34,19 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
      * Base constrcutor
      * @param jedisPool Jedis pool to be used
      */
-    public AbstractScanIterator(JedisPool jedisPool) {
+    AbstractScanIterator(JedisPool jedisPool, String pattern, int resultsPerScan) {
         this.jedisPool = jedisPool;
+        this.scanParams = generateNewScanParams(pattern, resultsPerScan);
     }
+
 
     /**
      * Retrieve scan params to use in scan
      * @return scan params to be used
      */
-    abstract ScanParams getScanParams();
+    public ScanParams getScanParams() {
+        return scanParams;
+    }
 
     /**
      * Generates a new ScanParams object

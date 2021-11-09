@@ -5,12 +5,13 @@ plugins {
 }
 
 group 'org.obapanel.jedis'
-version '2.6.0'
+version '2.6.2'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 

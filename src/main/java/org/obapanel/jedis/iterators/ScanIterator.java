@@ -21,8 +21,6 @@ public final class ScanIterator extends AbstractScanIterator<String> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanIterator.class);
 
-    private final ScanParams scanParams;
-
     /**
      * Creates a new only-one-use iterator
      * @param jedisPool Connection pool
@@ -56,13 +54,7 @@ public final class ScanIterator extends AbstractScanIterator<String> {
      * @param resultsPerScan Result that will return in each scan (hopefully)
      */
     public ScanIterator(JedisPool jedisPool, String pattern, int resultsPerScan) {
-        super(jedisPool);
-        this.scanParams = new ScanParams().match(pattern).count(resultsPerScan);
-    }
-
-    @Override
-    ScanParams getScanParams() {
-        return scanParams;
+        super(jedisPool, pattern, resultsPerScan);
     }
 
     @Override

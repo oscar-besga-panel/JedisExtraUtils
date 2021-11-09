@@ -23,7 +23,6 @@ public class ZScanIterator extends AbstractScanIterator<Tuple>  {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZScanIterator.class);
 
     private final String name;
-    private final ScanParams scanParams;
 
     /**
      * Iterator for zset entries (ordered set)
@@ -62,15 +61,8 @@ public class ZScanIterator extends AbstractScanIterator<Tuple>  {
      * @param resultsPerScan results per call to redis
      */
     public ZScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
-        super(jedisPool);
+        super(jedisPool, pattern, resultsPerScan);
         this.name = name;
-        this.scanParams = generateNewScanParams(pattern, resultsPerScan);
-    }
-
-
-    @Override
-    ScanParams getScanParams() {
-        return scanParams;
     }
 
     @Override

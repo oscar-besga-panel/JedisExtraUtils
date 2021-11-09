@@ -28,7 +28,6 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
     private static final Logger LOGGER = LoggerFactory.getLogger(HScanIterator.class);
 
     private final String name;
-    private final ScanParams scanParams;
 
     /**
      * Iterator for hmap entries
@@ -67,15 +66,11 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
      * @param resultsPerScan results per call to redis
      */
     public HScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
-        super(jedisPool);
+        super(jedisPool, pattern, resultsPerScan);
         this.name = name;
-        this.scanParams = generateNewScanParams(pattern, resultsPerScan);
     }
 
-    @Override
-    ScanParams getScanParams() {
-        return scanParams;
-    }
+
 
     @Override
     ScanResult<Map.Entry<String, String>> doScan(Jedis jedis, String currentCursor, ScanParams scanParams) {

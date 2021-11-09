@@ -1,11 +1,8 @@
 @Grab(group='redis.clients', module='jedis', version='2.10.2')
-@Grab(group='org.obapanel.jedis', module='interruptinglocks', version='2.6.0')
+@Grab(group='org.obapanel.jedis', module='interruptinglocks', version='2.6.2')
 
-import org.obapanel.jedis.iterators.AbstractScanIterator
-import org.obapanel.jedis.iterators.HScanIterator
-import redis.clients.jedis.JedisPool
-import redis.clients.jedis.JedisPoolConfig
-import redis.clients.jedis.Protocol
+import org.obapanel.jedis.iterators.*
+import redis.clients.jedis.*
 
 import java.time.Duration
 

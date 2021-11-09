@@ -26,7 +26,6 @@ public class SScanIterator extends AbstractScanIterator<String>  {
     private static final Logger LOGGER = LoggerFactory.getLogger(SScanIterator.class);
 
     private final String name;
-    private final ScanParams scanParams;
 
     /**
      * Iterator for sset entries
@@ -65,16 +64,8 @@ public class SScanIterator extends AbstractScanIterator<String>  {
      * @param resultsPerScan results per call to redis
      */
     public SScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
-        super(jedisPool);
+        super(jedisPool, pattern, resultsPerScan);
         this.name = name;
-        this.scanParams = generateNewScanParams(pattern, resultsPerScan);
-    }
-
-
-
-    @Override
-    ScanParams getScanParams() {
-        return scanParams;
     }
 
     @Override
