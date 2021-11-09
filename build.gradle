@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'org.obapanel.jedis'
-version '2.6.2'
+version '2.6.4'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -45,8 +45,12 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/oscar-besga-panel/InterruptingJedisLocks")
             credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+                //username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                // username = project.findProperty("gpr.user") ?: System.getenv("MAVEN_USERNAME")
+                //password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+                // password = project.findProperty("gpr.key") ?: System.getenv("MAVEN_PASSWORD")
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
