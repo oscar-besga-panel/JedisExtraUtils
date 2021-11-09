@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalJedisListTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 

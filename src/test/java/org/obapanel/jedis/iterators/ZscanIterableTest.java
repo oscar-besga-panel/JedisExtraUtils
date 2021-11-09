@@ -18,7 +18,7 @@ import static org.obapanel.jedis.iterators.MockOfJedis.unitTestEnabled;
 
 public class ZscanIterableTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ZscanIterableTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZscanIterableTest.class);
 
 
 
@@ -44,7 +44,7 @@ public class ZscanIterableTest {
         zscanitName = "zscanIterable:" + this.getClass().getName() + ":" + System.currentTimeMillis() + ":" + count.incrementAndGet();
         mockOfJedis = new MockOfJedis();
         letters = mockOfJedis.randomSizedListOfChars();
-        LOG.debug("before count {} for name {} with letters {}", count.get(), zscanitName, letters );
+        LOGGER.debug("before count {} for name {} with letters {}", count.get(), zscanitName, letters );
     }
 
     @After

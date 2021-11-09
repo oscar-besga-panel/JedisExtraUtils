@@ -16,7 +16,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalJedisListStreamTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 

@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalScanUtilTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalScanUtilTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalScanUtilTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 

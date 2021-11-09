@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
 
 public class FunctionalJedisListIteratorTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 

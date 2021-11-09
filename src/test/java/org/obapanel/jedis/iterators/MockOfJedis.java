@@ -18,7 +18,7 @@ import static org.obapanel.jedis.common.test.TTL.wrapTTL;
  */
 public class MockOfJedis {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MockOfJedis.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedis.class);
 
     private static final String ABC = "abcdefhijklmnopqrstuvwxyz";
 

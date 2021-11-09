@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalJedisMapTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisMapTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisMapTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 

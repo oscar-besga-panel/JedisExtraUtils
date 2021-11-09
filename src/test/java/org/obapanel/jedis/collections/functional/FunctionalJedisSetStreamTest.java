@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalJedisSetStreamTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisSetStreamTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisSetStreamTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 

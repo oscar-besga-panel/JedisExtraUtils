@@ -23,7 +23,7 @@ import static org.junit.Assert.assertFalse;
 public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
 
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -58,8 +58,8 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
             intoCriticalZone.set(false);
             errorInCriticalZone.set(false);
             otherError.set(false);
-            log.info("_\n");
-            log.info("i {}", i);
+            LOGGER.info("_\n");
+            LOGGER.info("i {}", i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
             t1.setName("prueba_t1");
             Thread t2 = new Thread(() -> accesLockOfCriticalZone(7));
@@ -94,7 +94,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
             }
             jedis.quit();
         } catch (Exception e) {
-            log.error("Other error", e);
+            LOGGER.error("Other error", e);
             otherError.set(true);
         }
     }

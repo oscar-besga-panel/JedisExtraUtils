@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalSemaphoreWaitingTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalSemaphoreWaitingTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalSemaphoreWaitingTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -61,10 +61,10 @@ public class FunctionalSemaphoreWaitingTest {
         Thread t1 = new Thread(() ->{
             try {
                 JedisSemaphore jedisSemaphore1 = new JedisSemaphore(jedisPool, semaphoreName,0);
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD1 waiting 1 permit");
                 jedisSemaphore1.acquire(1);
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit DONE");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit DONE");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD1 waiting 1 permit DONE");
                 acquired.set(true);
             } catch (InterruptedException e) {
@@ -77,10 +77,10 @@ public class FunctionalSemaphoreWaitingTest {
             try {
                 JedisSemaphore jedisSemaphore2 = new JedisSemaphore(jedisPool, semaphoreName,0);
                 Thread.sleep(1500);
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
                 jedisSemaphore2.release();
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit DONE");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit DONE");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit DONE");
                 released.set(true);
             } catch (Exception e) {
@@ -105,10 +105,10 @@ public class FunctionalSemaphoreWaitingTest {
         Thread t1 = new Thread(() ->{
             try {
                 JedisSemaphore jedisSemaphore1 = new JedisSemaphore(jedisPool, semaphoreName,0);
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD1 waiting 1 permit");
                 boolean tried = jedisSemaphore1.tryAcquire(1,2500, TimeUnit.MILLISECONDS);
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit DONE");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit DONE");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD1 waiting 1 permit DONE");
                 acquired.set(tried);
                 acquiredEnd.set(true);
@@ -122,10 +122,10 @@ public class FunctionalSemaphoreWaitingTest {
             try {
                 JedisSemaphore jedisSemaphore2 = new JedisSemaphore(jedisPool, semaphoreName,0);
                 Thread.sleep(1500);
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
                 jedisSemaphore2.release();
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit DONE");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit DONE");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit DONE");
                 released.set(true);
             } catch (Exception e) {
@@ -150,10 +150,10 @@ public class FunctionalSemaphoreWaitingTest {
         Thread t1 = new Thread(() ->{
             try {
                 JedisSemaphore jedisSemaphore1 = new JedisSemaphore(jedisPool, semaphoreName,0);
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD1 waiting 1 permit");
                 boolean tried = jedisSemaphore1.tryAcquire(1,500, TimeUnit.MILLISECONDS);
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit DONE");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit DONE");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD1 waiting 1 permit DONE");
                 acquired.set(tried);
                 acquiredEnd.set(true);
@@ -167,10 +167,10 @@ public class FunctionalSemaphoreWaitingTest {
             try {
                 JedisSemaphore jedisSemaphore2 = new JedisSemaphore(jedisPool, semaphoreName,0);
                 Thread.sleep(2500);
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
                 jedisSemaphore2.release();
-                LOG.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit DONE");
+                LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit DONE");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit DONE");
                 released.set(true);
             } catch (Exception e) {

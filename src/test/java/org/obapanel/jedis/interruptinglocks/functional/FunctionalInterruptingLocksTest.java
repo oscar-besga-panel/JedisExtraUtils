@@ -18,7 +18,7 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLo
 
 public class FunctionalInterruptingLocksTest {
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptingLocksTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -43,16 +43,16 @@ public class FunctionalInterruptingLocksTest {
     @Test
     public void testIfInterruptedFor5SecondsLock() {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
-            log.info("_\n");
-            log.info("i {}", i);
+            LOGGER.info("_\n");
+            LOGGER.info("i {}", i);
             boolean wasInterruptedFor3Seconds = wasInterrupted(3);
-            log.info("i {} wasInterruptedFor3Seconds {}", i, wasInterruptedFor3Seconds);
+            LOGGER.info("i {} wasInterruptedFor3Seconds {}", i, wasInterruptedFor3Seconds);
             boolean wasInterruptedFor7Seconds = wasInterrupted(7);
-            log.info("i {} wasInterruptedFor7Seconds {}", i, wasInterruptedFor7Seconds);
+            LOGGER.info("i {} wasInterruptedFor7Seconds {}", i, wasInterruptedFor7Seconds);
             boolean wasInterruptedFor1Seconds = wasInterrupted(1);
-            log.info("i {} wasInterruptedFor1Seconds {}", i, wasInterruptedFor1Seconds);
+            LOGGER.info("i {} wasInterruptedFor1Seconds {}", i, wasInterruptedFor1Seconds);
             boolean wasInterruptedFor9Seconds = wasInterrupted(9);
-            log.info("i {} wasInterruptedFor9Seconds {}", i, wasInterruptedFor9Seconds);
+            LOGGER.info("i {} wasInterruptedFor9Seconds {}", i, wasInterruptedFor9Seconds);
             assertFalse(wasInterruptedFor3Seconds);
             assertTrue(wasInterruptedFor7Seconds);
             assertFalse(wasInterruptedFor1Seconds);
@@ -74,7 +74,7 @@ public class FunctionalInterruptingLocksTest {
             wasInterrupted = true;
         }
         interruptingJedisLock.unlock();
-        log.info("thread wasLocked " + wasLocked + " wasInterrupted " + wasInterrupted + " thread " + Thread.currentThread().getName());
+        LOGGER.info("thread wasLocked " + wasLocked + " wasInterrupted " + wasInterrupted + " thread " + Thread.currentThread().getName());
         return wasInterrupted && wasLocked;
     }
 }

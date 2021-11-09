@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Deprecated
 public class JedisAdvancedSemaphore {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JedisAdvancedSemaphore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisAdvancedSemaphore.class);
 
     public static final String SEMAPHORE_LUA_SCRIPT = "" +
             "local permits = redis.call('get', KEYS[1]); " + "\n" +
@@ -82,7 +82,7 @@ public class JedisAdvancedSemaphore {
     }
 
     private synchronized void lazySubscribeToChannel() {
-        LOG.debug("lazySubscribeToChannel");
+        LOGGER.debug("lazySubscribeToChannel");
         if (pubSub == null && lockForPermits == null) {
             lockForPermits = new ReentrantLock();
             if (pubSubExecutor != null) {
@@ -102,7 +102,7 @@ public class JedisAdvancedSemaphore {
                 pubSub = new JedisSemaphorePubSub();
                 jedisForPubSub.subscribe(pubSub, channelName);
             } catch (Exception e) {
-                LOG.error("subscribe error ", e);
+                LOGGER.error("subscribe error ", e);
                 e.printStackTrace();
             }
         };
@@ -132,7 +132,7 @@ public class JedisAdvancedSemaphore {
         try (Jedis jedis = jedisPool.getResource()) {
             jedis.incrBy(name, permits);
             jedis.publish(channelName, name);
-            LOG.debug("release channel {} message {}", channelName, name);
+            LOGGER.debug("release channel {} message {}", channelName, name);
         }
     }
 
@@ -181,7 +181,7 @@ public class JedisAdvancedSemaphore {
     }
 
     private synchronized void unlockOnMessage(String messageChannelName, String messageName) {
-        LOG.debug("unlockOnMessage channel {} message {}", messageChannelName, messageName);
+        LOGGER.debug("unlockOnMessage channel {} message {}", messageChannelName, messageName);
         if (channelName.equals(messageChannelName) && name.equals(messageName) && lockForPermits != null) {
             synchronized (lockForPermits) {
                 lockForPermits.notify();

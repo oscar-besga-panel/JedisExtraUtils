@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 
 public class FunctionalSscanIterableTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalSscanIterableTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalSscanIterableTest.class);
 
 
 
@@ -39,7 +39,7 @@ public class FunctionalSscanIterableTest {
         sscanitName = "scanIterable:" + this.getClass().getName() + ":" + System.currentTimeMillis() + ":" + count.incrementAndGet();
         jedisPool = jtfTest.createJedisPool();
         letters = jtfTest.randomSizedListOfChars();
-        LOG.debug("before count {} for name {} with letters {}", count.get(), sscanitName, letters );
+        LOGGER.debug("before count {} for name {} with letters {}", count.get(), sscanitName, letters );
     }
 
     @After

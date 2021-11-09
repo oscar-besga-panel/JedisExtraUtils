@@ -30,7 +30,7 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLo
 
 public class FunctionalWritingFileScTest {
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalWritingFileScTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalWritingFileScTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -88,10 +88,10 @@ public class FunctionalWritingFileScTest {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
             line = 0;
             File tempFile = folder.newFile(getClass().getName() + "." + System.currentTimeMillis() + ".txt");
-            log.info("Temp file is " + tempFile.getAbsolutePath());
+            LOGGER.info("Temp file is " + tempFile.getAbsolutePath());
             otherError.set(false);
-            log.info("_\n");
-            log.info("FUNCTIONAL_TEST_CYCLES " + i);
+            LOGGER.info("_\n");
+            LOGGER.info("FUNCTIONAL_TEST_CYCLES " + i);
             Thread t1 = new Thread(new WriteTest(270, tempFile));
             t1.setName("T1_i"+i);
             Thread t2 = new Thread(new WriteTest(190, tempFile));
@@ -132,10 +132,10 @@ public class FunctionalWritingFileScTest {
                 checkLock(jedisLock);
                 writeTest();
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
-                log.info("Closed channel by interrupt exception");
+                LOGGER.info("Closed channel by interrupt exception");
                 Thread.interrupted();  // We clean the state
             } catch (Exception e){
-                log.error("Error ", e);
+                LOGGER.error("Error ", e);
                 otherError.set(true);
             } finally {
                 jedisLock.unlock();
@@ -144,7 +144,7 @@ public class FunctionalWritingFileScTest {
         }
 
         private void writeTest() throws IOException {
-            log.info("Writing with thread " + Thread.currentThread().getName());
+            LOGGER.info("Writing with thread " + Thread.currentThread().getName());
             FileWriter fileWriter= null;
             PrintWriter printWriter = null;
             try {

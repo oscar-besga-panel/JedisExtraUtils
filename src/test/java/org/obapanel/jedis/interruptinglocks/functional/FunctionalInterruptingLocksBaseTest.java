@@ -20,7 +20,7 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLo
 
 public class FunctionalInterruptingLocksBaseTest {
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksBaseTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptingLocksBaseTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -46,15 +46,15 @@ public class FunctionalInterruptingLocksBaseTest {
     public void testIfInterruptedFor5SecondsLock() {
         try {
             for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
-                log.info("_\n");
-                log.info("FUNCTIONAL_TEST_CYCLES " + i);
-                log.info("_i" + i + "_3s");
+                LOGGER.info("_\n");
+                LOGGER.info("FUNCTIONAL_TEST_CYCLES " + i);
+                LOGGER.info("_i" + i + "_3s");
                 boolean wasInterruptedFor3Seconds = wasInterrupted(3);
-                log.info("_i" + i + "_7s");
+                LOGGER.info("_i" + i + "_7s");
                 boolean wasInterruptedFor7Seconds = wasInterrupted(7);
-                log.info("_i" + i + "_1s");
+                LOGGER.info("_i" + i + "_1s");
                 boolean wasInterruptedFor1Seconds = wasInterrupted(1);
-                log.info("_i" + i + "_9s");
+                LOGGER.info("_i" + i + "_9s");
                 boolean wasInterruptedFor9Seconds = wasInterrupted(9);
                 assertFalse(wasInterruptedFor3Seconds);
                 assertTrue(wasInterruptedFor7Seconds);
@@ -62,7 +62,7 @@ public class FunctionalInterruptingLocksBaseTest {
                 assertTrue(wasInterruptedFor9Seconds);
             }
         } catch (Exception e) {
-            log.error("Error while locking", e);
+            LOGGER.error("Error while locking", e);
             fail();
         }
     }

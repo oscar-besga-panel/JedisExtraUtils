@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Deprecated
 public class JedisAdvancedCountDownLatch {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JedisAdvancedCountDownLatch.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisAdvancedCountDownLatch.class);
 
     private static final String JEDIS_COUNTDOWNLATCH_CHANNEL_PREFIX = "JedisCountDownLatchChannel:";
     private static final String ZERO = "0";
@@ -78,7 +78,7 @@ public class JedisAdvancedCountDownLatch {
             try {
                 waiting.set(true);
                 jedisPubSub = new CountDownLatchPubSub();
-                LOG.info("await go subscribe");
+                LOGGER.info("await go subscribe");
                 try (Jedis jedis = jedisPool.getResource()) {
                     jedis.subscribe(jedisPubSub, channelName);
                 }
@@ -88,7 +88,7 @@ public class JedisAdvancedCountDownLatch {
             } finally {
                 waiting.set(false);
             }
-            LOG.debug("await ended");
+            LOGGER.debug("await ended");
         }
     }
 
@@ -97,7 +97,7 @@ public class JedisAdvancedCountDownLatch {
                 jce.getCause() instanceof java.net.SocketException &&
                 interruptedSockedManually.get() ) {
             jedisPubSub.unsubscribe(channelName);
-            LOG.debug("await interrupted manually");
+            LOGGER.debug("await interrupted manually");
         } else {
             throw jce;
         }
@@ -115,7 +115,7 @@ public class JedisAdvancedCountDownLatch {
         }
         try (Jedis jedis = jedisPool.getResource()) {
             Object oresult = jedis.eval(COUNTDOWNLATCH_LUA_SCRIPT, Arrays.asList(name, channelName), Collections.singletonList(ZERO));
-            LOG.info("oresult {}", oresult);
+            LOGGER.info("oresult {}", oresult);
         }
     }
 
@@ -146,14 +146,14 @@ public class JedisAdvancedCountDownLatch {
                 jedis.close();
             }
         } catch (IOException ioe){
-            LOG.error("Error while interruptWaiting on CountDownLatch {} ", name, ioe);
+            LOGGER.error("Error while interruptWaiting on CountDownLatch {} ", name, ioe);
         }
     }
 
     private class CountDownLatchPubSub extends JedisPubSub {
         @Override
         public void onMessage(String channel, String message) {
-            LOG.info("CountDownLatchPubSub channel {} message {}", channel, message);
+            LOGGER.info("CountDownLatchPubSub channel {} message {}", channel, message);
             onMessageRecieved(channel, message);
         }
     }

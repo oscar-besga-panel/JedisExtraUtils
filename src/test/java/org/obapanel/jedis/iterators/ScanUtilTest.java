@@ -22,7 +22,7 @@ public class ScanUtilTest {
 
 
 
-    private static final Logger LOG = LoggerFactory.getLogger(ScanUtilTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScanUtilTest.class);
 
     private org.obapanel.jedis.utils.MockOfJedis mockOfJedis;
     private JedisPool jedisPool;

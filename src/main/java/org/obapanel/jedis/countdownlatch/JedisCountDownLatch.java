@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class JedisCountDownLatch {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JedisCountDownLatch.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisCountDownLatch.class);
     private static final Long LONG_NULL_VALUE = -1L;
 
 
@@ -103,7 +103,7 @@ public class JedisCountDownLatch {
     public long countDown() {
         try (Jedis jedis = jedisPool.getResource()) {
             Long value = jedis.decr(name);
-            LOG.debug("countDown name {} value {}", name, value);
+            LOGGER.debug("countDown name {} value {}", name, value);
             return value != null ? value : -1;
         }
     }
@@ -119,7 +119,7 @@ public class JedisCountDownLatch {
     public long getCount() {
         try (Jedis jedis = jedisPool.getResource()) {
             String value = jedis.get(name);
-            LOG.debug("getCount name {} value {}", name, value);
+            LOGGER.debug("getCount name {} value {}", name, value);
             if (value != null && !value.isEmpty()) {
                 return Long.parseLong(value);
             } else {

@@ -24,7 +24,7 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLo
 public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
 
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneUnderlockTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneUnderlockTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -52,7 +52,7 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
                 filter(Objects::nonNull).
                 forEach(il -> {
                     if (il.isLocked()) {
-                        log.error("A lock named {} is locked !", il.getName());
+                        LOGGER.error("A lock named {} is locked !", il.getName());
                     }
                     il.unlock();
         });
@@ -67,8 +67,8 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
             intoCriticalZone.set(false);
             errorInCriticalZone.set(false);
             otherError.set(false);
-            log.info("_\n");
-            log.info("i {}", i);
+            LOGGER.info("_\n");
+            LOGGER.info("i {}", i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
             t1.setName("prueba_t1");
             Thread t2 = new Thread(() -> accesLockOfCriticalZone(7));
@@ -96,7 +96,7 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
                 accessCriticalZone(sleepTime);
             });
         } catch (Exception e){
-            log.error("Error ", e);
+            LOGGER.error("Error ", e);
             otherError.set(true);
         }
     }
