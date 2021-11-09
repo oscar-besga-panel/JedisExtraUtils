@@ -5,9 +5,6 @@ before_script:
   - ./gradlew assemble
 script:
   - ./gradlew clean build
-  # - ./gradlew clean build --scan -s
-  #  - ./gradlew build --scan -s
-  # - ./gradlew codeCoverageReport
   - ./gradlew jacocoTestReport
 after_success:
   - bash <(curl -s https://codecov.io/bash)
