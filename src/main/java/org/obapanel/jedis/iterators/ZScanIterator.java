@@ -48,6 +48,16 @@ public class ZScanIterator extends AbstractScanIterator<Tuple>  {
      * Iterator for zset entries (ordered set)
      * @param jedisPool Jedis connection pool
      * @param name Name of the set
+     * @param resultsPerScan results per call to redis
+     */
+    public ZScanIterator(JedisPool jedisPool, String name, int resultsPerScan) {
+        this(jedisPool, name,DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    }
+
+    /**
+     * Iterator for zset entries (ordered set)
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */

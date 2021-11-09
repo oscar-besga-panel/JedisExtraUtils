@@ -5,6 +5,7 @@ import redis.clients.jedis.JedisPool;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
+import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_PATTERN_ITERATORS;
 import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS;
 
 /**
@@ -27,7 +28,7 @@ public class ScanIterable implements Iterable<String> {
      * @param jedisPool Jedis connection pool
      */
     public ScanIterable(JedisPool jedisPool){
-        this(jedisPool,"", DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+        this(jedisPool, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
@@ -42,10 +43,19 @@ public class ScanIterable implements Iterable<String> {
     /**
      * Iterable for redis entries
      * @param jedisPool Jedis connection pool
+     * @param resultsPerScan results per call to redis
+     */
+    public ScanIterable(JedisPool jedisPool, int resultsPerScan) {
+        this(jedisPool, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    }
+
+    /**
+     * Iterable for redis entries
+     * @param jedisPool Jedis connection pool
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */
-    public ScanIterable(JedisPool jedisPool, String pattern, int resultsPerScan){
+    public ScanIterable(JedisPool jedisPool, String pattern, int resultsPerScan) {
         this.jedisPool = jedisPool;
         this.pattern = pattern;
         this.resultsPerScan = resultsPerScan;

@@ -35,7 +35,7 @@ public class ZScanIterable implements Iterable<Tuple> {
      * @param jedisPool Jedis connection pool
      * @param name Name of the set
      */
-    public ZScanIterable(JedisPool jedisPool, String name){
+    public ZScanIterable(JedisPool jedisPool, String name) {
         this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
@@ -45,8 +45,18 @@ public class ZScanIterable implements Iterable<Tuple> {
      * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      */
-    public ZScanIterable(JedisPool jedisPool, String name, String pattern){
+    public ZScanIterable(JedisPool jedisPool, String name, String pattern) {
         this(jedisPool, name, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    }
+
+    /**
+     * Iterable for zset entries (ordered set)
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
+     * @param resultsPerScan results per call to redis
+     */
+    public ZScanIterable(JedisPool jedisPool, String name, int resultsPerScan) {
+        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
     }
 
     /**
@@ -56,7 +66,7 @@ public class ZScanIterable implements Iterable<Tuple> {
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */
-    public ZScanIterable(JedisPool jedisPool, String name, String pattern, int resultsPerScan){
+    public ZScanIterable(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
         this.jedisPool = jedisPool;
         this.name = name;
         this.pattern = pattern;

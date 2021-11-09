@@ -50,6 +50,16 @@ public class HScanIterable implements Iterable<Map.Entry<String,String>> {
      * Iterable for hmap entries
      * @param jedisPool Jedis connection pool
      * @param name Name of the hmap
+     * @param resultsPerScan results per call to redis
+     */
+    public HScanIterable(JedisPool jedisPool, String name, int resultsPerScan){
+        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    }
+
+    /**
+     * Iterable for hmap entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the hmap
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */

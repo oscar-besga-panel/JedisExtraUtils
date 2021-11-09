@@ -51,10 +51,20 @@ public class SScanIterable implements Iterable<String> {
      * Iterable for sset entries
      * @param jedisPool Jedis connection pool
      * @param name Name of the set
+     * @param resultsPerScan results per call to redis
+     */
+    public SScanIterable(JedisPool jedisPool, String name, int resultsPerScan) {
+        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    }
+
+    /**
+     * Iterable for sset entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */
-    public SScanIterable(JedisPool jedisPool, String name, String pattern, int resultsPerScan){
+    public SScanIterable(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
         this.jedisPool = jedisPool;
         this.name = name;
         this.pattern = pattern;

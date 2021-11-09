@@ -40,6 +40,14 @@ public final class ScanIterator extends AbstractScanIterator<String> {
         this(jedisPool, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
+    /**
+     * Creates a new only-one-use iterator
+     * @param jedisPool Connection pool
+     * @param resultsPerScan Result that will return in each scan (hopefully)
+     */
+    public ScanIterator(JedisPool jedisPool, int resultsPerScan) {
+        this(jedisPool, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    }
 
     /**
      * Creates a new only-one-use iterator

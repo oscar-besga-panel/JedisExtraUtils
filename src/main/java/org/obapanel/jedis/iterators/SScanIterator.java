@@ -51,6 +51,16 @@ public class SScanIterator extends AbstractScanIterator<String>  {
      * Iterator for sset entries
      * @param jedisPool Jedis connection pool
      * @param name Name of the set
+     * @param resultsPerScan results per call to redis
+     */
+    public SScanIterator(JedisPool jedisPool, String name, int resultsPerScan) {
+        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    }
+
+    /**
+     * Iterator for sset entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */

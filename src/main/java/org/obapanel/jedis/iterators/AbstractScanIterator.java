@@ -50,9 +50,9 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
      * @return Newver null ScanParams object
      */
     public static ScanParams generateNewScanParams(String pattern, int resultsPerScan ) {
-        if ((pattern == null || pattern.isEmpty()) && resultsPerScan <= 0) {
+        if ((pattern == null || pattern.trim().isEmpty()) && resultsPerScan <= 0) {
             return new ScanParams();
-        } else if (pattern == null || pattern.isEmpty()) {
+        } else if (pattern == null || pattern.trim().isEmpty()) {
             return new ScanParams().count(resultsPerScan);
         } else if (resultsPerScan <= 0) {
             return new ScanParams().match(pattern);
@@ -119,7 +119,6 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
     public void remove() {
         if (next != null) {
             try (Jedis jedis = jedisPool.getResource()) {
-                //jedis.del(next);
                 doRemove(jedis, next);
                 next = null;
             }

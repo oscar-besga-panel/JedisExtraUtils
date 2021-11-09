@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS;
+
 /**
  * This class can help with the key scanning
  * It can use a pool or a single connection
@@ -25,8 +27,6 @@ import java.util.function.Consumer;
  */
 public class ScanUtil {
 
-    public static final int DEFAULT_RESULTS_PER_SCAN_UTIL_ITERATORS = 10;
-
     /**
      * Scans for keys given a pattern
      * This method avoid returning duplicates
@@ -37,7 +37,7 @@ public class ScanUtil {
      */
     public static List<String> retrieveListOfKeys(JedisPool jedisPool, String pattern) {
         Set<String> result = new HashSet<>();
-        ScanIterable iterable = new ScanIterable(jedisPool, pattern, DEFAULT_RESULTS_PER_SCAN_UTIL_ITERATORS);
+        ScanIterable iterable = new ScanIterable(jedisPool, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
         iterable.forEach(result::add);
         return new ArrayList<>(result);
     }
@@ -63,7 +63,7 @@ public class ScanUtil {
      * @param action executed for each key
      */
     public static void useListOfKeys(JedisPool jedisPool, String pattern, Consumer<String> action) {
-        ScanIterable iterable = new ScanIterable(jedisPool, pattern, DEFAULT_RESULTS_PER_SCAN_UTIL_ITERATORS);
+        ScanIterable iterable = new ScanIterable(jedisPool, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
         iterable.forEach(action);
     }
 

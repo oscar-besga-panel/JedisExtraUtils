@@ -36,7 +36,7 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
      * @param name Name of the hmap
      */
     public HScanIterator(JedisPool jedisPool, String name) {
-        this(jedisPool, name, null, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
@@ -47,6 +47,16 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
      */
     public HScanIterator(JedisPool jedisPool, String name, String pattern) {
         this(jedisPool, name, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    }
+
+    /**
+     * Iterator for hmap entries
+     * @param jedisPool Jedis connection pool
+     * @param name Name of the hmap
+     * @param resultsPerScan results per call to redis
+     */
+    public HScanIterator(JedisPool jedisPool, String name, int resultsPerScan) {
+        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
     }
 
     /**
