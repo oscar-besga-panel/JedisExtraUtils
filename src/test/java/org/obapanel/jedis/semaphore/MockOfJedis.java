@@ -95,7 +95,7 @@ public class MockOfJedis {
 
     private synchronized Object mockEval(String script, List<String> keys, List<String> values) {
         Object response = null;
-        if (script.equalsIgnoreCase(JedisAdvancedSemaphore.SEMAPHORE_LUA_SCRIPT)) {
+        if (script.equalsIgnoreCase(JedisSemaphore.SEMAPHORE_LUA_SCRIPT)) {
             response = mockEvalSemaphoreLuaScript(keys, values);
         }
         return response;

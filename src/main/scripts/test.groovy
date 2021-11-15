@@ -1,5 +1,5 @@
-@Grab(group='redis.clients', module='jedis', version='2.10.2')
-@Grab(group='org.obapanel.jedis', module='interruptinglocks', version='2.6.2')
+@Grab(group='redis.clients', module='jedis', version='3.6.3')
+@Grab(group='org.obapanel.jedis', module='interruptinglocks', version='2.8.2')
 
 import org.obapanel.jedis.iterators.*
 import redis.clients.jedis.*
@@ -9,6 +9,7 @@ import java.time.Duration
 host = "localhost"
 port = 6379
 pass = ""
+
 
 JedisPool jedisPool = null;
 JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();

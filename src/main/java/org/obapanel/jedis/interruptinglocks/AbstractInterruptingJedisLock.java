@@ -62,16 +62,6 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         this.timeUnit = timeUnit;
     }
 
-    AbstractInterruptingJedisLock(IJedisLock jedisLock, long leaseTime, TimeUnit timeUnit, boolean forceTimeoutRedis) {
-        this.jedisLock = jedisLock;
-        this.forceTimeoutRedis = forceTimeoutRedis;
-        this.leaseTime = leaseTime;
-        this.timeUnit = timeUnit;
-        this.leaseTimeDiscountMillis = 10L;
-        this.recoverFromInterruptionMillis = 15L;
-    }
-
-
     public boolean isLocked() {
         return jedisLock.isLocked();
     }

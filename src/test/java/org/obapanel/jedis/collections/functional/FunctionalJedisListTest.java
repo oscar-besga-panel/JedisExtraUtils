@@ -52,6 +52,12 @@ public class FunctionalJedisListTest {
         return jedisList;
     }
 
+    @Test
+    public void getNameTest() {
+        JedisList jedisList = new JedisList(jedisPool, listName);
+        assertEquals(listName, jedisList.getName());
+    }
+
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
         JedisList jedisList = new JedisList(jedisPool, listName);

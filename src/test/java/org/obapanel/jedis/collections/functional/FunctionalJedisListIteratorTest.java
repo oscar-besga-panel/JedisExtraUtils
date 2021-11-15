@@ -168,5 +168,24 @@ public class FunctionalJedisListIteratorTest {
         assertTrue( check.containsAll(jedisList) );
     }
 
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void listIteratorRemoveOneTestError() {
+        JedisList jedisList = new JedisList(jedisPool, listName);
+        jedisList.add("a");
+        Iterator<String> it = jedisList.iterator();
+        it.remove();
+    }
+
+    @Test
+    public void listIteratorRemoveOneTest() {
+        JedisList jedisList = new JedisList(jedisPool, listName);
+        jedisList.add("a");
+        Iterator<String> it = jedisList.iterator();
+        if (it.hasNext()) {
+            it.next();
+            it.remove();
+        }
+        assertFalse(it.hasNext());
+    }
 
 }

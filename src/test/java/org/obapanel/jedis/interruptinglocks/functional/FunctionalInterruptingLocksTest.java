@@ -9,8 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLocks.checkLock;
@@ -58,7 +60,6 @@ public class FunctionalInterruptingLocksTest {
             assertFalse(wasInterruptedFor1Seconds);
             assertTrue(wasInterruptedFor9Seconds);
         }
-
     }
 
 
@@ -76,5 +77,46 @@ public class FunctionalInterruptingLocksTest {
         interruptingJedisLock.unlock();
         LOGGER.info("thread wasLocked " + wasLocked + " wasInterrupted " + wasInterrupted + " thread " + Thread.currentThread().getName());
         return wasInterrupted && wasLocked;
+    }
+
+    @Test
+    public void testInterruptingLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5L , TimeUnit.SECONDS);
+        assertEquals(lockName, jedisLock1.getName());
+        assertEquals(Long.valueOf(5L) , Long.valueOf(jedisLock1.getLeaseTime()));
+        assertEquals(TimeUnit.SECONDS , jedisLock1.getTimeUnit());
+        assertEquals(Long.valueOf(-1L) , Long.valueOf(jedisLock1.getLeaseMoment()));
+        long t = System.currentTimeMillis();
+        boolean lock = jedisLock1.tryLock();
+        if (lock) {
+            assertTrue(t <= jedisLock1.getLeaseMoment());
+        }
+        jedisLock1.unlock();
+    }
+
+    @Test
+    public void testTryLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5L , TimeUnit.SECONDS);
+        boolean result1 = jedisLock1.tryLock();
+        assertTrue(jedisLock1.isLocked());
+        assertTrue(result1);
+        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5L , TimeUnit.SECONDS);
+        boolean result2 = jedisLock2.tryLock();
+        assertFalse(jedisLock2.isLocked());
+        assertFalse(result2);
+        jedisLock1.unlock();
+    }
+
+    @Test
+    public void testTryLockForAWhile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
+        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPool,lockName, 5L , TimeUnit.SECONDS);
+        boolean result1 = jedisLock1.tryLock();
+        assertTrue(jedisLock1.isLocked());
+        assertTrue(result1);
+        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(jedisPool,lockName, 5L , TimeUnit.SECONDS);
+        boolean result2 = jedisLock2.tryLockForAWhile(1, TimeUnit.SECONDS);
+        assertFalse(jedisLock2.isLocked());
+        assertFalse(result2);
+        jedisLock1.unlock();
     }
 }

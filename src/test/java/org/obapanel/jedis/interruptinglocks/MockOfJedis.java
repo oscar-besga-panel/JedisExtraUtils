@@ -183,7 +183,6 @@ public class MockOfJedis {
         transactionActions.clear();
     }
 
-
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);
     }
