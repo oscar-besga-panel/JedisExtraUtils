@@ -7,6 +7,7 @@ import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.obapanel.jedis.interruptinglocks.JedisLockUtils;
+import org.obapanel.jedis.interruptinglocks.JedisLockWithNotification;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -78,6 +79,19 @@ public class FunctionalJedisLockUnderlockTask {
         assertTrue(result1.get());
         assertTrue(result2);
     }
+
+    @Test
+    public void underLockWithNotification() {
+        AtomicBoolean result1 = new AtomicBoolean(false);
+        JedisLockWithNotification jedisLock1 = new JedisLockWithNotification(jedisPool, keyName);
+        jedisLock1.underLock(() -> result1.set(true) );
+        JedisLockWithNotification jedisLock2 = new JedisLockWithNotification(jedisPool, keyName);
+        boolean result2 = jedisLock2.underLock(() -> true);
+        assertTrue(result1.get());
+        assertTrue(result2);
+    }
+
+
 
     @Test
     public void underLockWithInterrupted() {

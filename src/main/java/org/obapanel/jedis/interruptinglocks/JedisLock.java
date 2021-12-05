@@ -151,10 +151,11 @@ public class JedisLock implements IJedisLock {
 
     @Override
     public synchronized boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
-        long tryLockTimeLimit = System.currentTimeMillis() + unit.toMillis(time);
+        long timeInMilis = unit.toMillis(time);
+        long tryLockTimeLimit = System.currentTimeMillis() + timeInMilis;
         boolean locked = redisLock();
         while (!locked && tryLockTimeLimit > System.currentTimeMillis()) {
-            Thread.sleep(waitCylce);
+            doSleepBetweenAttempts(timeInMilis);
             locked = redisLock();
         }
         return locked;
@@ -166,7 +167,7 @@ public class JedisLock implements IJedisLock {
         boolean locked = redisLock();
         while (!locked) {
             try {
-                Thread.sleep(waitCylce);
+                doSleepBetweenAttempts();
                 locked = redisLock();
             } catch (InterruptedException ie) {
                 LOGGER.debug("interrupted", ie);
@@ -179,13 +180,25 @@ public class JedisLock implements IJedisLock {
     public synchronized void lockInterruptibly() throws InterruptedException {
         boolean locked = redisLock();
         while (!locked) {
-            Thread.sleep(waitCylce);
+            doSleepBetweenAttempts();
             locked = redisLock();
         }
     }
 
+    protected void doSleepBetweenAttempts() throws InterruptedException {
+        Thread.sleep(waitCylce);
+    }
+
+    protected void doSleepBetweenAttempts(long timeInMilis) throws InterruptedException {
+        long waitNow = waitCylce;
+        if (waitCylce > timeInMilis) {
+            waitNow = timeInMilis - 1;
+        }
+        Thread.sleep(waitNow);
+    }
+
     @Override
-    public synchronized boolean isLocked(){
+    public boolean isLocked(){
         return redisCheckLock();
     }
 
@@ -208,11 +221,6 @@ public class JedisLock implements IJedisLock {
         }
     }
 
-    private <T> T underPool(Function<Jedis, T> action) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return action.apply(jedis);
-        }
-    }
 
     /**
      * Attempts to get the lock.
@@ -221,7 +229,9 @@ public class JedisLock implements IJedisLock {
      * @return true if lock obtained, false otherwise
      */
     private synchronized boolean redisLock() {
-        return underPool(this::redisLockUnderPool);
+        try (Jedis jedis = jedisPool.getResource()) {
+            return redisLockUnderPool(jedis);
+        }
     }
 
     private synchronized boolean redisLockUnderPool(Jedis jedis) {
@@ -275,8 +285,10 @@ public class JedisLock implements IJedisLock {
      * If not, returns false
      * @return true if the lock is remotely held
      */
-    private synchronized boolean redisCheckLock() {
-        return underPool(this::redisCheckLockUnderPool);
+    private boolean redisCheckLock() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return redisCheckLockUnderPool(jedis);
+        }
     }
 
     /**
@@ -285,16 +297,13 @@ public class JedisLock implements IJedisLock {
      * If not, returns false
      * @return true if the lock is remotely held
      */
-    private synchronized boolean redisCheckLockUnderPool(Jedis jedis) {
+    private boolean redisCheckLockUnderPool(Jedis jedis) {
         boolean check = false;
         LOGGER.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
         if ((leaseTime == null) || (timeLimit > System.currentTimeMillis())) {
             String currentValueRedis = jedis.get(name);
             LOGGER.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", value, currentValueRedis);
             check = value.equals(currentValueRedis);
-        }
-        if (!check) {
-            resetLockMoment();
         }
         return check;
     }
