@@ -1,5 +1,6 @@
 package org.obapanel.jedis.interruptinglocks;
 
+import org.obapanel.jedis.utils.OnMessagePubSub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -110,20 +111,6 @@ public class JedisLockWithNotification extends JedisLock {
             jedis.publish(CHANNEL_NAME, name);
             LOGGER.debug("redisNotificationUnlock publish {} {}", CHANNEL_NAME, name);
         }
-    }
-
-    public static class OnMessagePubSub extends JedisPubSub {
-
-        private final BiConsumer<String, String> onMessageDo;
-
-        public OnMessagePubSub(BiConsumer<String, String> onMessageDo) {
-            this.onMessageDo = onMessageDo;
-        }
-
-        public void onMessage(String channel, String message) {
-            onMessageDo.accept(channel, message);
-        }
-
     }
 
 }

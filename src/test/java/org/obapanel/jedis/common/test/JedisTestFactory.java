@@ -118,9 +118,9 @@ public class JedisTestFactory {
 
     public JedisPool createJedisPool() {
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-        jedisPoolConfig.setMaxTotal(24); // original 128
-        jedisPoolConfig.setMaxIdle(24); // original 128
-        jedisPoolConfig.setMinIdle(4); // original 16
+        jedisPoolConfig.setMaxTotal(8); // original 128
+        jedisPoolConfig.setMaxIdle(8); // original 128
+        jedisPoolConfig.setMinIdle(2); // original 16
         // High performance
 //        jedisPoolConfig.setMaxTotal(128);
 //        jedisPoolConfig.setMaxIdle(128);
