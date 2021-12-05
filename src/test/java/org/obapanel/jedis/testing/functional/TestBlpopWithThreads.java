@@ -75,7 +75,7 @@ public class TestBlpopWithThreads {
         }
     }
 
-    private void doOtherThings() {
+    private void doWaitUnitlMessageComesOrInterrupted() {
         try (Jedis jedis = jedisPool.getResource()) {
             LOGGER.info("waiter wait");
             synchronized (waiter) {
@@ -116,7 +116,7 @@ public class TestBlpopWithThreads {
     @Test
     public void testBlpopInterrupt() throws InterruptedException {
         LOGGER.info("testBlpopInterrupt init");
-        ScheduledFuture doOtherThingsFuture = scheduler.schedule(this::doOtherThings, 10, TimeUnit.MILLISECONDS);
+        ScheduledFuture doOtherThingsFuture = scheduler.schedule(this::doWaitUnitlMessageComesOrInterrupted, 10, TimeUnit.MILLISECONDS);
         ScheduledFuture doBlpopFuture = scheduler.schedule(this::doBlpop, 150, TimeUnit.MILLISECONDS);
         Thread.sleep(300);
         assertFalse(doOtherThingsFuture.isDone());
@@ -140,13 +140,13 @@ public class TestBlpopWithThreads {
         assertNull(blpopResult.get());
         assertTrue(blpopEnter.get());
         assertFalse(blpopExit.get());
-
+        assertEquals(1, jedisPool.getNumActive());
     }
 
     @Test
     public void testBlpopInterruptCancelling() throws InterruptedException {
         LOGGER.info("testBlpopInterrupt init");
-        ScheduledFuture doOtherThingsFuture = scheduler.schedule(this::doOtherThings, 10, TimeUnit.MILLISECONDS);
+        ScheduledFuture doOtherThingsFuture = scheduler.schedule(this::doWaitUnitlMessageComesOrInterrupted, 10, TimeUnit.MILLISECONDS);
         ScheduledFuture doBlpopFuture = scheduler.schedule(this::doBlpop, 150, TimeUnit.MILLISECONDS);
         ScheduledFuture doCancelJedisOfBlpop = scheduler.schedule(this::cancelJedisOfBlpop, 500, TimeUnit.MILLISECONDS);
         Thread.sleep(300);
@@ -176,12 +176,13 @@ public class TestBlpopWithThreads {
 //        assertTrue(blpopEnter.get());
 //        assertFalse(blpopExit.get());
 //        assertEquals("PONG", pong.get());
+//        assertEquals(1, jedisPool.getNumActive());
     }
 
     @Test
     public void testBlpopSend() throws InterruptedException {
         LOGGER.info("testBlpopSend init");
-        ScheduledFuture doOtherThingsFuture = scheduler.schedule(this::doOtherThings, 10, TimeUnit.MILLISECONDS);
+        ScheduledFuture doOtherThingsFuture = scheduler.schedule(this::doWaitUnitlMessageComesOrInterrupted, 10, TimeUnit.MILLISECONDS);
         ScheduledFuture doBlpopFuture = scheduler.schedule(this::doBlpop, 150, TimeUnit.MILLISECONDS);
         ScheduledFuture sendDataFuture = scheduler.schedule(this::sendData, 500, TimeUnit.MILLISECONDS);
         Thread.sleep(300);
@@ -206,6 +207,7 @@ public class TestBlpopWithThreads {
         assertEquals(blpopName + ":XXX", blpopResult.get());
         assertTrue(blpopEnter.get());
         assertTrue(blpopExit.get());
+        assertEquals(0, jedisPool.getNumActive());
     }
 
 }
