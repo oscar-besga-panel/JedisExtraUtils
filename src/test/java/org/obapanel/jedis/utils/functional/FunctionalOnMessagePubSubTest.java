@@ -1,5 +1,6 @@
 package org.obapanel.jedis.utils.functional;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.common.test.JedisTestFactory;
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class FunctionalOnMessagePubSubTest {
@@ -39,44 +41,75 @@ public class FunctionalOnMessagePubSubTest {
         if (!jtfTest.functionalTestEnabled()) return;
         jedisPool = jtfTest.createJedisPool();
         varName = "OnMessagePubSub:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        onMessagePubSub = new OnMessagePubSub(this::doOnMessage);
+    }
+
+    @After
+    public void after() throws IOException {
+        if (!jtfTest.functionalTestEnabled()) return;
+        if (onMessagePubSub != null && onMessagePubSub.isSubscribed()) {
+            onMessagePubSub.unsubscribe();
+        }
+        if (jedisPool != null) {
+            jedisPool.close();
+        }
     }
 
     void doOnMessage(String channel, String message) {
-        LOGGER.info("FunctionalOnMessagePubSubTest doOnMessage channel {} message {}", channel, message);
-        refChannel.set(channel);
-        refMessage.set(message);
-        waiter.notify();
+        try {
+            LOGGER.info("doOnMessage channel {} message {}", channel, message);
+            refChannel.set(channel);
+            refMessage.set(message);
+            synchronized (waiter) {
+                waiter.notify();
+            }
+            LOGGER.info("doOnMessage exit channel {} message {}", channel, message);
+        } catch (Exception e) {
+            LOGGER.error("doOnMessage error", e);
+        }
     }
 
     void doSubscribe() {
         try (Jedis jedis = jedisPool.getResource()) {
-            LOGGER.info("FunctionalOnMessagePubSubTest messagePubSub subscribe {}", varName);
+            LOGGER.info("messagePubSub subscribe {}", varName);
+            onMessagePubSub = new OnMessagePubSub(this::doOnMessage);
             jedis.subscribe(onMessagePubSub, varName);
+            LOGGER.info("messagePubSub subscribe exit {}", varName);
+        } catch (Exception e) {
+            LOGGER.error("messagePubSub subscribe error", e);
         }
     }
 
     void doSendMessage() {
         try (Jedis jedis = jedisPool.getResource()) {
             jedis.publish(varName, "FunctionalOnMessagePubSubTest");
-            LOGGER.info("FunctionalOnMessagePubSubTest doSendMessage channel {} message {} ", varName, "FunctionalOnMessagePubSubTest");
+            LOGGER.info("doSendMessage channel {} message {} ", varName, "FunctionalOnMessagePubSubTest");
+        } catch (Exception e) {
+            LOGGER.error("doSendMessage error", e);
         }
     }
 
-
-        @Test
-        public void testONMessage() throws InterruptedException {
-            long t = System.currentTimeMillis();
-            LOGGER.info("testONMessage init");
-            scheduler.schedule(this::doSubscribe, 5, TimeUnit.MILLISECONDS);
-            scheduler.schedule(this::doSendMessage, 250, TimeUnit.MILLISECONDS);
-            synchronized (waiter) {
-                waiter.wait(5000);
-            }
-            assertEquals(varName, refChannel.get());
-            assertEquals("FunctionalOnMessagePubSubTest", refMessage.get());
-            assertTrue( 5000 > (System.currentTimeMillis() - t) );
+    @Test
+    public void testONMessage() throws InterruptedException {
+        long t = System.currentTimeMillis();
+        LOGGER.info("testONMessage init");
+        scheduler.schedule(this::doSubscribe, 5, TimeUnit.MILLISECONDS);
+        scheduler.schedule(this::doSendMessage, 250, TimeUnit.MILLISECONDS);
+        LOGGER.info("testONMessage wait");
+        synchronized (waiter) {
+            waiter.wait(2500);
         }
+        LOGGER.info("testONMessage unwait");
+        assertTrue(onMessagePubSub.isSubscribed());
+        assertEquals(varName, refChannel.get());
+        assertEquals("FunctionalOnMessagePubSubTest", refMessage.get());
+        assertTrue( 2500 > (System.currentTimeMillis() - t) );
+        Thread.sleep(10);
+        if (onMessagePubSub != null) {
+            onMessagePubSub.unsubscribe();
+        }
+        Thread.sleep(100); // Needed
+        assertFalse(onMessagePubSub.isSubscribed());
 
+    }
 
 }
