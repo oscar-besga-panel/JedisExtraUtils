@@ -4,7 +4,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.common.test.JedisTestFactory;
-import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.obapanel.jedis.interruptinglocks.JedisLockWithNotification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLocks.checkLock;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisCheckLocks.checkLock;
 
 
 public class FunctionalLocksWithNotificationsOnCriticalZoneTest {

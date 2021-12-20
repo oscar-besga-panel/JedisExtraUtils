@@ -42,18 +42,15 @@ public class JedisLockWithNotification extends JedisLock {
     }
 
     protected void doSleepBetweenAttempts() throws InterruptedException {
-        redisWaitNotification();
+        //long currentWaitNotificationMilis = waitNotificationUnit.toMillis(waitNotificationTime);
+        //redisWaitNotification(currentWaitNotificationMilis);
+        redisWaitNotification(0L);
     }
 
     protected void doSleepBetweenAttempts(long timeInMilis) throws InterruptedException {
         redisWaitNotification(timeInMilis - 1);
     }
 
-
-    private void redisWaitNotification() throws InterruptedException {
-        long currentWaitNotificationMilis = waitNotificationUnit.toMillis(waitNotificationTime);
-        redisWaitNotification(currentWaitNotificationMilis);
-    }
 
     private void redisWaitNotification(long currentWaitNotificationMilis) throws InterruptedException {
         OnMessagePubSub onMessagePubSub = new OnMessagePubSub(this::redisWaitNotificationOnMessage);
@@ -62,7 +59,11 @@ public class JedisLockWithNotification extends JedisLock {
                     redisWaitNotificationSubscribeBackground(onMessagePubSub)
             );
             synchronized (waiter) {
-                waiter.wait(currentWaitNotificationMilis);
+                if (currentWaitNotificationMilis == 0) {
+                    waiter.wait();
+                } else {
+                    waiter.wait(currentWaitNotificationMilis);
+                }
             }
         } finally {
             onMessagePubSub.unsubscribe();

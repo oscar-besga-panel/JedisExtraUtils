@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 import static org.junit.Assert.assertFalse;
-import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLocks.checkLock;
+import static org.obapanel.jedis.interruptinglocks.functional.JedisCheckLocks.checkLock;
 
 
 public class FunctionalLocksOnCriticalZoneTest {
