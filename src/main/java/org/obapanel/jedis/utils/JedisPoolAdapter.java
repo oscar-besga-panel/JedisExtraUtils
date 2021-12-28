@@ -2,8 +2,6 @@ package org.obapanel.jedis.utils;
 
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
-import org.apache.commons.pool2.PooledObjectFactory;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -11,6 +9,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisExhaustedPoolException;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -41,7 +40,8 @@ public class JedisPoolAdapter extends JedisPool {
 
     private static final String CLOSE = "close";
 
-    private Jedis jedis;
+    private final Jedis jedis;
+    private final AtomicBoolean isClosedStatus = new AtomicBoolean(false);
 
     /**
      * Creates a pool from a single connection
@@ -54,9 +54,12 @@ public class JedisPoolAdapter extends JedisPool {
 
     /**
      * Creates a JedisPoolAdapter from a single connection
-     * @param jedis
+     * @param jedis Jedis connection
      */
     public JedisPoolAdapter(Jedis jedis) {
+        if (jedis == null) {
+            throw new IllegalArgumentException("Jedis should not be null");
+        }
         this.jedis = jedis;
     }
 
@@ -65,7 +68,6 @@ public class JedisPoolAdapter extends JedisPool {
      * @param action Consumer of redis connection
      */
     public void withResource(Consumer<Jedis> action) {
-        checkJedis();
         try(Jedis jedis = getResource()) {
             action.accept(jedis);
         }
@@ -78,7 +80,6 @@ public class JedisPoolAdapter extends JedisPool {
      * @return result of function
      */
     public <T> T withResourceFunction(Function<Jedis, T> action) {
-        checkJedis();
         try(Jedis jedis = getResource()) {
             return action.apply(jedis);
         }
@@ -87,7 +88,9 @@ public class JedisPoolAdapter extends JedisPool {
 
     @Override
     public Jedis getResource() {
-        checkJedis();
+        if (isClosedStatus.get()) {
+            throw new JedisExhaustedPoolException("JedisPoolAdapter already closed");
+        }
         return createDynamicProxyFromJedis(jedis);
     }
 
@@ -103,12 +106,12 @@ public class JedisPoolAdapter extends JedisPool {
 
     @Override
     public void close() {
-        jedis = null;
+        isClosedStatus.set(true);
     }
 
     @Override
     public boolean isClosed() {
-        return jedis == null || !jedis.isConnected();
+        return isClosedStatus.get();
     }
 
 
@@ -134,31 +137,26 @@ public class JedisPoolAdapter extends JedisPool {
 
     @Override
     public int getNumActive() {
-        checkJedis();
         return 1;
     }
 
     @Override
     public int getNumIdle() {
-        checkJedis();
         return 0;
     }
 
     @Override
     public int getNumWaiters() {
-        checkJedis();
         return 0;
     }
 
     @Override
     public long getMeanBorrowWaitTimeMillis() {
-        checkJedis();
         return 0L;
     }
 
     @Override
     public long getMaxBorrowWaitTimeMillis() {
-        checkJedis();
         return 0L;
     }
 
@@ -167,13 +165,6 @@ public class JedisPoolAdapter extends JedisPool {
         //NOPE
     }
 
-    /**
-     * If jedis is not present, the pool is exhausted
-     */
-    private void checkJedis() {
-        if (jedis == null)
-            throw new JedisExhaustedPoolException("Jedis pool adapter is closed");
-    }
 
     /**
      * This will create a proxy object

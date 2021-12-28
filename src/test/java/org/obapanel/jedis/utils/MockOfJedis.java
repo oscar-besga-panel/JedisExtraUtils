@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
@@ -42,6 +43,7 @@ public class MockOfJedis {
     }
 
     private final JedisPool jedisPool;
+    private final JedisSentinelPool jedisSentinelPool;
     private final Jedis jedis;
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
@@ -52,6 +54,8 @@ public class MockOfJedis {
         jedis = Mockito.mock(Jedis.class);
         jedisPool = Mockito.mock(JedisPool.class);
         Mockito.when(jedisPool.getResource()).thenReturn(jedis);
+        jedisSentinelPool = Mockito.mock(JedisSentinelPool.class);
+        Mockito.when(jedisSentinelPool.getResource()).thenReturn(jedis);
 
         Mockito.when(jedis.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
@@ -135,6 +139,10 @@ public class MockOfJedis {
 
     public JedisPool getJedisPool(){
         return jedisPool;
+    }
+
+    public JedisSentinelPool getJedisSentinelPool(){
+        return jedisSentinelPool;
     }
 
     public synchronized void clearData(){
