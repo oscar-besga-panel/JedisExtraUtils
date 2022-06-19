@@ -1,5 +1,5 @@
 @Grab(group='redis.clients', module='jedis', version='3.6.3')
-@Grab(group='org.obapanel.jedis', module='interruptinglocks', version='2.8.2')
+@Grab(group='org.obapanel.jedis', module='interruptinglocks', version='2.12.0')
 
 import org.obapanel.jedis.iterators.*
 import redis.clients.jedis.*
