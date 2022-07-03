@@ -54,13 +54,13 @@ public class RedisCache implements Cache<String,String> {
         return name + ":" + key;
     }
 
-    <K> K underPool(Function<Jedis, K> action) {
+    <K> K underPoolGet(Function<Jedis, K> action) {
         try (Jedis jedis = jedisPool.getResource()){
             return action.apply(jedis);
         }
     }
 
-    void underPool(Consumer<Jedis> action) {
+    void underPoolDo(Consumer<Jedis> action) {
         try (Jedis jedis = jedisPool.getResource()){
             action.accept(jedis);
         }
@@ -68,9 +68,8 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public String get(String key) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.get(key);
-        }
+        if (key == null) throw new NullPointerException("RedisCache.get key is null");
+        return underPoolGet(jedis -> jedis.get(key));
     }
 
     @Override
@@ -82,9 +81,6 @@ public class RedisCache implements Cache<String,String> {
                 responses.put(key, t.get(key));
             }
             t.exec();
-            //            return responses.entrySet().stream().
-//                    filter( entry -> entry.getValue().get() != null ).
-//                    collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             Map<String, String> result = new HashMap<>();
             for(Map.Entry<String, Response<String>> entry: responses.entrySet()) {
                 if (entry.getValue() != null && entry.getValue().get() != null) {
@@ -107,6 +103,8 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public void put(String key, String value) {
+        if (key == null) throw new NullPointerException("RedisCache.put key is null");
+        if (value == null) throw new NullPointerException("RedisCache.put value is null");
         try (Jedis jedis = jedisPool.getResource()) {
             jedis.set(key, value);
         }
@@ -114,6 +112,8 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public String getAndPut(String key, String value) {
+        if (key == null) throw new NullPointerException("RedisCache.getAndPut key is null");
+        if (value == null) throw new NullPointerException("RedisCache.getAndPut value is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
             Response<String> response = t.get(key);
@@ -125,6 +125,7 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public void putAll(Map<? extends String, ? extends String> map) {
+        if (map == null) throw new NullPointerException("RedisCache.putAll map is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
             map.forEach(t::set);
@@ -134,6 +135,8 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public boolean putIfAbsent(String key, String value) {
+        if (key == null) throw new NullPointerException("RedisCache.putIfAbsent key is null");
+        if (value == null) throw new NullPointerException("RedisCache.putIfAbsent value is null");
         try (Jedis jedis = jedisPool.getResource()) {
             String result = jedis.set(key, value, new SetParams().nx());
             return result != null; //TODO
@@ -142,6 +145,7 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public boolean remove(String key) {
+        if (key == null) throw new NullPointerException("RedisCache.remove key is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
             Response<String> previous = t.get(key);
@@ -154,6 +158,8 @@ public class RedisCache implements Cache<String,String> {
     @Override
     public boolean remove(String key, String oldValue) {
         //Better with script
+        if (key == null) throw new NullPointerException("RedisCache.remove key is null");
+        if (oldValue == null) throw new NullPointerException("RedisCache.remove oldValue is null");
         try (Jedis jedis = jedisPool.getResource()) {
             String current = jedis.get(key);
             if (current != null && current.equals(oldValue)) {
@@ -167,6 +173,7 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public String getAndRemove(String key) {
+        if (key == null) throw new NullPointerException("RedisCache.getAndRemove key is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
             Response<String> previous = t.get(key);
@@ -178,6 +185,10 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public boolean replace(String key, String oldValue, String newValue) {
+        if (key == null) throw new NullPointerException("RedisCache.replace key is null");
+        if (oldValue == null) throw new NullPointerException("RedisCache.replace oldValue is null");
+        if (newValue == null) throw new NullPointerException("RedisCache.replace newValue is null");
+
         //Better with script
         try (Jedis jedis = jedisPool.getResource()) {
             String current = jedis.get(key);
@@ -192,6 +203,8 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public boolean replace(String key, String value) {
+        if (key == null) throw new NullPointerException("RedisCache.replace key is null");
+        if (value == null) throw new NullPointerException("RedisCache.replace value is null");
         //Better with script
         try (Jedis jedis = jedisPool.getResource()) {
             String current = jedis.get(key);
