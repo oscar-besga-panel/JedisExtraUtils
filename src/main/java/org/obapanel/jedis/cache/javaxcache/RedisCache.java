@@ -1,39 +1,98 @@
 package org.obapanel.jedis.cache.javaxcache;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
 import javax.cache.Cache;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
+import javax.cache.processor.MutableEntry;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class RedisCache implements Cache<String,String> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(RedisCache.class);
 
-    private final JedisPool jedisPool;
+
+    private JedisPool jedisPool;
+
+    private CacheLoader<String, String> cacheLoader;
+
+    private CacheWriter<String, String> cacheWriter;
+
     private final String name;
     private final RedisCacheConfiguration configuration;
     private final RedisCacheManager cacheManager;
-
-    RedisCache(JedisPool jedisPool, String name, RedisCacheConfiguration redisCacheConfiguration) {
-        this.jedisPool = jedisPool;
-        this.name = name;
-        this.configuration = redisCacheConfiguration;
-        this.cacheManager = null;
-    }
+    private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
     RedisCache(String name, RedisCacheConfiguration redisCacheConfiguration, RedisCacheManager cacheManager) {
         this.jedisPool = cacheManager.getJedisPool();
         this.name = name;
         this.configuration = redisCacheConfiguration;
         this.cacheManager = cacheManager;
+    }
+
+    public JedisPool getJedisPool() {
+        return jedisPool;
+    }
+
+    public void setJedisPool(JedisPool jedisPool) {
+        if (this.jedisPool != null) LOGGER.warn("JedisPool was not null, replacing");
+        this.jedisPool = jedisPool;
+    }
+
+    public void clearJedisPool() {
+        jedisPool = null;
+    }
+
+    public boolean hasJedisPool() {
+        return jedisPool != null;
+    }
+
+
+    public CacheLoader<String, String> getCacheLoader() {
+        return cacheLoader;
+    }
+
+    public void setCacheLoader(CacheLoader<String, String> cacheLoader) {
+        if (this.cacheLoader != null) LOGGER.warn("CacheLoader was not null, replacing");
+        this.cacheLoader = cacheLoader;
+    }
+
+    public void clearCacheLoader() {
+        cacheLoader = null;
+    }
+
+    public boolean hasCacheLoader() {
+        return cacheLoader != null;
+    }
+
+
+    public CacheWriter<String, String> getCacheWriter() {
+        return cacheWriter;
+    }
+
+    public void setCacheWriter(CacheWriter<String, String> cacheWriter) {
+        if (this.cacheWriter != null) LOGGER.warn("CacheWriter was not null, replacing");
+        this.cacheWriter = cacheWriter;
+    }
+
+    public void clearCacheWriter() {
+        cacheWriter = null;
+    }
+
+    public boolean hasCacheWriter() {
+        return cacheWriter != null;
     }
 
     @Override
@@ -50,120 +109,236 @@ public class RedisCache implements Cache<String,String> {
         return configuration;
     }
 
-    String dataKey(String key) {
+    public String resolveKey(String key) {
+        if (key == null) throw new NullPointerException("Key must be not null");
         return name + ":" + key;
     }
 
-    <K> K underPoolGet(Function<Jedis, K> action) {
-        try (Jedis jedis = jedisPool.getResource()){
-            return action.apply(jedis);
-        }
+    public String unresolveKey(String key) {
+        if (key == null) throw new NullPointerException("Key must be not null");
+        return key.replace(name + ":", "");
     }
 
-    void underPoolDo(Consumer<Jedis> action) {
-        try (Jedis jedis = jedisPool.getResource()){
-            action.accept(jedis);
+    private String readThrougth(Jedis jedis, String key) {
+        return readThrougth(jedis, key, null);
+    }
+
+    private String readThrougth(Jedis jedis, String key, String value) {
+        if (value == null && cacheLoader != null) {
+            value = cacheLoader.load(key);
+            if (value != null) {
+                jedis.set(resolveKey(key), value);
+            }
         }
+        return value;
     }
 
     @Override
     public String get(String key) {
+        checkClosed();
         if (key == null) throw new NullPointerException("RedisCache.get key is null");
-        return underPoolGet(jedis -> jedis.get(key));
-    }
-
-    @Override
-    public Map<String, String> getAll(Set<? extends String> keys) {
         try (Jedis jedis = jedisPool.getResource()) {
-            Map<String, Response<String>> responses = new HashMap<>();
-            Transaction t = jedis.multi();
-            for(String key: keys) {
-                responses.put(key, t.get(key));
-            }
-            t.exec();
-            Map<String, String> result = new HashMap<>();
-            for(Map.Entry<String, Response<String>> entry: responses.entrySet()) {
-                if (entry.getValue() != null && entry.getValue().get() != null) {
-                    result.put(entry.getKey(), entry.getValue().get());
-                }
-            }
-            return result;
+            String value = jedis.get(resolveKey(key));
+            value = readThrougth(jedis, key, value);
+            return value;
         }
     }
 
     @Override
+    public Map<String, String> getAll(Set<? extends String> keys) {
+        checkClosed();
+        try (Jedis jedis = jedisPool.getResource()) {
+            Map<String, Response<String>> responses = new HashMap<>();
+            Transaction t = jedis.multi();
+            for(String key: keys) {
+                responses.put(key, t.get(resolveKey(key)));
+            }
+            t.exec();
+            Map<String, String> result = resolveTransactionEntries(jedis, responses);
+            return result;
+        }
+    }
+
+    private Map<String, String> resolveTransactionEntries(Jedis jedis, Map<String, Response<String>> responses) {
+        Map<String, String> result = new HashMap<>();
+        for (Map.Entry<String, Response<String>> entry: responses.entrySet()) {
+            String resolvedValue;
+            if (entry.getValue() != null && entry.getValue().get() != null) {
+                resolvedValue = entry.getValue().get();
+            } else {
+                resolvedValue = readThrougth(jedis, entry.getKey());
+            }
+            if (resolvedValue != null) {
+                result.put(entry.getKey(), resolvedValue);
+            }
+        }
+        return result;
+    }
+
+    @Override
     public boolean containsKey(String key) {
-        return get(key) != null;
+        checkClosed();
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.exists(resolveKey(key));
+        }
     }
 
     @Override
     public void loadAll(Set<? extends String> keys, boolean replaceExistingValues, CompletionListener completionListener) {
-
+        checkClosed();
+        Thread t = new Thread(() -> loadAllRun(keys, replaceExistingValues, completionListener));
+        t.setDaemon(true);
+        t.start();
     }
+
+    private void loadAllRun(Set<? extends String> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+        try {
+            loadAllNow(keys, replaceExistingValues);
+            completionListener.onCompletion();
+        } catch (Exception e) {
+            completionListener.onException(e);
+        }
+    }
+
+//    public void loadAllNow1(Set<? extends String> keys, boolean replaceExistingValues) {
+//        checkClosed();
+//        if (cacheLoader != null) {
+//            for(String key: keys) {
+//                if (replaceExistingValues || !containsKey(key)) {
+//                    String value = cacheLoader.load(key);
+//                    if (value != null) {
+//                        put(key, value);
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//
+//    public void loadAllNow2(Set<? extends String> keys, boolean replaceExistingValues) {
+//        checkClosed();
+//        if (cacheLoader != null) {
+//            Map<String, String> newKeyValues = new HashMap<>();
+//            for(String key: keys) {
+//                if (replaceExistingValues || !containsKey(key)) {
+//                    String value = cacheLoader.load(key);
+//                    if (value != null) {
+//                        newKeyValues.put(key, value);
+//                    }
+//                }
+//            }
+//            putAll(newKeyValues);
+//        }
+//    }
+
+    public void loadAllNow(Set<? extends String> keys, boolean replaceExistingValues) {
+        checkClosed();
+        if (cacheLoader != null) {
+            if (!replaceExistingValues) {
+                keys = keys.stream().
+                        filter(k -> !containsKey(k)).
+                        collect(Collectors.toSet());
+            }
+            Map<String, String> newKeyValues = cacheLoader.loadAll(keys);
+            putAll(newKeyValues);
+        }
+    }
+
+
+
 
     @Override
     public void put(String key, String value) {
+        checkClosed();
         if (key == null) throw new NullPointerException("RedisCache.put key is null");
         if (value == null) throw new NullPointerException("RedisCache.put value is null");
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(key, value);
+            jedis.set(resolveKey(key), value);
+            if (cacheWriter != null) {
+                cacheWriter.write(new SimpleEntry(key, value));
+            }
         }
     }
 
     @Override
     public String getAndPut(String key, String value) {
+        checkClosed();
         if (key == null) throw new NullPointerException("RedisCache.getAndPut key is null");
         if (value == null) throw new NullPointerException("RedisCache.getAndPut value is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
-            Response<String> response = t.get(key);
-            t.set(key, value);
+            Response<String> response = t.get(resolveKey(key));
+            t.set(resolveKey(key), value);
             t.exec();
+            if (cacheWriter != null) {
+                cacheWriter.write(new SimpleEntry(key, value));
+            }
             return response.get();
         }
     }
 
     @Override
     public void putAll(Map<? extends String, ? extends String> map) {
+        checkClosed();
         if (map == null) throw new NullPointerException("RedisCache.putAll map is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
-            map.forEach(t::set);
+            map.forEach( (k,v) -> t.set(resolveKey(k),v));
             t.exec();
+            if (cacheWriter != null) {
+                Collection<Cache.Entry<? extends String,? extends String>> entries = map.entrySet().
+                        stream().
+                        map(e -> new SimpleEntry(e.getKey(), e.getValue())).
+                        collect(Collectors.toSet());
+                cacheWriter.writeAll(entries);
+            }
         }
     }
 
+
     @Override
     public boolean putIfAbsent(String key, String value) {
+        checkClosed();
         if (key == null) throw new NullPointerException("RedisCache.putIfAbsent key is null");
         if (value == null) throw new NullPointerException("RedisCache.putIfAbsent value is null");
         try (Jedis jedis = jedisPool.getResource()) {
-            String result = jedis.set(key, value, new SetParams().nx());
-            return result != null; //TODO
+            String result = jedis.set(resolveKey(key), value, new SetParams().nx());
+            if (result!= null && cacheWriter != null) {
+                cacheWriter.write(new SimpleEntry(key, value));
+            }
+            return result != null;
         }
     }
 
     @Override
     public boolean remove(String key) {
+        checkClosed();
         if (key == null) throw new NullPointerException("RedisCache.remove key is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
-            Response<String> previous = t.get(key);
-            t.del(key);
+            Response<String> previous = t.get(resolveKey(key));
+            t.del(resolveKey(key));
             t.exec();
+            if (previous.get() != null && cacheWriter != null) {
+                cacheWriter.delete(key);
+            }
             return previous.get() != null;
         }
     }
 
     @Override
     public boolean remove(String key, String oldValue) {
+        checkClosed();
         //Better with script
         if (key == null) throw new NullPointerException("RedisCache.remove key is null");
         if (oldValue == null) throw new NullPointerException("RedisCache.remove oldValue is null");
         try (Jedis jedis = jedisPool.getResource()) {
-            String current = jedis.get(key);
+            String current = jedis.get(resolveKey(key));
             if (current != null && current.equals(oldValue)) {
-                jedis.del(key);
+                jedis.del(resolveKey(key));
+                if (cacheWriter != null) {
+                    cacheWriter.delete(key);
+                }
                 return true;
             }  else {
                 return false;
@@ -173,27 +348,35 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public String getAndRemove(String key) {
+        checkClosed();
         if (key == null) throw new NullPointerException("RedisCache.getAndRemove key is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
-            Response<String> previous = t.get(key);
-            t.del(key);
+            Response<String> previous = t.get(resolveKey(key));
+            t.del(resolveKey(key));
             t.exec();
+            if (previous.get() != null && cacheWriter != null) {
+                cacheWriter.delete(key);
+            }
             return previous.get();
         }
     }
 
     @Override
     public boolean replace(String key, String oldValue, String newValue) {
+        checkClosed();
         if (key == null) throw new NullPointerException("RedisCache.replace key is null");
         if (oldValue == null) throw new NullPointerException("RedisCache.replace oldValue is null");
         if (newValue == null) throw new NullPointerException("RedisCache.replace newValue is null");
 
         //Better with script
         try (Jedis jedis = jedisPool.getResource()) {
-            String current = jedis.get(key);
+            String current = jedis.get(resolveKey(key));
             if (current != null && current.equals(oldValue)) {
-                jedis.set(key, newValue);
+                jedis.set(resolveKey(key), newValue);
+                if (cacheWriter != null) {
+                    cacheWriter.write(new SimpleEntry(key, newValue));
+                }
                 return true;
             }  else {
                 return false;
@@ -203,13 +386,17 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public boolean replace(String key, String value) {
+        checkClosed();
         if (key == null) throw new NullPointerException("RedisCache.replace key is null");
         if (value == null) throw new NullPointerException("RedisCache.replace value is null");
         //Better with script
         try (Jedis jedis = jedisPool.getResource()) {
-            String current = jedis.get(key);
+            String current = jedis.get(resolveKey(key));
             if (current != null) {
-                jedis.set(key, value);
+                jedis.set(resolveKey(key), value);
+                if (cacheWriter != null) {
+                    cacheWriter.write(new SimpleEntry(key, value));
+                }
                 return true;
             }  else {
                 return false;
@@ -219,11 +406,17 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public String getAndReplace(String key, String value) {
+        checkClosed();
+        if (key == null) throw new NullPointerException("RedisCache.getAndReplace key is null");
+        if (value == null) throw new NullPointerException("RedisCache.getAndReplace value is null");
         //Better with script
         try (Jedis jedis = jedisPool.getResource()) {
-            String current = jedis.get(key);
+            String current = jedis.get(resolveKey(key));
             if (current != null) {
-                jedis.set(key, value);
+                jedis.set(resolveKey(key), value);
+                if (cacheWriter != null) {
+                    cacheWriter.write(new SimpleEntry(key, value));
+                }
                 return current;
             }  else {
                 return null;
@@ -233,23 +426,46 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public void removeAll(Set<? extends String> keys) {
+        checkClosed();
+        if (keys == null) throw new NullPointerException("RedisCache.removeAll keys is null");
+        String[] keysAsArray = keys.toArray(new String[0]);
+        for(int i=0; i < keysAsArray.length; i++) {
+            keysAsArray[i] = resolveKey(keysAsArray[i]);
+        }
         try (Jedis jedis = jedisPool.getResource()) {
-            String[] keysAsArray = keys.toArray(new String[]{});
             jedis.del(keysAsArray);
+        }
+        if (cacheWriter != null) {
+            cacheWriter.deleteAll(keys);
         }
     }
 
     @Override
     public void removeAll() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            String[] keysAsArray = doScan().toArray(new String[]{});
-            jedis.del(keysAsArray);
+        removeAll(true);
+    }
+
+
+    private void removeAll(boolean allowCacheWriter) {
+        checkClosed();
+        Set<String> scanned = doScan();
+        // No need to convert here
+        if (!scanned.isEmpty()) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                jedis.del(scanned.toArray(new String[]{}));
+            }
+            if (allowCacheWriter && cacheWriter != null) {
+                Set<String> unresolved = scanned.stream().
+                        map(this::unresolveKey).
+                        collect(Collectors.toSet());
+                cacheWriter.deleteAll(unresolved);
+            }
         }
     }
 
     @Override
     public void clear() {
-
+        removeAll(false);
     }
 
     @Override
@@ -259,28 +475,46 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public <T> T invoke(String key, EntryProcessor<String, String, T> entryProcessor, Object... arguments) throws EntryProcessorException {
-        return null;
+        checkClosed();
+        RedisCacheEntry entry = new RedisCacheEntry(key);
+        return entryProcessor.process(entry, arguments);
     }
 
     @Override
     public <T> Map<String, EntryProcessorResult<T>> invokeAll(Set<? extends String> keys, EntryProcessor<String, String, T> entryProcessor, Object... arguments) {
-        return null;
+        Map<String, EntryProcessorResult<T>> results = new HashMap<>();
+        for(String key: keys) {
+            try {
+                T result = invoke(key, entryProcessor, arguments);
+                results.put(key, new RedisCacheEntryProcessorResult<>(result));
+            } catch (Exception exception) {
+                results.put(key, new RedisCacheEntryProcessorResult<>(exception));
+            }
+        }
+        return results;
     }
 
 
     @Override
     public void close() {
-
+        clear();
+        isClosed.set(true);
     }
 
     @Override
     public boolean isClosed() {
-        return false;
+        return isClosed.get();
+    }
+
+    private void checkClosed() {
+        if (isClosed.get()) {
+            throw new IllegalStateException("RedisCachingProvider is closed");
+        }
     }
 
     @Override
     public <T> T unwrap(Class<T> clazz) {
-        return null;
+        return RedisCacheUtils.unwrap(clazz, this);
     }
 
     @Override
@@ -295,13 +529,14 @@ public class RedisCache implements Cache<String,String> {
 
     @Override
     public Iterator<Entry<String, String>> iterator() {
+        checkClosed();
         return null;
     }
 
     private Set<String> doScan() {
         try (Jedis jedis = jedisPool.getResource()) {
             Set<String> keys = new HashSet<>();
-            ScanParams scanParams = new ScanParams(); // Scan on two-by-two responses
+            ScanParams scanParams = new ScanParams().match(resolveKey("*"));
             String cursor = ScanParams.SCAN_POINTER_START;
             do {
                 ScanResult<String> partialResult =  jedis.scan(cursor, scanParams);
@@ -311,4 +546,45 @@ public class RedisCache implements Cache<String,String> {
             return keys;
         }
     }
+
+    private class RedisCacheEntry implements MutableEntry<String, String> {
+
+        private final String key;
+
+        private RedisCacheEntry(String key) {
+            this.key = key;
+        }
+
+        @Override
+        public boolean exists() {
+            return RedisCache.this.containsKey(key);
+        }
+
+        @Override
+        public void remove() {
+            RedisCache.this.remove(key);
+        }
+
+        @Override
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String getValue() {
+            return RedisCache.this.get(key);
+        }
+
+        @Override
+        public void setValue(String value) {
+            RedisCache.this.put(key, value);
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> clazz) {
+            return RedisCacheUtils.unwrap(clazz, this);
+        }
+
+    }
+
 }
