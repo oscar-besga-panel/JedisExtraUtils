@@ -2,8 +2,6 @@ package org.obapanel.jedis.utils;
 
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
-import org.apache.commons.pool2.PooledObjectFactory;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -11,6 +9,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisExhaustedPoolException;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -41,25 +40,46 @@ public class JedisPoolAdapter extends JedisPool {
 
     private static final String CLOSE = "close";
 
-    private Jedis jedis;
+    private final Jedis jedis;
+    private final AtomicBoolean isClosedStatus = new AtomicBoolean(false);
 
+    /**
+     * Creates a pool from a single connection
+     * @param jedis connection to redis
+     * @return pool of connection
+     */
     public static JedisPoolAdapter poolFromJedis(Jedis jedis) {
         return new JedisPoolAdapter(jedis);
     }
 
+    /**
+     * Creates a JedisPoolAdapter from a single connection
+     * @param jedis Jedis connection
+     */
     public JedisPoolAdapter(Jedis jedis) {
+        if (jedis == null) {
+            throw new IllegalArgumentException("Jedis should not be null");
+        }
         this.jedis = jedis;
     }
 
+    /**
+     * Execute the consumer with the resource
+     * @param action Consumer of redis connection
+     */
     public void withResource(Consumer<Jedis> action) {
-        checkJedis();
         try(Jedis jedis = getResource()) {
             action.accept(jedis);
         }
     }
 
+    /**
+     * Execute the consumer with the resource
+     * and gets the result
+     * @param action Function of redis connection
+     * @return result of function
+     */
     public <T> T withResourceFunction(Function<Jedis, T> action) {
-        checkJedis();
         try(Jedis jedis = getResource()) {
             return action.apply(jedis);
         }
@@ -68,7 +88,9 @@ public class JedisPoolAdapter extends JedisPool {
 
     @Override
     public Jedis getResource() {
-        checkJedis();
+        if (isClosedStatus.get()) {
+            throw new JedisExhaustedPoolException("JedisPoolAdapter already closed");
+        }
         return createDynamicProxyFromJedis(jedis);
     }
 
@@ -84,12 +106,12 @@ public class JedisPoolAdapter extends JedisPool {
 
     @Override
     public void close() {
-        jedis = null;
+        isClosedStatus.set(true);
     }
 
     @Override
     public boolean isClosed() {
-        return jedis == null || !jedis.isConnected();
+        return isClosedStatus.get();
     }
 
 
@@ -115,31 +137,26 @@ public class JedisPoolAdapter extends JedisPool {
 
     @Override
     public int getNumActive() {
-        checkJedis();
         return 1;
     }
 
     @Override
     public int getNumIdle() {
-        checkJedis();
         return 0;
     }
 
     @Override
     public int getNumWaiters() {
-        checkJedis();
         return 0;
     }
 
     @Override
     public long getMeanBorrowWaitTimeMillis() {
-        checkJedis();
         return 0L;
     }
 
     @Override
     public long getMaxBorrowWaitTimeMillis() {
-        checkJedis();
         return 0L;
     }
 
@@ -148,11 +165,23 @@ public class JedisPoolAdapter extends JedisPool {
         //NOPE
     }
 
-    private void checkJedis() {
-        if (jedis == null)
-            throw new JedisExhaustedPoolException("Jedis pool adapter is closed");
-    }
 
+    /**
+     * This will create a proxy object
+     * The intent is to have a proxy that will execute every method except close()
+     *
+     * Because close() can be called manually by the developer or automatically by the try-with-resources
+     *   and this close() will be expected to return the connection to the pool
+     *   not to close definitely the connection to redis
+     *   (and this pool will be effectively closed)
+     *   the proxy will capture the close method of the resource-returned jedis connection
+     *   and do nothing
+     *   and avoid errors.
+     *
+     *
+     * @param jedis jedis connection
+     * @return jedis proxied connection
+     */
     private static Jedis createDynamicProxyFromJedis(final Jedis jedis)  {
         try {
             ProxyFactory factory = new ProxyFactory();

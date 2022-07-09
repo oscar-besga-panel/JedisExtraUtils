@@ -19,7 +19,7 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLo
 
 public class FunctionalInterruptingLocksWithExecutorTest {
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksWithExecutorTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptingLocksWithExecutorTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -48,8 +48,8 @@ public class FunctionalInterruptingLocksWithExecutorTest {
     @Test
     public void testIfInterruptedFor5SecondsLock() {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
-            log.info("_\n");
-            log.info("i {}", i);
+            LOGGER.info("_\n");
+            LOGGER.info("i {}", i);
             boolean wasInterruptedFor3Seconds = wasInterrupted(3);
             boolean wasInterruptedFor7Seconds = wasInterrupted(7);
             boolean wasInterruptedFor1Seconds = wasInterrupted(1);

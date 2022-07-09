@@ -4,7 +4,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.common.test.JedisTestFactory;
-import org.obapanel.jedis.countdownlatch.JedisAdvancedCountDownLatch;
 import org.obapanel.jedis.countdownlatch.JedisCountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalJedisAdvancedCountDownLatchTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisAdvancedCountDownLatchTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisAdvancedCountDownLatchTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -55,7 +54,7 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
             } catch (Exception e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setName("T1");
@@ -66,7 +65,7 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setName("T2");
@@ -93,7 +92,7 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
             } catch (Exception e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setName("T1");
@@ -104,7 +103,7 @@ public class FunctionalJedisAdvancedCountDownLatchTest {
                 Thread.sleep(2500);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setName("T2");

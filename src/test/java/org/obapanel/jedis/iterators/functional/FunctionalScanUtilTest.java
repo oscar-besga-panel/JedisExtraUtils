@@ -1,10 +1,10 @@
-package org.obapanel.jedis.utils.functional;
+package org.obapanel.jedis.iterators.functional;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.obapanel.jedis.common.test.JedisTestFactory;
-import org.obapanel.jedis.utils.ScanUtil;
+import org.obapanel.jedis.iterators.ScanUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalScanUtilTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalScanUtilTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalScanUtilTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 

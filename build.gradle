@@ -1,37 +1,36 @@
 plugins {
     id 'java'
-    id 'maven'
-    id 'maven-publish'
     id 'jacoco'
+    id 'maven-publish'
 }
 
 group 'org.obapanel.jedis'
-version '2.2.0'
+version '2.12.0'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
-    compile 'redis.clients:jedis:3.6.3'
-    compile 'org.slf4j:slf4j-api:1.7.32'
-    compile 'org.slf4j:slf4j-simple:1.7.32'
+    implementation 'redis.clients:jedis:3.8.0'
+    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'org.slf4j:slf4j-simple:1.7.32'
     implementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
     implementation 'javax.cache:cache-api:1.1.1'
     implementation 'org.jsr107.ri:cache-ri-impl:1.1.1' //TODO to be deteled
 
 
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
-    testCompile group: 'org.powermock', name: 'powermock-core', version: '2.0.9'
-    testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.9'
-    testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.9'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
+    testImplementation group: 'org.powermock', name: 'powermock-core', version: '2.0.9'
+    testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.9'
+    testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.9'
 
-    // sadly doesnt work
-    // testCompile 'com.github.fppt:jedis-mock:0.1.14' 
+    // sadly doesnt work => testImplementation 'com.github.fppt:jedis-mock:0.1.14'
 }
 
 jacocoTestReport {
@@ -47,15 +46,9 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/oscar-besga-panel/InterruptingJedisLocks")
             credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
-    publications {
-        gpr(MavenPublication) {
-            from(components.java)
-        }
-    }
 }
-

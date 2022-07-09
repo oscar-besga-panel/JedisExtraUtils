@@ -38,16 +38,16 @@ The implementations are
 As java collections, you also can rely on iterator and streams to operate (be aware that under the hood there is a redis connection)
 
 
-Also you have iteators por SCAN, HSCAN, SCAN and ZSCAN operations. The iterable-iterator pair will 
+Also you have iteators por SCAN, HSCAN, SCAN and ZSCAN operations. The iterable-iterator pair will
 give you easy Java control and semantics over iterating an scan operation in redis.
 
-  
+
 All classes have tests, unit and functional ones.   
 You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
 There are more than 300 working tests, so the code is pretty secure.
 
-  
-   
+
+
 
 **See the [wiki](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki) for more documentation**
 
@@ -58,14 +58,14 @@ There are more than 300 working tests, so the code is pretty secure.
 
 Jedis is a Java library to use a Redis server with Java, at a low-level commands
 https://github.com/xetorthio/jedis.
-See it on mvn repository 
+See it on mvn repository
 https://mvnrepository.com/artifact/redis.clients/jedis
 
 Made with
 - Intellij
-- Mackdown editor [Editor.md](https://pandao.github.io/editor.md/en.html) 
+- Mackdown editor [Editor.md](https://pandao.github.io/editor.md/en.html)
 - Diagrams with [Draw io](https://app.diagrams.net/)
-- Bages from [awesome-badges](https://github.com/badges/awesome-badges) and [badgen](https://badgen.net/) and [open-source-badges](https://github.com/ellerbrock/open-source-badges/) 
+- Bages from [awesome-badges](https://github.com/badges/awesome-badges) and [badgen](https://badgen.net/) and [open-source-badges](https://github.com/ellerbrock/open-source-badges/)
 - Help from Stackoveflow, forums like [Jedis redis forum](https://groups.google.com/g/jedis_redis)
 
 See also
@@ -77,12 +77,12 @@ See also
 ## TODOs
 
 On branch ``develop/mapper`` I'm trying to make a POJO <-> RedisObject mapper to store objects in Redis directly.  
-It's barely working, so it is not production ready.  
+It's barely working, so it is not production ready.
 
-On branch ``cache`` I want to implement a javax.cache (JSR107 API and SPI 1.0.0 API) class based on redis; with the most simple 
-and straigthforward implementation. Also some simple caches for everyday use.  
-See spec in https://github.com/jsr107/jsr107spec
-See reference implementation in https://github.com/jsr107/RI
+On branch ``cache`` I want to implement a javax.cache (JSR107 API and SPI 1.0.0 API) class based on redis; with the most simple
+and straigthforward implementation. Also some simple caches for everyday use.
+
+
 
 Help, suggestions, critics and tests will be greatly appreciated.
 

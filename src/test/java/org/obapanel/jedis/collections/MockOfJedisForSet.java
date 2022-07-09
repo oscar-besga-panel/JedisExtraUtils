@@ -29,7 +29,7 @@ import static org.obapanel.jedis.common.test.TransactionOrder.quickReponseExecut
  */
 public class MockOfJedisForSet {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MockOfJedisForList.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedisForList.class);
 
     public static final String CLIENT_RESPONSE_OK = "OK";
     public static final String CLIENT_RESPONSE_KO = "KO";

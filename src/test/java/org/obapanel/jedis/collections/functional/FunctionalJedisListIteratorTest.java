@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
 
 public class FunctionalJedisListIteratorTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -168,5 +168,24 @@ public class FunctionalJedisListIteratorTest {
         assertTrue( check.containsAll(jedisList) );
     }
 
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void listIteratorRemoveOneTestError() {
+        JedisList jedisList = new JedisList(jedisPool, listName);
+        jedisList.add("a");
+        Iterator<String> it = jedisList.iterator();
+        it.remove();
+    }
+
+    @Test
+    public void listIteratorRemoveOneTest() {
+        JedisList jedisList = new JedisList(jedisPool, listName);
+        jedisList.add("a");
+        Iterator<String> it = jedisList.iterator();
+        if (it.hasNext()) {
+            it.next();
+            it.remove();
+        }
+        assertFalse(it.hasNext());
+    }
 
 }

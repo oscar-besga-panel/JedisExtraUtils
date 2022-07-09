@@ -27,7 +27,7 @@ import static org.obapanel.jedis.common.test.TTL.wrapTTL;
  */
 public class MockOfJedis {
 
-    private static final Logger log = LoggerFactory.getLogger(MockOfJedis.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedis.class);
 
     public static final String CLIENT_RESPONSE_OK = "OK";
     public static final String CLIENT_RESPONSE_KO = "KO";
@@ -44,13 +44,13 @@ public class MockOfJedis {
 
 
     static boolean checkLock(IJedisLock jedisLock){
-        log.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
+        LOGGER.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
         if (jedisLock.isLocked()) {
-            log.debug("LOCKED");
+            LOGGER.debug("LOCKED");
             return true;
         } else {
             IllegalStateException ise =  new IllegalStateException("LOCK NOT ADQUIRED isLocked " + jedisLock.isLocked());
-            log.error("ERROR LOCK NOT ADQUIRED e {} ", ise.getMessage(), ise);
+            LOGGER.error("ERROR LOCK NOT ADQUIRED e {} ", ise.getMessage(), ise);
             throw ise;
         }
     }
@@ -58,13 +58,13 @@ public class MockOfJedis {
     static boolean checkLock(java.util.concurrent.locks.Lock lock){
         if (lock instanceof  org.obapanel.jedis.interruptinglocks.Lock) {
             org.obapanel.jedis.interruptinglocks.Lock jedisLock = (org.obapanel.jedis.interruptinglocks.Lock) lock;
-            log.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
+            LOGGER.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
             if (jedisLock.isLocked()) {
-                log.debug("LOCKED");
+                LOGGER.debug("LOCKED");
                 return true;
             } else {
                 IllegalStateException ise =  new IllegalStateException("LOCK NOT ADQUIRED isLocked " + jedisLock.isLocked());
-                log.error("ERROR LOCK NOT ADQUIRED e {} ", ise.getMessage(), ise);
+                LOGGER.error("ERROR LOCK NOT ADQUIRED e {} ", ise.getMessage(), ise);
                 throw ise;
             }
         } else {
@@ -182,7 +182,6 @@ public class MockOfJedis {
         data.clear();
         transactionActions.clear();
     }
-
 
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);

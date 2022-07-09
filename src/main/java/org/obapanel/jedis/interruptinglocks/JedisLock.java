@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  */
 public class JedisLock implements IJedisLock {
 
-    private static final Logger log = LoggerFactory.getLogger(JedisLock.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisLock.class);
 
     public static final String CLIENT_RESPONSE_OK = "OK";
 
@@ -169,7 +169,7 @@ public class JedisLock implements IJedisLock {
                 Thread.sleep(waitCylce);
                 locked = redisLock();
             } catch (InterruptedException ie) {
-                log.debug("interrupted", ie);
+                LOGGER.debug("interrupted", ie);
             }
         }
     }
@@ -260,7 +260,7 @@ public class JedisLock implements IJedisLock {
             Object response = jedis.eval(UNLOCK_LUA_SCRIPT, keys, values);
             int num = 0;
             if (response != null) {
-                log.debug("response {}", response);
+                LOGGER.debug("response {}", response);
                 num = Integer.parseInt(response.toString());
             }
             if (num > 0) {
@@ -287,10 +287,10 @@ public class JedisLock implements IJedisLock {
      */
     private synchronized boolean redisCheckLockUnderPool(Jedis jedis) {
         boolean check = false;
-        log.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
+        LOGGER.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
         if ((leaseTime == null) || (timeLimit > System.currentTimeMillis())) {
             String currentValueRedis = jedis.get(name);
-            log.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", value, currentValueRedis);
+            LOGGER.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", value, currentValueRedis);
             check = value.equals(currentValueRedis);
         }
         if (!check) {

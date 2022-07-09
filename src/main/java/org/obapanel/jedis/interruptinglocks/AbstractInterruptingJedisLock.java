@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 public abstract class AbstractInterruptingJedisLock implements IJedisLock {
 
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractInterruptingJedisLock.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractInterruptingJedisLock.class);
 
 
     private final IJedisLock jedisLock;
@@ -61,16 +61,6 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         this.leaseTime = leaseTime;
         this.timeUnit = timeUnit;
     }
-
-    AbstractInterruptingJedisLock(IJedisLock jedisLock, long leaseTime, TimeUnit timeUnit, boolean forceTimeoutRedis) {
-        this.jedisLock = jedisLock;
-        this.forceTimeoutRedis = forceTimeoutRedis;
-        this.leaseTime = leaseTime;
-        this.timeUnit = timeUnit;
-        this.leaseTimeDiscountMillis = 10L;
-        this.recoverFromInterruptionMillis = 15L;
-    }
-
 
     public boolean isLocked() {
         return jedisLock.isLocked();
@@ -184,16 +174,16 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         try {
             long currentLeaseTime = timeUnit.toMillis( leaseTime );
             long realTimeToSleep = jedisLock.getLeaseMoment() + currentLeaseTime - System.currentTimeMillis() - leaseTimeDiscountMillis;
-            LOG.debug("runInterruptThread realTimeToSleep {} leaseTime {} forceTimeoutRedis {}", realTimeToSleep, currentLeaseTime, forceTimeoutRedis);
+            LOGGER.debug("runInterruptThread realTimeToSleep {} leaseTime {} forceTimeoutRedis {}", realTimeToSleep, currentLeaseTime, forceTimeoutRedis);
             if (realTimeToSleep > 0) {
                 Thread.sleep(realTimeToSleep);
             } else {
-                LOG.error("runInterruptThread realTimeToSleep ERROR, sleepring 50");
+                LOGGER.error("runInterruptThread realTimeToSleep ERROR, sleepring 50");
                 Thread.sleep(50);
             }
             interruptAndUnlock();
         } catch (InterruptedException e) {
-            LOG.debug("runInterruptThread interrupted");
+            LOGGER.debug("runInterruptThread interrupted");
         }
     }
 
@@ -202,7 +192,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
      */
     private synchronized void interruptAndUnlock() {
         if (!manualUnlock.get() && currentThread != null) {
-            LOG.debug("interruptAndUnlock interrupt current thread " + currentThread.getName());
+            LOGGER.debug("interruptAndUnlock interrupt current thread " + currentThread.getName());
             currentThread.interrupt();
         }
         try {

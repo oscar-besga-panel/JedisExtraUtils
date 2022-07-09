@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class JedisSemaphore {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JedisSemaphore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisSemaphore.class);
 
     // Thanks to redisson semaphore for guidance
     // https://github.com/redisson/redisson/blob/master/redisson/src/main/java/org/redisson/RedissonSemaphore.java

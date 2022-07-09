@@ -23,7 +23,7 @@ import static org.obapanel.jedis.common.test.TTL.wrapTTL;
  */
 public class MockOfJedis {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MockOfJedis.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedis.class);
 
     public static final String CLIENT_RESPONSE_OK = "OK";
     public static final String CLIENT_RESPONSE_KO = "KO";
@@ -95,7 +95,7 @@ public class MockOfJedis {
 
     private synchronized Object mockEval(String script, List<String> keys, List<String> values) {
         Object response = null;
-        if (script.equalsIgnoreCase(JedisAdvancedSemaphore.SEMAPHORE_LUA_SCRIPT)) {
+        if (script.equalsIgnoreCase(JedisSemaphore.SEMAPHORE_LUA_SCRIPT)) {
             response = mockEvalSemaphoreLuaScript(keys, values);
         }
         return response;

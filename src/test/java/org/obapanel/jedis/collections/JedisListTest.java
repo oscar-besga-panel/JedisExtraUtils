@@ -45,6 +45,12 @@ public class JedisListTest {
         return jedisList;
     }
 
+    @Test
+    public void getNameTest() {
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        assertEquals(listName, jedisList.getName());
+    }
+
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
         JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);

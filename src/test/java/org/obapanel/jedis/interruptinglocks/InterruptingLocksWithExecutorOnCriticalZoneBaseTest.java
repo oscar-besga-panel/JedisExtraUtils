@@ -26,7 +26,7 @@ import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
 
 
-    private static final Logger LOG = LoggerFactory.getLogger(InterruptingLocksWithExecutorOnCriticalZoneBaseTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InterruptingLocksWithExecutorOnCriticalZoneBaseTest.class);
 
 
     private final AtomicBoolean intoCriticalZone = new AtomicBoolean(false);
@@ -57,7 +57,7 @@ public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
                 filter(Objects::nonNull).
                 forEach(il -> {
                     if (il.isLocked()) {
-                        LOG.error("A lock named {} is locked !", il.getName());
+                        LOGGER.error("A lock named {} is locked !", il.getName());
                     }
                     il.unlock();
         });
@@ -73,7 +73,7 @@ public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
             errorInCriticalZone.set(false);
             otherError.set(false);
             intoCriticalZone.set(false);
-            LOG.info("FUNCTIONAL_TEST_CYCLES " + i);
+            LOGGER.info("FUNCTIONAL_TEST_CYCLES " + i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
             t1.setName("T1_1s_i"+i);
             Thread t2 = new Thread(() -> accesLockOfCriticalZone(7));
@@ -106,23 +106,23 @@ public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
     }
 
     private void accessCriticalZone(int sleepTime){
-        LOG.info("accessCriticalZone > enter  > " + Thread.currentThread().getName());
+        LOGGER.info("accessCriticalZone > enter  > " + Thread.currentThread().getName());
         if (intoCriticalZone.get()) {
             errorInCriticalZone.set(true);
             throw new IllegalStateException("Other thread is here " + Thread.currentThread().getName());
         }
         try {
-            LOG.info("accessCriticalZone > bef true  > " + Thread.currentThread().getName());
+            LOGGER.info("accessCriticalZone > bef true  > " + Thread.currentThread().getName());
             intoCriticalZone.set(true);
-            LOG.info("accessCriticalZone > aft true  > " + Thread.currentThread().getName());
+            LOGGER.info("accessCriticalZone > aft true  > " + Thread.currentThread().getName());
             Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
         } catch (InterruptedException e) {
             //NOOP
         } finally {
-            LOG.info("accessCriticalZone > bef false > " + Thread.currentThread().getName());
+            LOGGER.info("accessCriticalZone > bef false > " + Thread.currentThread().getName());
             intoCriticalZone.set(false);
-            LOG.info("accessCriticalZone > aft false > " + Thread.currentThread().getName());
+            LOGGER.info("accessCriticalZone > aft false > " + Thread.currentThread().getName());
         }
-        LOG.info("accessCriticalZone > exit   > " + Thread.currentThread().getName());
+        LOGGER.info("accessCriticalZone > exit   > " + Thread.currentThread().getName());
     }
 }

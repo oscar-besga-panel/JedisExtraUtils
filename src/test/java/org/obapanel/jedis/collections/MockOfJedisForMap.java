@@ -25,7 +25,7 @@ import static org.obapanel.jedis.common.test.TransactionOrder.quickReponseExecut
 
 public class MockOfJedisForMap {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MockOfJedisForMap.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedisForMap.class);
 
     public static final String CLIENT_RESPONSE_OK = "OK";
     public static final String CLIENT_RESPONSE_KO = "KO";

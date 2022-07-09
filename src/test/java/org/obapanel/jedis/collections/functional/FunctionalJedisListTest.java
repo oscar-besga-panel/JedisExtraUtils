@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalJedisListTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisListTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -50,6 +50,12 @@ public class FunctionalJedisListTest {
         JedisList jedisList = new JedisList(jedisPool, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
+    }
+
+    @Test
+    public void getNameTest() {
+        JedisList jedisList = new JedisList(jedisPool, listName);
+        assertEquals(listName, jedisList.getName());
     }
 
     @Test(expected = IllegalStateException.class)

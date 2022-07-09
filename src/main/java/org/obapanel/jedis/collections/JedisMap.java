@@ -1,5 +1,6 @@
 package org.obapanel.jedis.collections;
 
+import org.obapanel.jedis.iterators.HScanIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -9,11 +10,7 @@ import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class JedisMap implements Map<String, String> {
@@ -202,17 +199,12 @@ public class JedisMap implements Map<String, String> {
     }
 
     private Set<Entry<String, String>> doHscan() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Set<Entry<String, String>> keyValues = new HashSet<>();
-            ScanParams scanParams = new ScanParams(); // Scan on two-by-two responses
-            String cursor = ScanParams.SCAN_POINTER_START;
-            do {
-                ScanResult<Entry<String, String>> partialResult =  jedis.hscan(name, cursor, scanParams);
-                cursor = partialResult.getCursor();
-                keyValues.addAll(partialResult.getResult());
-            }  while(!cursor.equals(ScanParams.SCAN_POINTER_START));
-            return keyValues;
+        Set<Entry<String, String>> keyValues = new HashSet<>();
+        HScanIterator hScanIterator = new HScanIterator(jedisPool, name);
+        while (hScanIterator.hasNext()){
+            keyValues.add(hScanIterator.next());
         }
+        return keyValues;
     }
 
 }

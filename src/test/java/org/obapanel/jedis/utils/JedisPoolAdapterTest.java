@@ -16,7 +16,7 @@ import static org.obapanel.jedis.utils.MockOfJedis.unitTestEnabled;
 
 public class JedisPoolAdapterTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JedisPoolAdapterTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisPoolAdapterTest.class);
 
     private MockOfJedis mockOfJedis;
     private JedisPool jedisPool;

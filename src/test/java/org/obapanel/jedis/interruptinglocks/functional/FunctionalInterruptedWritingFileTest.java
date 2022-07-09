@@ -1,9 +1,6 @@
 package org.obapanel.jedis.interruptinglocks.functional;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.obapanel.jedis.common.test.JedisTestFactory;
 import org.obapanel.jedis.interruptinglocks.IJedisLock;
@@ -28,7 +25,7 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLo
 
 public class FunctionalInterruptedWritingFileTest {
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptedWritingFileTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptedWritingFileTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -58,15 +55,16 @@ public class FunctionalInterruptedWritingFileTest {
     }
 
 
+    //@Ignore
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
             line = 0;
             File tempFile = folder.newFile(getClass().getName() + "." + System.currentTimeMillis() + ".txt");
-            log.info("Temp file is " + tempFile.getAbsolutePath());
+            LOGGER.info("Temp file is " + tempFile.getAbsolutePath());
             otherError.set(false);
-            log.info("_\n");
-            log.info("FUNCTIONAL_TEST_CYCLES " + i);
+            LOGGER.info("_\n");
+            LOGGER.info("FUNCTIONAL_TEST_CYCLES " + i);
             Thread t1 = new Thread(new WriteTest(250, tempFile));
             t1.setName("T1_i"+i);
             Thread t2 = new Thread(new WriteTest(150, tempFile));
@@ -77,8 +75,18 @@ public class FunctionalInterruptedWritingFileTest {
             Collections.shuffle(threadList);
             threadList.forEach(Thread::start);
             for(Thread tt: threadList) tt.join();
+            //pressAnyKeyToContinue();
             assertFalse(otherError.get());
             assertFalse(lockList.stream().anyMatch(il -> il != null && il.isLocked()));
+        }
+    }
+
+    private void pressAnyKeyToContinue() {
+        try {
+            System.out.println("Press Enter key to continue...");
+            System.in.read();
+        } catch(Exception e) {
+            // NOOPE
         }
     }
 
@@ -101,11 +109,13 @@ public class FunctionalInterruptedWritingFileTest {
                 jedisLock.lock();
                 checkLock(jedisLock);
                 writeTest();
+            } catch (InterruptedException ie) {
+                LOGGER.info("Closed channel by interrupt exception InterruptedException", ie);
             } catch (java.nio.channels.ClosedByInterruptException cbie) {
-                log.info("Closed channel by interrupt exception ClosedByInterruptException", cbie);
+                LOGGER.info("Closed channel by interrupt exception ClosedByInterruptException", cbie);
                 Thread.interrupted();  // We clean the state
             } catch (Exception e){
-                log.error("Error ", e);
+                LOGGER.error("Error ", e);
                 otherError.set(true);
             } finally {
                 jedisLock.unlock();
@@ -113,12 +123,15 @@ public class FunctionalInterruptedWritingFileTest {
             }
         }
 
-        private void writeTest() throws IOException {
-            log.info("Writing with thread " + Thread.currentThread().getName());
+        private void writeTest() throws IOException, InterruptedException {
+            LOGGER.info("Writing with thread " + Thread.currentThread().getName());
             while(true) {
                 line++;
                 String text = "#" + line + " " + Thread.currentThread().getName();
                 Files.write(tempFile.toPath(), Collections.singletonList(text), StandardOpenOption.APPEND);
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("writeTest interrupted");
+                }
             }
         }
     }

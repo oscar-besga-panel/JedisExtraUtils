@@ -1,8 +1,9 @@
-package org.obapanel.jedis.utils;
+package org.obapanel.jedis.iterators;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.obapanel.jedis.utils.MockOfJedis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -14,16 +15,16 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.obapanel.jedis.utils.MockOfJedis.unitTestEnabled;
+import static org.obapanel.jedis.iterators.MockOfJedis.unitTestEnabled;
 
 
 public class ScanUtilTest {
 
 
 
-    private static final Logger LOG = LoggerFactory.getLogger(ScanUtilTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScanUtilTest.class);
 
-    private MockOfJedis mockOfJedis;
+    private org.obapanel.jedis.utils.MockOfJedis mockOfJedis;
     private JedisPool jedisPool;
 
 
@@ -37,8 +38,12 @@ public class ScanUtilTest {
 
     @After
     public void after() throws IOException {
-        jedisPool.close();
-        mockOfJedis.clearData();
+        if (jedisPool != null) {
+            jedisPool.close();
+        }
+        if (mockOfJedis != null) {
+            mockOfJedis.clearData();
+        }
     }
 
     @Test

@@ -17,7 +17,7 @@ import static org.obapanel.jedis.countdownlatch.MockOfJedis.unitTestEnabled;
 
 public class JedisCountDownLatchTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JedisCountDownLatchTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisCountDownLatchTest.class);
 
     private String countDownLatch;
     private MockOfJedis mockOfJedis;
@@ -47,7 +47,7 @@ public class JedisCountDownLatchTest {
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setDaemon(true);
@@ -58,7 +58,7 @@ public class JedisCountDownLatchTest {
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setDaemon(true);
@@ -85,7 +85,7 @@ public class JedisCountDownLatchTest {
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setDaemon(true);
@@ -96,7 +96,7 @@ public class JedisCountDownLatchTest {
                 Thread.sleep(2500);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setDaemon(true);
@@ -125,7 +125,7 @@ public class JedisCountDownLatchTest {
                 awaitZero.set(reachedZero);
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setDaemon(true);
@@ -136,7 +136,7 @@ public class JedisCountDownLatchTest {
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setDaemon(true);
@@ -166,7 +166,7 @@ public class JedisCountDownLatchTest {
                 awaitZero.set(reachedZero);
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setDaemon(true);
@@ -177,7 +177,7 @@ public class JedisCountDownLatchTest {
                 Thread.sleep(5000);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setDaemon(true);
@@ -207,7 +207,7 @@ public class JedisCountDownLatchTest {
                 awaitZero.set(reachedZero);
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setDaemon(true);
@@ -218,7 +218,7 @@ public class JedisCountDownLatchTest {
                 Thread.sleep(5000);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setDaemon(true);

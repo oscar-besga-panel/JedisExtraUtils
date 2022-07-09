@@ -1,11 +1,13 @@
 package org.obapanel.jedis.common.test;
 
+import org.obapanel.jedis.utils.JedisSentinelPoolAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.params.SetParams;
 
@@ -13,11 +15,19 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class JedisTestFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisTestFactory.class);
+
+    private static final String ABC = "abcdefhijklmnopqrstuvwxyz";
 
     public static final String TEST_PROPERTIES_FILE = "jedis.test.properties";
     public static final String TEST_PROPERTIES_PATH = "./src/test/resources/" + TEST_PROPERTIES_FILE;
@@ -37,6 +47,11 @@ public class JedisTestFactory {
     private String host = "127.0.0.1";
     private int port = 6379;
     private String pass = "";
+    private boolean enableSentinel = false;
+    private String sentinelHosts = "";
+    private String sentinelMaster = "";
+    private String sentinelPass = "";
+
 
     private boolean testConnectionOk = true;
 
@@ -92,7 +107,12 @@ public class JedisTestFactory {
         host = properties.getProperty(PREFIX + "host");
         port = Integer.parseInt(properties.getProperty(PREFIX + "port"));
         pass = properties.getProperty(PREFIX + "pass");
+        enableSentinel = "true".equalsIgnoreCase(properties.getProperty(PREFIX + "enableSentinel", "false"));
+        sentinelHosts = properties.getProperty(PREFIX + "sentinel.hosts");
+        sentinelMaster = properties.getProperty(PREFIX + "sentinel.master");
+        sentinelPass = properties.getProperty(PREFIX + "sentinel.pass");
     }
+
 
     public boolean functionalTestEnabled(){
         return testConnectionOk && functionalTestCycles > 0;
@@ -111,24 +131,57 @@ public class JedisTestFactory {
         return jedis;
     }
 
+
     public JedisPool createJedisPool() {
-        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-        jedisPoolConfig.setMaxTotal(24); // original 128
-        jedisPoolConfig.setMaxIdle(24); // original 128
-        jedisPoolConfig.setMinIdle(4); // original 16
-        jedisPoolConfig.setTestOnBorrow(true);
-        jedisPoolConfig.setTestOnReturn(true);
-        jedisPoolConfig.setTestWhileIdle(true);
-        jedisPoolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(60).toMillis());
-        jedisPoolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(30).toMillis());
-        jedisPoolConfig.setNumTestsPerEvictionRun(3);
-        jedisPoolConfig.setBlockWhenExhausted(true);
+        if (enableSentinel) {
+            return createJedisPoolSentinel();
+        } else {
+            return createJedisPoolClassic();
+        }
+    }
+
+    public JedisPool createJedisPoolClassic() {
+        JedisPoolConfig jedisPoolConfig = createJedisPoolConfig();
         if (pass != null && !pass.trim().isEmpty()) {
             return new JedisPool(jedisPoolConfig, host, port, Protocol.DEFAULT_TIMEOUT, pass);
         } else {
             return new JedisPool(jedisPoolConfig, host, port);
         }
     }
+
+    public JedisPool createJedisPoolSentinel() {
+        JedisPoolConfig jedisPoolConfig = createJedisPoolConfig();
+        Set<String> sentinels = new HashSet<>();
+        Collections.addAll(sentinels, sentinelHosts.split(","));
+        JedisSentinelPool jedisSentinelPool;
+        if (sentinelPass != null || !sentinelPass.trim().isEmpty()) {
+            jedisSentinelPool = new JedisSentinelPool(sentinelMaster, sentinels, jedisPoolConfig,sentinelPass);
+        } else {
+            jedisSentinelPool = new JedisSentinelPool(sentinelMaster, sentinels, jedisPoolConfig);
+        }
+
+        return JedisSentinelPoolAdapter.poolFromSentinel(jedisSentinelPool);
+    }
+
+    private JedisPoolConfig createJedisPoolConfig() {
+        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMaxTotal(24); // original 128
+        jedisPoolConfig.setMaxIdle(24); // original 128
+        jedisPoolConfig.setMinIdle(4); // original 16
+        // High performance
+//        jedisPoolConfig.setMaxTotal(128);
+//        jedisPoolConfig.setMaxIdle(128);
+//        jedisPoolConfig.setMinIdle(16);
+        jedisPoolConfig.setTestOnBorrow(true);
+        jedisPoolConfig.setTestOnReturn(true);
+        jedisPoolConfig.setTestWhileIdle(true);
+        jedisPoolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(30).toMillis());
+        jedisPoolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(10).toMillis());
+        jedisPoolConfig.setNumTestsPerEvictionRun(1);
+        jedisPoolConfig.setBlockWhenExhausted(true);
+        return jedisPoolConfig;
+    }
+
 
     public void testConnection() {
         try (Jedis jedis = createJedisClient()) {
@@ -163,6 +216,15 @@ public class JedisTestFactory {
             if (!jedis.ping().equalsIgnoreCase("PONG"))
                 throw new IllegalStateException("Jedis connection not pong");
         }
+    }
+
+    public List<String> randomSizedListOfChars() {
+        int size = ThreadLocalRandom.current().nextInt(5, ABC.length());
+        List<String> result = new ArrayList<>(size);
+        for(int i=0; i < size ; i++) {
+            result.add(String.valueOf(ABC.toCharArray()[i]));
+        }
+        return result;
     }
 
 

@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FunctionalJedisCountDownLatchTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FunctionalJedisCountDownLatchTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisCountDownLatchTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -56,7 +56,7 @@ public class FunctionalJedisCountDownLatchTest {
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setName("T1");
@@ -68,7 +68,7 @@ public class FunctionalJedisCountDownLatchTest {
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setName("T2");
@@ -96,7 +96,7 @@ public class FunctionalJedisCountDownLatchTest {
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setName("T1");
@@ -108,7 +108,7 @@ public class FunctionalJedisCountDownLatchTest {
                 Thread.sleep(2500);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setName("T2");
@@ -138,7 +138,7 @@ public class FunctionalJedisCountDownLatchTest {
                 awaitZero.set(reachedZero);
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setName("T1");
@@ -150,7 +150,7 @@ public class FunctionalJedisCountDownLatchTest {
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setName("T2");
@@ -177,11 +177,13 @@ public class FunctionalJedisCountDownLatchTest {
             try {
                 JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
                         withWaitingTimeMilis(100);
+                LOGGER.debug("Thread1 - Created jedisCountDownLatch1");
                 boolean reachedZero = jedisCountDownLatch1.await(500, TimeUnit.MILLISECONDS);
+                LOGGER.debug("Thread1 - reachedZero jedisCountDownLatch1 reachedZero {}", reachedZero);
                 awaitZero.set(reachedZero);
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setName("T1");
@@ -190,10 +192,13 @@ public class FunctionalJedisCountDownLatchTest {
             try {
                 JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
                         withWaitingTimeMilis(100);
-                Thread.sleep(5000);
+                LOGGER.debug("Thread2 - Created jedisCountDownLatch2");
+                Thread.sleep(2000);
+                LOGGER.debug("Thread2 - countdown before");
                 jedisCountDownLatch2.countDown();
+                LOGGER.debug("Thread2 - countdown after");
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setName("T2");
@@ -201,7 +206,7 @@ public class FunctionalJedisCountDownLatchTest {
         t1.start();
         t2.start();
         try {
-            t2.join(1200);
+            t2.join(2100);
             t1.join(1200);
             Thread.sleep(1);
         } catch (InterruptedException e) {
@@ -209,7 +214,7 @@ public class FunctionalJedisCountDownLatchTest {
         }
         assertTrue(awaitDone.get());
         assertFalse(awaitZero.get());
-        assertTrue( 1L ==  new JedisCountDownLatch(jedisPool, countDownLatch,1).getCount());
+        assertTrue( 0L ==  new JedisCountDownLatch(jedisPool, countDownLatch,1).getCount());
     }
 
     @Test
@@ -220,11 +225,13 @@ public class FunctionalJedisCountDownLatchTest {
             try {
                 JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
                         withWaitingTimeMilis(100);
+                LOGGER.debug("Thread1 - Created jedisCountDownLatch1");
                 boolean reachedZero = jedisCountDownLatch1.await(1500, TimeUnit.MILLISECONDS);
+                LOGGER.debug("Thread1 - reachedZero jedisCountDownLatch1 reachedZero {}", reachedZero);
                 awaitZero.set(reachedZero);
                 awaitDone.set(true);
             } catch (InterruptedException e) {
-                LOG.error("Error in thread 1", e);
+                LOGGER.error("Error in thread 1", e);
             }
         });
         t1.setName("T1");
@@ -233,10 +240,13 @@ public class FunctionalJedisCountDownLatchTest {
             try {
                 JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
                         withWaitingTimeMilis(100);
-                Thread.sleep(5000);
+                LOGGER.debug("Thread2 - Created jedisCountDownLatch2");
+                Thread.sleep(2500);
+                LOGGER.debug("Thread2 - countdown before");
                 jedisCountDownLatch2.countDown();
+                LOGGER.debug("Thread2 - countdown after");
             } catch (Exception e) {
-                LOG.error("Error in thread 2", e);
+                LOGGER.error("Error in thread 2", e);
             }
         });
         t2.setName("T2");
@@ -244,8 +254,8 @@ public class FunctionalJedisCountDownLatchTest {
         t1.start();
         t2.start();
         try {
-            t2.join(200);
-            t1.join(200);
+            t2.join(500);
+            t1.join(500);
             Thread.sleep(1);
         } catch (InterruptedException e) {
             e.printStackTrace();

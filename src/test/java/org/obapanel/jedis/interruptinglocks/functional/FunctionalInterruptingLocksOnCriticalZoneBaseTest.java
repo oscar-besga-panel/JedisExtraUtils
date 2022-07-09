@@ -22,7 +22,7 @@ import static org.obapanel.jedis.interruptinglocks.functional.JedisTestFactoryLo
 
 public class FunctionalInterruptingLocksOnCriticalZoneBaseTest {
 
-    private static final Logger log = LoggerFactory.getLogger(FunctionalInterruptingLocksOnCriticalZoneBaseTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptingLocksOnCriticalZoneBaseTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -49,7 +49,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseTest {
                 filter(il ->  il != null ).
                 forEach(il -> {
                     if (il.isLocked()) {
-                        log.error("A lock named {} is locked !", il.getName());
+                        LOGGER.error("A lock named {} is locked !", il.getName());
                     }
                     il.unlock();
         });
@@ -63,8 +63,8 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseTest {
             errorInCriticalZone.set(false);
             otherError.set(false);
             intoCriticalZone.set(false);
-            log.info("_\n");
-            log.info("FUNCTIONAL_TEST_CYCLES " + i);
+            LOGGER.info("_\n");
+            LOGGER.info("FUNCTIONAL_TEST_CYCLES " + i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
             t1.setName("T1_1s_i"+i);
             Thread t2 = new Thread(() -> accesLockOfCriticalZone(7));
