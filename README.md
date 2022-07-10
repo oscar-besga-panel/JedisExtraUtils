@@ -15,7 +15,7 @@ _Current Build_
 ![Issues](https://img.shields.io/github/issues/oscar-besga-panel/InterruptingJedisLocks)
 [![codecov](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks)
 [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/oscar-besga-panel/InterruptingJedisLocks.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/oscar-besga-panel/InterruptingJedisLocks/context:java)
-
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/010964cad8f94b07838e53aa41259792)](https://www.codacy.com/gh/oscar-besga-panel/InterruptingJedisLocks/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=oscar-besga-panel/InterruptingJedisLocks&amp;utm_campaign=Badge_Grade)
 
 
 ## Introduction
