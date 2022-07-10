@@ -8,10 +8,13 @@ import javax.cache.Cache;
 import java.util.Iterator;
 
 class RedisCacheIterator implements Iterator<Cache.Entry<String, String>> {
+
+    private final RedisCache redisCache;
     private final JedisPool jedisPool;
     private final ScanIterator scanIterator;
 
-    RedisCacheIterator(RedisCache redisCache, JedisPool jedisPool){
+    RedisCacheIterator(RedisCache redisCache, JedisPool jedisPool) {
+        this.redisCache = redisCache;
         this.jedisPool = jedisPool;
         this.scanIterator = new ScanIterator(jedisPool, redisCache.resolveKey("*"));
     }
@@ -23,11 +26,12 @@ class RedisCacheIterator implements Iterator<Cache.Entry<String, String>> {
 
     @Override
     public Cache.Entry<String, String> next() {
-        String key = scanIterator.next();
-        if (key != null) {
+        String redisKey = scanIterator.next();
+        if (redisKey != null) {
             try(Jedis jedis = jedisPool.getResource()) {
-                String value = jedis.get(key);
-                return new SimpleEntry(key, value);
+                String value = jedis.get(redisKey);
+                String key = redisCache.unresolveKey(redisKey);
+                return new RedisCacheEntry(key, value);
             }
         } else {
             return null;

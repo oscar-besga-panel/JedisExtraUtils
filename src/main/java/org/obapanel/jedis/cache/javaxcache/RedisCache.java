@@ -18,7 +18,6 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
-import javax.cache.processor.MutableEntry;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -259,7 +258,7 @@ public class RedisCache implements Cache<String,String> {
         try (Jedis jedis = jedisPool.getResource()) {
             jedis.set(resolveKey(key), value);
             if (cacheWriter != null) {
-                cacheWriter.write(new SimpleEntry(key, value));
+                cacheWriter.write(new RedisCacheEntry(key, value));
             }
         }
     }
@@ -275,7 +274,7 @@ public class RedisCache implements Cache<String,String> {
             t.set(resolveKey(key), value);
             t.exec();
             if (cacheWriter != null) {
-                cacheWriter.write(new SimpleEntry(key, value));
+                cacheWriter.write(new org.obapanel.jedis.cache.javaxcache.RedisCacheEntry(key, value));
             }
             return response.get();
         }
@@ -292,7 +291,7 @@ public class RedisCache implements Cache<String,String> {
             if (cacheWriter != null) {
                 Collection<Cache.Entry<? extends String,? extends String>> entries = map.entrySet().
                         stream().
-                        map(e -> new SimpleEntry(e.getKey(), e.getValue())).
+                        map(e -> new org.obapanel.jedis.cache.javaxcache.RedisCacheEntry(e.getKey(), e.getValue())).
                         collect(Collectors.toSet());
                 cacheWriter.writeAll(entries);
             }
@@ -308,7 +307,7 @@ public class RedisCache implements Cache<String,String> {
         try (Jedis jedis = jedisPool.getResource()) {
             String result = jedis.set(resolveKey(key), value, new SetParams().nx());
             if (result!= null && cacheWriter != null) {
-                cacheWriter.write(new SimpleEntry(key, value));
+                cacheWriter.write(new org.obapanel.jedis.cache.javaxcache.RedisCacheEntry(key, value));
             }
             return result != null;
         }
@@ -379,7 +378,7 @@ public class RedisCache implements Cache<String,String> {
             if (current != null && current.equals(oldValue)) {
                 jedis.set(resolveKey(key), newValue);
                 if (cacheWriter != null) {
-                    cacheWriter.write(new SimpleEntry(key, newValue));
+                    cacheWriter.write(new org.obapanel.jedis.cache.javaxcache.RedisCacheEntry(key, newValue));
                 }
                 return true;
             }  else {
@@ -399,7 +398,7 @@ public class RedisCache implements Cache<String,String> {
             if (current != null) {
                 jedis.set(resolveKey(key), value);
                 if (cacheWriter != null) {
-                    cacheWriter.write(new SimpleEntry(key, value));
+                    cacheWriter.write(new org.obapanel.jedis.cache.javaxcache.RedisCacheEntry(key, value));
                 }
                 return true;
             }  else {
@@ -419,7 +418,7 @@ public class RedisCache implements Cache<String,String> {
             if (current != null) {
                 jedis.set(resolveKey(key), value);
                 if (cacheWriter != null) {
-                    cacheWriter.write(new SimpleEntry(key, value));
+                    cacheWriter.write(new org.obapanel.jedis.cache.javaxcache.RedisCacheEntry(key, value));
                 }
                 return current;
             }  else {
@@ -480,7 +479,7 @@ public class RedisCache implements Cache<String,String> {
     @Override
     public <T> T invoke(String key, EntryProcessor<String, String, T> entryProcessor, Object... arguments) throws EntryProcessorException {
         checkClosed();
-        RedisCacheEntry entry = new RedisCacheEntry(key);
+        RedisCacheInvokeEntry entry = new RedisCacheInvokeEntry(this, key);
         return entryProcessor.process(entry, arguments);
     }
 
@@ -490,9 +489,9 @@ public class RedisCache implements Cache<String,String> {
         for(String key: keys) {
             try {
                 T result = invoke(key, entryProcessor, arguments);
-                results.put(key, new RedisCacheEntryProcessorResult<>(result));
+                results.put(key, new RedisCacheInvokeEntryProcessorResult<>(result));
             } catch (Exception exception) {
-                results.put(key, new RedisCacheEntryProcessorResult<>(exception));
+                results.put(key, new RedisCacheInvokeEntryProcessorResult<>(exception));
             }
         }
         return results;
@@ -535,46 +534,6 @@ public class RedisCache implements Cache<String,String> {
     public Iterator<Entry<String, String>> iterator() {
         checkClosed();
         return new RedisCacheIterator(this, jedisPool);
-    }
-
-    private class RedisCacheEntry implements MutableEntry<String, String> {
-
-        private final String key;
-
-        private RedisCacheEntry(String key) {
-            this.key = key;
-        }
-
-        @Override
-        public boolean exists() {
-            return RedisCache.this.containsKey(key);
-        }
-
-        @Override
-        public void remove() {
-            RedisCache.this.remove(key);
-        }
-
-        @Override
-        public String getKey() {
-            return key;
-        }
-
-        @Override
-        public String getValue() {
-            return RedisCache.this.get(key);
-        }
-
-        @Override
-        public void setValue(String value) {
-            RedisCache.this.put(key, value);
-        }
-
-        @Override
-        public <T> T unwrap(Class<T> clazz) {
-            return RedisCacheUtils.unwrap(clazz, this);
-        }
-
     }
 
 }

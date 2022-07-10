@@ -4,12 +4,12 @@ import javax.cache.Cache;
 import java.util.Map;
 import java.util.Objects;
 
-class SimpleEntry implements Cache.Entry<String, String>, Map.Entry<String, String> {
+class RedisCacheEntry implements Cache.Entry<String, String>, Map.Entry<String, String> {
 
     private String key;
     private String value;
 
-    SimpleEntry(String key, String value) {
+    RedisCacheEntry(String key, String value) {
         this.key = key;
         this.value = value;
     }
@@ -37,8 +37,8 @@ class SimpleEntry implements Cache.Entry<String, String>, Map.Entry<String, Stri
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof SimpleEntry)) return false;
-        SimpleEntry that = (SimpleEntry) o;
+        if (!(o instanceof RedisCacheEntry)) return false;
+        RedisCacheEntry that = (RedisCacheEntry) o;
         return Objects.equals(getKey(), that.getKey()) && Objects.equals(getValue(), that.getValue());
     }
 

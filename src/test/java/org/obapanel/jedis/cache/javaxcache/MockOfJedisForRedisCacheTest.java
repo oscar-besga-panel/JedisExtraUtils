@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
-import org.obapanel.jedis.utils.ScanUtil;
+import org.obapanel.jedis.iterators.ScanUtil;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisDataException;

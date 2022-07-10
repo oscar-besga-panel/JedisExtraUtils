@@ -302,6 +302,12 @@ public class RedisCacheTest {
     }
 
     @Test
+    public void clearEmptyTest() {
+        RedisCache redisCache = createNewCache();
+        redisCache.clear();
+    }
+
+    @Test
     public void invokeTest() {
         RedisCache redisCache = createNewCache();
         redisCache.put("a", "A1");
@@ -350,7 +356,7 @@ public class RedisCacheTest {
     }
 
     @Test(expected = EntryProcessorException.class)
-    public void invokeAllTestWithError() {
+    public void invokeAllTestWithErrorTest() {
         RedisCache redisCache = createNewCache();
         redisCache.put("a", "A1");
         Set<String> keys = new HashSet<>(Arrays.asList("a"));
@@ -359,5 +365,13 @@ public class RedisCacheTest {
         });
         results.get("a").get();
     }
+
+    @Test
+    public void getIteratorTest() {
+        RedisCache redisCache = createNewCache();
+        assertNotNull(redisCache.iterator());
+    }
+
+
 
 }

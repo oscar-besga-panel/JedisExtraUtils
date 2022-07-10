@@ -297,6 +297,12 @@ public class FunctionalRedisCacheTest {
     }
 
     @Test
+    public void clearEmptyTest() {
+        RedisCache redisCache = createNewCache();
+        redisCache.clear();
+    }
+
+    @Test
     public void invokeTest() {
         RedisCache redisCache = createNewCache();
         redisCache.put("a","A1");

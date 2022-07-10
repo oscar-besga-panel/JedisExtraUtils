@@ -3,17 +3,17 @@ package org.obapanel.jedis.cache.javaxcache;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 
-class RedisCacheEntryProcessorResult<T> implements EntryProcessorResult<T> {
+class RedisCacheInvokeEntryProcessorResult<T> implements EntryProcessorResult<T> {
 
     private final T result;
     private final Exception error;
 
-    RedisCacheEntryProcessorResult(T result) {
+    RedisCacheInvokeEntryProcessorResult(T result) {
         this.result = result;
         this.error = null;
     }
 
-    RedisCacheEntryProcessorResult(Exception error) {
+    RedisCacheInvokeEntryProcessorResult(Exception error) {
         this.result = null;
         this.error = error;
     }
