@@ -1,8 +1,12 @@
 package org.obapanel.jedis.cache.javaxcache;
 
+import org.obapanel.jedis.iterators.ScanUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.*;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.SetParams;
 
 import javax.cache.Cache;
@@ -448,16 +452,16 @@ public class RedisCache implements Cache<String,String> {
 
     private void removeAll(boolean allowCacheWriter) {
         checkClosed();
-        Set<String> scanned = doScan();
+        List<String> scanned =  ScanUtil.retrieveListOfKeys(jedisPool, resolveKey("*"));
         // No need to convert here
         if (!scanned.isEmpty()) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.del(scanned.toArray(new String[]{}));
             }
             if (allowCacheWriter && cacheWriter != null) {
-                Set<String> unresolved = scanned.stream().
+                List<String> unresolved = scanned.stream().
                         map(this::unresolveKey).
-                        collect(Collectors.toSet());
+                        collect(Collectors.toList());
                 cacheWriter.deleteAll(unresolved);
             }
         }
@@ -530,21 +534,7 @@ public class RedisCache implements Cache<String,String> {
     @Override
     public Iterator<Entry<String, String>> iterator() {
         checkClosed();
-        return null;
-    }
-
-    private Set<String> doScan() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Set<String> keys = new HashSet<>();
-            ScanParams scanParams = new ScanParams().match(resolveKey("*"));
-            String cursor = ScanParams.SCAN_POINTER_START;
-            do {
-                ScanResult<String> partialResult =  jedis.scan(cursor, scanParams);
-                cursor = partialResult.getCursor();
-                keys.addAll(partialResult.getResult());
-            }  while(!cursor.equals(ScanParams.SCAN_POINTER_START));
-            return keys;
-        }
+        return new RedisCacheIterator(this, jedisPool);
     }
 
     private class RedisCacheEntry implements MutableEntry<String, String> {

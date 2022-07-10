@@ -1,9 +1,10 @@
 package org.obapanel.jedis.cache.javaxcache;
 
 import javax.cache.Cache;
+import java.util.Map;
 import java.util.Objects;
 
-class SimpleEntry implements Cache.Entry<String, String> {
+class SimpleEntry implements Cache.Entry<String, String>, Map.Entry<String, String> {
 
     private String key;
     private String value;
@@ -21,6 +22,11 @@ class SimpleEntry implements Cache.Entry<String, String> {
     @Override
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public String setValue(String value) {
+        throw new UnsupportedOperationException("Not supported here");
     }
 
     @Override
