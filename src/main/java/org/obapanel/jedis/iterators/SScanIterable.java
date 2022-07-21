@@ -1,10 +1,9 @@
 package org.obapanel.jedis.iterators;
 
+import org.obapanel.jedis.utils.Listable;
 import redis.clients.jedis.JedisPool;
 
-import java.util.Iterator;
-import java.util.Spliterator;
-import java.util.function.Consumer;
+import java.util.List;
 
 import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_PATTERN_ITERATORS;
 import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS;
@@ -20,7 +19,7 @@ import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_RESULTS_
  *
  * Can return duplicated results, but is rare
  */
-public class SScanIterable implements Iterable<String> {
+public class SScanIterable implements Iterable<String>, Listable<String> {
 
 
     private final JedisPool jedisPool;
@@ -71,19 +70,17 @@ public class SScanIterable implements Iterable<String> {
         this.resultsPerScan = resultsPerScan;
     }
 
-
     @Override
-    public Iterator<String> iterator() {
+    public SScanIterator iterator() {
         return new SScanIterator(jedisPool, name, pattern, resultsPerScan);
     }
 
-    @Override
-    public void forEach(Consumer<? super String> action) {
-        Iterable.super.forEach(action);
-    }
-
-    @Override
-    public Spliterator<String> spliterator() {
-        return Iterable.super.spliterator();
+    /**
+     * This method returns ALL of the values of the iterable as a unmodificable list
+     * The list is unmodificable and contains no repeated elements
+     * @return list with values
+     */
+    public List<String> asList() {
+        return iterator().asList();
     }
 }

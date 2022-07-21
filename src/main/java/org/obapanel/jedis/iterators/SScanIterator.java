@@ -22,7 +22,6 @@ import redis.clients.jedis.ScanResult;
  */
 public class SScanIterator extends AbstractScanIterator<String>  {
 
-
     private static final Logger LOGGER = LoggerFactory.getLogger(SScanIterator.class);
 
     private final String name;

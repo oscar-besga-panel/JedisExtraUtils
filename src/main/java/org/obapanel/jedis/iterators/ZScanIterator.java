@@ -50,7 +50,7 @@ public class ZScanIterator extends AbstractScanIterator<Tuple>  {
      * @param resultsPerScan results per call to redis
      */
     public ZScanIterator(JedisPool jedisPool, String name, int resultsPerScan) {
-        this(jedisPool, name,DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
     }
 
     /**

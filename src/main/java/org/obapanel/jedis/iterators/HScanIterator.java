@@ -1,5 +1,6 @@
 package org.obapanel.jedis.iterators;
 
+import org.obapanel.jedis.utils.Mapeable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -7,6 +8,8 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -22,7 +25,7 @@ import java.util.Map;
  *
  * Can return duplicated results, but is rare
  */
-public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String>> {
+public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String>> implements Mapeable<String, String> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HScanIterator.class);
@@ -70,8 +73,6 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
         this.name = name;
     }
 
-
-
     @Override
     ScanResult<Map.Entry<String, String>> doScan(Jedis jedis, String currentCursor, ScanParams scanParams) {
         return jedis.hscan(name, currentCursor, scanParams);
@@ -82,5 +83,17 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
         jedis.hdel(name, next.getKey());
     }
 
+
+    /**
+     * This method returns ALL of the values of the iterator as a unmodificable map
+     * This method consumes the iterator, no next and hasNetx method shoould be called
+     * The map is unmodificable and contains no repeated elements
+     * @return map with values
+     */
+    public Map<String, String> asMap(){
+        final Map<String, String> map = new HashMap<>();
+        forEachRemaining( e -> map.put(e.getKey(), e.getValue()));
+        return Collections.unmodifiableMap(map);
+    }
 
 }

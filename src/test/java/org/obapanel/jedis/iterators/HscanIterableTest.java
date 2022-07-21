@@ -7,10 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -151,5 +148,30 @@ public class HscanIterableTest {
         });
     }
 
+    @Test
+    public void asListTest() {
+        createABCData();
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPool(),hscanitName, "*");
+        List<Map.Entry<String,String>> data = hscanIterable.asList();
+        Map<String, String> dataMap = new HashMap<>();
+        data.forEach( e -> dataMap.put(e.getKey(), e.getValue()));
+        letters.forEach( letter -> {
+            assertTrue(dataMap.containsKey(letter));
+            assertTrue(dataMap.get(letter).equals(letter));
+        });
+        assertEquals(letters.size(), data.size());
+    }
+
+    @Test
+    public void asMapTest() {
+        createABCData();
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPool(),hscanitName, "*");
+        Map<String, String> data = hscanIterable.asMap();
+        letters.forEach( letter -> {
+            assertTrue(data.containsKey(letter));
+            assertTrue(data.get(letter).equals(letter));
+        });
+        assertEquals(letters.size(), data.size());
+    }
 
 }

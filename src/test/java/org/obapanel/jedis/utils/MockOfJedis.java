@@ -3,19 +3,12 @@ package org.obapanel.jedis.utils;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisSentinelPool;
-import redis.clients.jedis.Protocol;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -48,7 +41,16 @@ public class MockOfJedis {
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
+    private final BlockingQueue<SimpleEntry> messageQueue = new LinkedBlockingQueue<>();
+    private final Map<String, List<JedisPubSub>> channelsMap = new HashMap<>();
+
+    private final Thread messageThread;
+
     public MockOfJedis() {
+        messageThread = new Thread(this::mockRunMessages);
+        messageThread.setName("messageThread");
+        messageThread.setDaemon(true);
+        messageThread.start();
         timer = new Timer();
 
         jedis = Mockito.mock(Jedis.class);
@@ -86,8 +88,26 @@ public class MockOfJedis {
             ScanParams scanParams = ioc.getArgument(1);
             return mockScan(cursor, scanParams);
         });
+        Mockito.when(jedis.publish(anyString(), anyString())).thenAnswer(ioc -> {
+            String channel = ioc.getArgument(0, String.class);
+            String message = ioc.getArgument(1, String.class);
+            return mockPublish(channel, message);
+        });
+        Mockito.doAnswer( ioc -> {
+            JedisPubSub jedisPubSub = ioc.getArgument(0, JedisPubSub.class);
+            Object ochannels = ioc.getArgument(1);
+            if (ochannels instanceof String) {
+                mockSubscribe(jedisPubSub, new String[]{(String) ochannels});
+            } else if (ochannels instanceof String[]) {
+                mockSubscribe(jedisPubSub, (String[]) ochannels);
+            } else if (ochannels instanceof List) {
+                mockSubscribe(jedisPubSub, ((List<String>) ochannels).toArray(new String[]{}));
+            }
+            return null;
+        }).when(jedis).subscribe(any(JedisPubSub.class), any());
 
     }
+
 
     private boolean mockExist(String key) {
         return data.containsKey(key);
@@ -131,6 +151,37 @@ public class MockOfJedis {
         } else {
             return 0L;
         }
+    }
+
+    private Long mockPublish(String channel, String message) {
+        LOGGER.debug("mockPublish channel {} message {} >", channel, message);
+        boolean inserted = messageQueue.offer(new SimpleEntry(channel, message));
+        LOGGER.debug("mockPublish channel {} message {} < inserted {}", channel, message, inserted);
+        return inserted ? 1L : 0L;
+    }
+
+    private void mockSubscribe(JedisPubSub jedisPubSub, String[] channels) {
+        for(String channel: channels) {
+            LOGGER.debug("mockSubscribe channel {} >", channel);
+            channelsMap.computeIfAbsent(channel, k -> new ArrayList<>()).add(jedisPubSub);
+            LOGGER.debug("mockSubscribe channel {} <", channel);
+        }
+    }
+
+    private void mockRunMessages() {
+        try {
+            while(true) {
+                SimpleEntry message = messageQueue.take();
+                LOGGER.debug("mockRunMessages message {} >", message);
+                channelsMap.computeIfAbsent(message.getKey(), k -> new ArrayList<>()).
+                        forEach( jps -> jps.onMessage(message.getKey(), message.getValue()));
+                LOGGER.debug("mockRunMessages message {} <", message);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+
     }
 
     public Jedis getJedis(){

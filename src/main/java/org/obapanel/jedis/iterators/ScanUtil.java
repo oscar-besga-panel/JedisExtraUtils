@@ -4,10 +4,7 @@ import org.obapanel.jedis.utils.JedisPoolAdapter;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS;
@@ -36,10 +33,8 @@ public class ScanUtil {
      * @return List of matching keys
      */
     public static List<String> retrieveListOfKeys(JedisPool jedisPool, String pattern) {
-        Set<String> result = new HashSet<>();
         ScanIterable iterable = new ScanIterable(jedisPool, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
-        iterable.forEach(result::add);
-        return new ArrayList<>(result);
+        return iterable.asList();
     }
 
     /**

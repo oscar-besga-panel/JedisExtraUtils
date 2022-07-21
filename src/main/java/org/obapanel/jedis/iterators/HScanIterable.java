@@ -1,10 +1,11 @@
 package org.obapanel.jedis.iterators;
 
+import org.obapanel.jedis.utils.Listable;
+import org.obapanel.jedis.utils.Mapeable;
 import redis.clients.jedis.JedisPool;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Spliterator;
-import java.util.function.Consumer;
 
 import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_PATTERN_ITERATORS;
 import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS;
@@ -20,7 +21,8 @@ import static org.obapanel.jedis.iterators.AbstractScanIterator.DEFAULT_RESULTS_
  *
  * Can return duplicated results, but is rare
  */
-public class HScanIterable implements Iterable<Map.Entry<String,String>> {
+public class HScanIterable implements Iterable<Map.Entry<String,String>>,
+        Listable<Map.Entry<String,String>>, Mapeable<String, String> {
 
     private final JedisPool jedisPool;
     private final String name;
@@ -77,13 +79,12 @@ public class HScanIterable implements Iterable<Map.Entry<String,String>> {
     }
 
     @Override
-    public void forEach(Consumer<? super Map.Entry<String,String>> action) {
-        Iterable.super.forEach(action);
+    public List<Map.Entry<String,String>> asList() {
+        return iterator().asList();
     }
 
-    @Override
-    public Spliterator<Map.Entry<String,String>> spliterator() {
-        return Iterable.super.spliterator();
+    public Map<String, String> asMap() {
+        return iterator().asMap();
     }
 
 }

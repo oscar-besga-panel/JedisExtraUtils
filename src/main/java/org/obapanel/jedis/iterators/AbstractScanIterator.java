@@ -1,5 +1,6 @@
 package org.obapanel.jedis.iterators;
 
+import org.obapanel.jedis.utils.Listable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -13,12 +14,12 @@ import java.util.*;
  * Iterator scan for the keys of the redis database
  * It is abstract so it can be applied to SCAN, HSCAN, SSCAN
  */
-abstract class AbstractScanIterator<K> implements Iterator<K> {
+abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractScanIterator.class);
 
-    public static final int DEFAULT_RESULTS_PER_SCAN_ITERATORS = 1;
+    public static final int DEFAULT_RESULTS_PER_SCAN_ITERATORS = 50;
 
     public static final String DEFAULT_PATTERN_ITERATORS = null;
 
@@ -139,5 +140,17 @@ abstract class AbstractScanIterator<K> implements Iterator<K> {
      */
     abstract void doRemove(Jedis jedis, K next);
 
+
+    /**
+     * This method returns ALL of the values of the iterator as a unmodificable list
+     * This method consumes the iterator, no next and hasNetx method shoould be called
+     * The list is unmodificable and contains no repeated elements
+     * @return list with values
+     */
+    public List<K> asList(){
+        final Set<K> set = new HashSet<>();
+        forEachRemaining(set::add);
+        return Collections.unmodifiableList(new ArrayList<>(set));
+    }
 
 }

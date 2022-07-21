@@ -186,4 +186,15 @@ public class ZscanIterableTest {
         });
     }
 
+    @Test
+    public void asListTest() {
+        createABCData();
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName);
+        List<Tuple> data = zscanIterable.asList();
+        data.forEach(  tuple -> {
+            assertTrue(letters.contains(tuple.getElement()));
+        });
+        assertEquals(letters.size(), data.size());
+    }
+
 }

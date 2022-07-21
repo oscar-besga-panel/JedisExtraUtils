@@ -192,4 +192,15 @@ public class FunctionalZscanIterableTest {
         });
     }
 
+    @Test
+    public void asListTest() {
+        createABCData();
+        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName);
+        List<Tuple> data = zscanIterable.asList();
+        data.forEach(  tuple -> {
+            assertTrue(letters.contains(tuple.getElement()));
+        });
+        assertEquals(letters.size(), data.size());
+    }
+
 }

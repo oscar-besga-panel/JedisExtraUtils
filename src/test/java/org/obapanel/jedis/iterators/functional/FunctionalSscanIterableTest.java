@@ -175,5 +175,15 @@ public class FunctionalSscanIterableTest {
         });
     }
 
+    @Test
+    public void asListTest() {
+        createABCData();
+        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName);
+        List<String> data = sscanIterable.asList();
+        letters.forEach( letter -> {
+            assertTrue(data.contains(letter));
+        });
+        assertEquals(letters.size(), data.size());
+    }
 
 }

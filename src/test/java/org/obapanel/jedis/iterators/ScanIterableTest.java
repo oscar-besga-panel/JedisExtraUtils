@@ -152,4 +152,18 @@ public class ScanIterableTest {
         });
     }
 
+    @Test
+    public void asListTest() {
+        createABCData();
+        ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
+        List<String> data = scanIterable.asList();
+        data.forEach( key -> {
+            String value = mockOfJedis.getCurrentData().get(key);
+            assertTrue(letters.contains(value));
+        });
+        assertEquals(letters.size(), data.size());
+    }
+
+
+
 }

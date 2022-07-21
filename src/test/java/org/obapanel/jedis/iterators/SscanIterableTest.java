@@ -172,5 +172,16 @@ public class SscanIterableTest {
         });
     }
 
+    @Test
+    public void asListTest() {
+        createABCData();
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPool(), sscanitName);
+        List<String> data = sscanIterable.asList();
+        letters.forEach( letter -> {
+           assertTrue(data.contains(letter));
+        });
+        assertEquals(letters.size(), data.size());
+    }
+
 
 }

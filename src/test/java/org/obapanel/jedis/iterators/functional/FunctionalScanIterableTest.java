@@ -153,4 +153,22 @@ public class FunctionalScanIterableTest {
         });
     }
 
+    @Test
+    public void asListTest() {
+        createABCData();
+        ScanIterable scanIterable = new ScanIterable(jedisPool, scanitName + ":*");
+        List<String> data = scanIterable.asList();
+        data.forEach( key -> {
+            String value = get(key);
+            assertTrue(letters.contains(value));
+        });
+        assertEquals(letters.size(), data.size());
+    }
+
+    private String get(String key) {
+        try(Jedis jedis = jedisPool.getResource()){
+            return jedis.get(key);
+        }
+    }
+
 }
