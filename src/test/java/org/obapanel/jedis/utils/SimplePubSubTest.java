@@ -6,8 +6,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisSentinelPool;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,22 +22,17 @@ public class SimplePubSubTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(SimplePubSubTest.class);
 
     private MockOfJedis mockOfJedis;
-    private JedisPool jedisPool;
-    private JedisSentinelPool jedisSentinelPool;
-    private Jedis jedis;
-
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(unitTestEnabled());
         if (!unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
-        jedisPool = mockOfJedis.getJedisPool();
     }
 
     @After
     public void after() throws IOException {
-        jedisPool.close();
+        mockOfJedis.getJedisPool().close();
         mockOfJedis.clearData();
     }
 

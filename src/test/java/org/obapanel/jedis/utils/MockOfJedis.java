@@ -44,10 +44,8 @@ public class MockOfJedis {
     private final BlockingQueue<SimpleEntry> messageQueue = new LinkedBlockingQueue<>();
     private final Map<String, List<JedisPubSub>> channelsMap = new HashMap<>();
 
-    private final Thread messageThread;
-
     public MockOfJedis() {
-        messageThread = new Thread(this::mockRunMessages);
+        Thread messageThread = new Thread(this::mockRunMessages);
         messageThread.setName("messageThread");
         messageThread.setDaemon(true);
         messageThread.start();
@@ -179,7 +177,7 @@ public class MockOfJedis {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw new IllegalStateException("Interrupted mockRunMessages", e);
         }
 
     }
