@@ -551,7 +551,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      *     return null
      *   }
      *
-     * writethrough -> If the value is going to be updated in redis, in external system too
+     * writethrough: If the value is going to be updated in redis, in external system too
      * @param key Key to be modified
      * @param value New value to be updated
      * @return Old value in cache
@@ -579,7 +579,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Will remove entries from redis with the given keys
-     * writethrough -> If a cacheWriter is present, all external values wil be deleted
+     * writethrough: If a cacheWriter is present, all external values wil be deleted
      * @param keys keys to remove
      */
     public void removeAll(Set<String> keys) {
@@ -608,7 +608,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Will remove ALL entries from redis
-     * writethrough -> If a cacheWriter is present, all external values wil be deleted
+     * writethrough: If a cacheWriter is present, all external values wil be deleted
      */
     public void removeAll() {
         removeAll(true);
