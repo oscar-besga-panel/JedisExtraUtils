@@ -291,6 +291,7 @@ public class FunctionalSimpleCacheTest {
     public void clearEmptyTest() {
         SimpleCache simpleCache = createNewCache();
         simpleCache.clear();
+        assertTrue(simpleCache.keys().isEmpty());
     }
 
 

@@ -3,6 +3,8 @@ package org.obapanel.jedis.cache.simple;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.obapanel.jedis.common.test.TransactionOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
@@ -18,6 +20,9 @@ import static org.obapanel.jedis.common.test.TTL.wrapTTL;
  * Mock of jedis methods used by the lock
  */
 public class MockOfJedisForSimpleCache {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedisForSimpleCache.class);
+
 
     public static final String CLIENT_RESPONSE_OK = "OK";
     public static final String CLIENT_RESPONSE_KO = null;
@@ -182,6 +187,9 @@ public class MockOfJedisForSimpleCache {
     }
 
     private ScanResult<String> mockScan(String cursor, ScanParams scanParams) {
+        if (!cursor.equals("0")) {
+            LOGGER.warn("Cursor inited wirh value {}", cursor);
+        }
         String pattern = extractPatternFromScanParams(scanParams);
         List<String> keys = data.keySet().stream().
                 filter( k -> k.matches(pattern) ).

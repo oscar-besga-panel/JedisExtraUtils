@@ -355,13 +355,13 @@
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#get-java.lang.String-">get(String)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Gets current value from redis cache
- If not found, it can use the default cacheloader readthrough if present</div>
+ read-through: If not found, it can use the default cacheloader if present</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#get-java.lang.String-org.obapanel.jedis.cache.simple.CacheLoader-">get(String, CacheLoader)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Gets current value from redis cache
- If not founnd, it can use the provided cacheloader readthrough
- The default cacheloader is overriden</div>
+ read-through: If not found, it can use the provided cacheloader
+ The default cacheloader is overridden</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/collections/JedisList.html#get-int-">get(int)</a></span> - Method in class org.obapanel.jedis.collections.<a href="org/obapanel/jedis/collections/JedisList.html" title="class in org.obapanel.jedis.collections">JedisList</a></dt>
 <dd>&nbsp;</dd>
@@ -370,29 +370,28 @@
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#getAll-java.util.Set-">getAll(Set&lt;String&gt;)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Gets values from redis cache
- If not found, it can use the default cacheloader readthrough if present
+ read-through: If not found, it can use the default cacheloader if present
  Not found values will not be present in result map (null resutls are no retunred)</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#getAll-java.util.Set-org.obapanel.jedis.cache.simple.CacheLoader-">getAll(Set&lt;String&gt;, CacheLoader)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Gets values from redis cache
- If not found, it can use the given cacheloader readthrough
- The default cacheloader is overriden
- Not found values will not be present in result map (null resutls are no retunred)</div>
+ If not found, it can use the given cacheloader
+ The default cacheloader is overridden
+ Not found values will not be present in result map (null results are no retunned)</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#getAndPut-java.lang.String-java.lang.String-">getAndPut(String, String)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Inserts a new value for given key in redis
  The new value will use the default timeout of the cache
  If the value exists it will be returned in this method (and overwritten)
- If a cacheWriter is present, it will be updated in external sources by writethrougth</div>
+ write-through: If a cacheWriter is present, it will be updated in external sources</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#getAndRemove-java.lang.String-">getAndRemove(String)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Removes for given key in redis and returns the current redis value
 
- If a cacheWriter is present,
- it will be removed in external sources by writethrougth</div>
+ write-through: If a cacheWriter is present, it will be removed in external sources</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#getAndReplace-java.lang.String-java.lang.String-">getAndReplace(String, String)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
@@ -407,7 +406,7 @@
      return null
    }
 
- writethrough: If the value is going to be updated in redis, in external system too</div>
+ write-through: If the value is going to be updated in redis, in external system too</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/countdownlatch/JedisCountDownLatch.html#getCount--">getCount()</a></span> - Method in class org.obapanel.jedis.countdownlatch.<a href="org/obapanel/jedis/countdownlatch/JedisCountDownLatch.html" title="class in org.obapanel.jedis.countdownlatch">JedisCountDownLatch</a></dt>
 <dd>
@@ -819,7 +818,8 @@
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#loadAll-java.util.Set-boolean-">loadAll(Set&lt;String&gt;, boolean)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Load the set of keys from external sources, updating their values in redis
- If no cacheLoader exists, it does nothing</div>
+ If no cacheLoader exists, it does nothing
+ read-through: resolves data from external source if possible</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/interruptinglocks/AbstractInterruptingJedisLock.html#lock--">lock()</a></span> - Method in class org.obapanel.jedis.interruptinglocks.<a href="org/obapanel/jedis/interruptinglocks/AbstractInterruptingJedisLock.html" title="class in org.obapanel.jedis.interruptinglocks">AbstractInterruptingJedisLock</a></dt>
 <dd>&nbsp;</dd>
@@ -920,14 +920,14 @@
 <div class="block">Inserts a new value for given key in redis
  The new value will use the default timeout of the cache
  If the value exists, it will be overwritten
- If a cacheWriter is present, it will be updated in external sources by writethrougth</div>
+ write-through: If a cacheWriter is present, it will be updated in external sources</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#put-java.lang.String-java.lang.String-long-">put(String, String, long)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Inserts a new value for given key in redis
  The new value will use given timeout
  If the value exists, it will be overwritten
- If a cacheWriter is present, it will be updated in external sources by writethrougth</div>
+ write-through: If a cacheWriter is present, it will be updated in external sources</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/collections/JedisMap.html#put-java.lang.String-java.lang.String-">put(String, String)</a></span> - Method in class org.obapanel.jedis.collections.<a href="org/obapanel/jedis/collections/JedisMap.html" title="class in org.obapanel.jedis.collections">JedisMap</a></dt>
 <dd>&nbsp;</dd>
@@ -936,7 +936,7 @@
 <div class="block">Inserts a list of new key-values in cache
  The new values will use the default timeout of the cache
  If any value exists, it will be overwritten
- If a cacheWriter is present, it will be updated in external sources by writethrougth</div>
+ write-through: If a cacheWriter is present, it will be updated in external sources</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/collections/JedisMap.html#putAll-java.util.Map-">putAll(Map&lt;? extends String, ? extends String&gt;)</a></span> - Method in class org.obapanel.jedis.collections.<a href="org/obapanel/jedis/collections/JedisMap.html" title="class in org.obapanel.jedis.collections">JedisMap</a></dt>
 <dd>&nbsp;</dd>
@@ -945,8 +945,8 @@
 <div class="block">Inserts a new value for given key in redis if no previous value is present
  Nothing will be done otherwise
  The new value will use given timeout
- If a cacheWriter is present and can be updated in redis,
- it will be updated in external sources by writethrougth</div>
+ write-through: If a cacheWriter is present and can be updated in redis,
+ it will be updated in external sources</div>
 </dd>
 </dl>
 <a name="I:R">
@@ -966,14 +966,14 @@
 <dd>
 <div class="block">Removes for given key in redis
  If the value doesn't exist, nothing will happen
- If a cacheWriter is present, it will be removed in external sources by writethrougth</div>
+ write-through: If a cacheWriter is present, it will be removed in external sources</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#remove-java.lang.String-java.lang.String-">remove(String, String)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Removes for given key in redis if the value matches
- The deletion will happen if current value matches withi given value
- If a cacheWriter is present and the deletion is done,
- it will be removed in external sources by writethrougth</div>
+ The deletion will happen if current value matches with given value
+ write-through: If a cacheWriter is present and the deletion is done,
+ it will be removed in external sources</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/collections/JedisList.html#remove-java.lang.Object-">remove(Object)</a></span> - Method in class org.obapanel.jedis.collections.<a href="org/obapanel/jedis/collections/JedisList.html" title="class in org.obapanel.jedis.collections">JedisList</a></dt>
 <dd>&nbsp;</dd>
@@ -986,12 +986,12 @@
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#removeAll-java.util.Set-">removeAll(Set&lt;String&gt;)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Will remove entries from redis with the given keys
- writethrough: If a cacheWriter is present, all external values wil be deleted</div>
+ write-through: If a cacheWriter is present, all external values wil be deleted</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#removeAll--">removeAll()</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Will remove ALL entries from redis
- writethrough: If a cacheWriter is present, all external values wil be deleted</div>
+ write-through: If a cacheWriter is present, all external values wil be deleted</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/collections/JedisList.html#removeAll-java.util.Collection-">removeAll(Collection&lt;?&gt;)</a></span> - Method in class org.obapanel.jedis.collections.<a href="org/obapanel/jedis/collections/JedisList.html" title="class in org.obapanel.jedis.collections">JedisList</a></dt>
 <dd>&nbsp;</dd>
@@ -1000,12 +1000,12 @@
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#replace-java.lang.String-java.lang.String-java.lang.String-">replace(String, String, String)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Replaces key value with new value if current redis value is equals to given oldValue
- If value is replaced and a cachewriter exits, external source is updated too writethrougth</div>
+ write-through: If value is replaced and a cachewriter exits, external source is updated too</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#replace-java.lang.String-java.lang.String-">replace(String, String)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>
 <div class="block">Replaces key value with new value if key exists
- If value is replaced and a cachewriter exits, external source is updated too writethrougth</div>
+ write-through: If value is replaced and a cachewriter exits, external source is updated too</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/obapanel/jedis/cache/simple/SimpleCache.html#resolveKey-java.lang.String-">resolveKey(String)</a></span> - Method in class org.obapanel.jedis.cache.simple.<a href="org/obapanel/jedis/cache/simple/SimpleCache.html" title="class in org.obapanel.jedis.cache.simple">SimpleCache</a></dt>
 <dd>

@@ -28,18 +28,17 @@ import java.util.stream.Collectors;
  *
  * Keys inside redis are resolved with the cache name to avoid duplication in redis space
  *
- * Unlike maps, null keys or values aren't alllowed.
+ * Unlike maps, null keys or values aren't allowed.
  * Every value has a timeout before it's deleted automatically by redis
  *
- * You can use a CacheLoader to give readthrough caching, that is
+ * You can use a CacheLoader to give read-through caching, that is
  * the ability to search externally for a value not present in the cache
  *
- * You can use a CacheWriter to give writethrough caching, that is
+ * You can use a CacheWriter to give write-through caching, that is
  * the ability to insert/update or delete a value when it's modified in the cache
  *
  * This cache works like a javax.cache.Cache
- * but simpler and less options
- * (no factories, events, mxbeans, statistics included)
+ * but simpler and fewer options (no factories, events, mxbeans, statistics included)
  *
  * The cache must have a Jedis connection pool
  * Also a name, every instance with the same name will access the same redis data
@@ -131,7 +130,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * @return key converted
      */
     public String resolveKey(String key) {
-        if (key == null) throw new NullPointerException("Key must be not null");
+        if (key == null) throw new IllegalArgumentException("Key must be not null");
         return name + ":" + key;
     }
 
@@ -142,13 +141,13 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * @return key un-converted
      */
     public String unresolveKey(String key) {
-        if (key == null) throw new NullPointerException("Key must be not null");
+        if (key == null) throw new IllegalArgumentException("Key must be not null");
         return key.replace(name + ":", "");
     }
 
     /**
      * Gets current value from redis cache
-     * If not found, it can use the default cacheloader readthrough if present
+     * read-through: If not found, it can use the default cacheloader if present
      * @param key not null key
      * @return value from cache or loaded, or null if no exists
      */
@@ -158,14 +157,14 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Gets current value from redis cache
-     * If not founnd, it can use the provided cacheloader readthrough
-     * The default cacheloader is overriden
+     * read-through: If not found, it can use the provided cacheloader
+     * The default cacheloader is overridden
      * @param key not null key
      * @return value from cache or loaded, or null if no exists
      */
     public String get(String key, CacheLoader cacheLoader) {
         checkClosed();
-        if (key == null) throw new NullPointerException("RedisCache.get key is null");
+        if (key == null) throw new IllegalArgumentException("RedisCache.get key is null");
         try (Jedis jedis = jedisPool.getResource()) {
             String value = jedis.get(resolveKey(key));
             if (value == null) {
@@ -177,7 +176,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Gets values from redis cache
-     * If not found, it can use the default cacheloader readthrough if present
+     * read-through: If not found, it can use the default cacheloader if present
      * Not found values will not be present in result map (null resutls are no retunred)
      * @param keys not null set of keys
      * @return map with values from cache or loaded, (no nulls)
@@ -188,9 +187,9 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Gets values from redis cache
-     * If not found, it can use the given cacheloader readthrough
-     * The default cacheloader is overriden
-     * Not found values will not be present in result map (null resutls are no retunred)
+     * If not found, it can use the given cacheloader
+     * The default cacheloader is overridden
+     * Not found values will not be present in result map (null results are no retunned)
      * @param keys not null set of keys
      * @return map with values from cache or loaded, (no nulls)
      */
@@ -208,9 +207,10 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
     }
 
     /**
-     * Covert data from trasn
+     * Covert data from trasnaction to a map value
+     * read-through: if theres a cacheloader, data is returned from external
      * @param jedis connection
-     * @param responses Map of key reponsese
+     * @param responses Map of key reponses
      * @param cacheLoader current cache loader of the operation
      * @return map with key values from cache
      */
@@ -235,14 +235,14 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * Gets a value from the external source,
      * and updates it in jedis if not null
      * @param jedis  Jedis connnection
-     * @param key Key
+     * @param key Keyº
      * @param cacheLoader Current cache loader of operation
      * @return external value, null if not exists
      */
     private String readThrougth(Jedis jedis, String key, CacheLoader cacheLoader) {
         String value = null;
         if (cacheLoader != null) {
-            LOGGER.debug("readThrougth key {}", key);
+            LOGGER.debug("read-through load key {}", key);
             value = cacheLoader.load(key);
             if (value != null) {
                 jedis.set(resolveKey(key), value);
@@ -266,6 +266,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
     /**
      * Load the set of keys from external sources, updating their values in redis
      * If no cacheLoader exists, it does nothing
+     * read-through: resolves data from external source if possible
      * @param keys Set of keys to update
      * @param replaceExistingValues if a value is found in redis, should it be updated
      */
@@ -277,7 +278,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
                         filter(k -> !containsKey(k)).
                         collect(Collectors.toSet());
             }
-            LOGGER.debug("readThrougth keys {}", keys);
+            LOGGER.debug("read-through load keys {}", keys);
             Map<String, String> newKeyValues = cacheLoader.loadAll(keys);
             putAll(newKeyValues, false);
         }
@@ -287,7 +288,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * Inserts a new value for given key in redis
      * The new value will use the default timeout of the cache
      * If the value exists, it will be overwritten
-     * If a cacheWriter is present, it will be updated in external sources by writethrougth
+     * write-through: If a cacheWriter is present, it will be updated in external sources
      * @param key Key of the value
      * @param value Data of the value
      */
@@ -299,20 +300,20 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * Inserts a new value for given key in redis
      * The new value will use given timeout
      * If the value exists, it will be overwritten
-     * If a cacheWriter is present, it will be updated in external sources by writethrougth
+     * write-through: If a cacheWriter is present, it will be updated in external sources
      * @param key Key of the value
      * @param value Data of the value
      * @param timeOutMs Time to live
      */
     public void put(String key, String value, long timeOutMs) {
         checkClosed();
-        if (key == null) throw new NullPointerException("RedisCache.put key is null");
-        if (value == null) throw new NullPointerException("RedisCache.put value is null");
+        if (key == null) throw new IllegalArgumentException("RedisCache.put key is null");
+        if (value == null) throw new IllegalArgumentException("RedisCache.put value is null");
         try (Jedis jedis = jedisPool.getResource()) {
             SetParams setParams = new SetParams().px(timeOutMs);
             jedis.set(resolveKey(key), value, setParams);
             if (cacheWriter != null) {
-                LOGGER.debug("writeThrougth key {} value {}", key, value);
+                LOGGER.debug("write-through store key {} value {}", key, value);
                 cacheWriter.write(key, value);
             }
         }
@@ -322,15 +323,15 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * Inserts a new value for given key in redis
      * The new value will use the default timeout of the cache
      * If the value exists it will be returned in this method (and overwritten)
-     * If a cacheWriter is present, it will be updated in external sources by writethrougth
+     * write-through: If a cacheWriter is present, it will be updated in external sources
      * @param key Key of the value
      * @param value Data of the value
      * @return previous value, null if there was no one
      */
     public String getAndPut(String key, String value) {
         checkClosed();
-        if (key == null) throw new NullPointerException("RedisCache.getAndPut key is null");
-        if (value == null) throw new NullPointerException("RedisCache.getAndPut value is null");
+        if (key == null) throw new IllegalArgumentException("RedisCache.getAndPut key is null");
+        if (value == null) throw new IllegalArgumentException("RedisCache.getAndPut value is null");
         try (Jedis jedis = jedisPool.getResource()) {
             SetParams setParams = new SetParams().px(timeOutMs);
             Transaction t = jedis.multi();
@@ -338,7 +339,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
             t.set(resolveKey(key), value, setParams);
             t.exec();
             if (cacheWriter != null) {
-                LOGGER.debug("writeThrougth key {} value {}", key, value);
+                LOGGER.debug("write-through store key {} value {}", key, value);
                 cacheWriter.write(key, value);
             }
             return response.get();
@@ -349,7 +350,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * Inserts a list of new key-values in cache
      * The new values will use the default timeout of the cache
      * If any value exists, it will be overwritten
-     * If a cacheWriter is present, it will be updated in external sources by writethrougth
+     * write-through: If a cacheWriter is present, it will be updated in external sources
      * @param values map of the key-values data
      */
     public void putAll(Map<String,String> values) {
@@ -360,21 +361,21 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * Inserts a list of new key-values in cache
      * The new values will use the default timeout of the cache
      * If any value exists, it will be overwritten
-     * If a cacheWriter is present and the second parameter is true,
-     * it will be updated in external sources by writethrougth
+     * write-through: If a cacheWriter is present and the second parameter is true,
+     * it will be updated in external sources
      * @param values map of the key-values data
      * @param allowWriteThrougth if the values should be updated in external datasource
      */
     private void putAll(Map<String,String> values, boolean allowWriteThrougth) {
         checkClosed();
-        if (values == null) throw new NullPointerException("RedisCache.putAll map is null");
+        if (values == null) throw new IllegalArgumentException("RedisCache.putAll map is null");
         try (Jedis jedis = jedisPool.getResource()) {
             SetParams setParams = new SetParams().px(timeOutMs);
             Transaction t = jedis.multi();
             values.forEach( (k,v) -> t.set(resolveKey(k),v, setParams));
             t.exec();
             if (allowWriteThrougth && cacheWriter != null) {
-                LOGGER.debug("writeThrougth values {}", values);
+                LOGGER.debug("write-through store values {}", values);
                 cacheWriter.writeAll(values);
             }
         }
@@ -384,20 +385,20 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * Inserts a new value for given key in redis if no previous value is present
      * Nothing will be done otherwise
      * The new value will use given timeout
-     * If a cacheWriter is present and can be updated in redis,
-     * it will be updated in external sources by writethrougth
+     * write-through: If a cacheWriter is present and can be updated in redis,
+     * it will be updated in external sources
      * @param key Key of the value
      * @param value Data of the value
      */
     public boolean putIfAbsent(String key, String value) {
         checkClosed();
-        if (key == null) throw new NullPointerException("RedisCache.putIfAbsent key is null");
-        if (value == null) throw new NullPointerException("RedisCache.putIfAbsent value is null");
+        if (key == null) throw new IllegalArgumentException("RedisCache.putIfAbsent key is null");
+        if (value == null) throw new IllegalArgumentException("RedisCache.putIfAbsent value is null");
         try (Jedis jedis = jedisPool.getResource()) {
             SetParams setParams = new SetParams().nx().px(timeOutMs);
             String result = jedis.set(resolveKey(key), value, setParams );
             if (result!= null && cacheWriter != null) {
-                LOGGER.debug("writeThrougth key {} value {}", key, value);
+                LOGGER.debug("write-through store key {} value {}", key, value);
                 cacheWriter.write(key, value);
             }
             return result != null;
@@ -407,20 +408,20 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
     /**
      * Removes for given key in redis
      * If the value doesn't exist, nothing will happen
-     * If a cacheWriter is present, it will be removed in external sources by writethrougth
+     * write-through: If a cacheWriter is present, it will be removed in external sources
      * @param key Key of the value
      * @return true if a values has been removed
      */
     public boolean remove(String key) {
         checkClosed();
-        if (key == null) throw new NullPointerException("RedisCache.remove key is null");
+        if (key == null) throw new IllegalArgumentException("RedisCache.remove key is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
             Response<String> previous = t.get(resolveKey(key));
             t.del(resolveKey(key));
             t.exec();
             if (previous.get() != null && cacheWriter != null) {
-                LOGGER.debug("deleteThrougth key {} ", key);
+                LOGGER.debug("write-through remove key {} ", key);
                 cacheWriter.delete(key);
             }
             return previous.get() != null;
@@ -429,9 +430,9 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Removes for given key in redis if the value matches
-     * The deletion will happen if current value matches withi given value
-     * If a cacheWriter is present and the deletion is done,
-     * it will be removed in external sources by writethrougth
+     * The deletion will happen if current value matches with given value
+     * write-through: If a cacheWriter is present and the deletion is done,
+     * it will be removed in external sources
      * @param key Key of the value
      * @param oldValue value that must equal to redis one to execute deletion
      * @return true if deleted
@@ -439,14 +440,14 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
     public boolean remove(String key, String oldValue) {
         checkClosed();
         //Better with script
-        if (key == null) throw new NullPointerException("RedisCache.remove key is null");
-        if (oldValue == null) throw new NullPointerException("RedisCache.remove oldValue is null");
+        if (key == null) throw new IllegalArgumentException("RedisCache.remove key is null");
+        if (oldValue == null) throw new IllegalArgumentException("RedisCache.remove oldValue is null");
         try (Jedis jedis = jedisPool.getResource()) {
             String current = jedis.get(resolveKey(key));
             if (current != null && current.equals(oldValue)) {
                 jedis.del(resolveKey(key));
                 if (cacheWriter != null) {
-                    LOGGER.debug("deleteThrougth key {} ", key);
+                    LOGGER.debug("write-through remove key {} ", key);
                     cacheWriter.delete(key);
                 }
                 return true;
@@ -459,21 +460,20 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
     /**
      * Removes for given key in redis and returns the current redis value
      *
-     * If a cacheWriter is present,
-     * it will be removed in external sources by writethrougth
+     * write-through: If a cacheWriter is present, it will be removed in external sources
      * @param key Key of the value
      * @return previous value or null if ther wasn't one
      */
     public String getAndRemove(String key) {
         checkClosed();
-        if (key == null) throw new NullPointerException("RedisCache.getAndRemove key is null");
+        if (key == null) throw new IllegalArgumentException("RedisCache.getAndRemove key is null");
         try (Jedis jedis = jedisPool.getResource()) {
             Transaction t = jedis.multi();
             Response<String> previous = t.get(resolveKey(key));
             t.del(resolveKey(key));
             t.exec();
             if (previous.get() != null && cacheWriter != null) {
-                LOGGER.debug("deleteThrougth key {} ", key);
+                LOGGER.debug("write-through remove key {} ", key);
                 cacheWriter.delete(key);
             }
             return previous.get();
@@ -482,7 +482,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Replaces key value with new value if current redis value is equals to given oldValue
-     * If value is replaced and a cachewriter exits, external source is updated too writethrougth
+     * write-through: If value is replaced and a cachewriter exits, external source is updated too
      * @param key Key to have replacement
      * @param oldValue Value to be matched
      * @param newValue New value to update in redis
@@ -490,10 +490,9 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      */
     public boolean replace(String key, String oldValue, String newValue) {
         checkClosed();
-        if (key == null) throw new NullPointerException("RedisCache.replace key is null");
-        if (oldValue == null) throw new NullPointerException("RedisCache.replace oldValue is null");
-        if (newValue == null) throw new NullPointerException("RedisCache.replace newValue is null");
-
+        if (key == null) throw new IllegalArgumentException("RedisCache.replace key is null");
+        if (oldValue == null) throw new IllegalArgumentException("RedisCache.replace oldValue is null");
+        if (newValue == null) throw new IllegalArgumentException("RedisCache.replace newValue is null");
         //Better with script
         try (Jedis jedis = jedisPool.getResource()) {
             String current = jedis.get(resolveKey(key));
@@ -501,7 +500,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
                 SetParams setParams = new SetParams().px(timeOutMs);
                 jedis.set(resolveKey(key), newValue, setParams);
                 if (cacheWriter != null) {
-                    LOGGER.debug("writeThrougth key {} value {}", key, newValue);
+                    LOGGER.debug("write-through replace key {} value {}", key, newValue);
                     cacheWriter.write(key, newValue);
                 }
                 return true;
@@ -513,15 +512,15 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Replaces key value with new value if key exists
-     * If value is replaced and a cachewriter exits, external source is updated too writethrougth
+     * write-through: If value is replaced and a cachewriter exits, external source is updated too
      * @param key Key to have replacement
      * @param value New value to update in redis
      * @return true if replaced
      */
     public boolean replace(String key, String value) {
         checkClosed();
-        if (key == null) throw new NullPointerException("RedisCache.replace key is null");
-        if (value == null) throw new NullPointerException("RedisCache.replace value is null");
+        if (key == null) throw new IllegalArgumentException("RedisCache.replace key is null");
+        if (value == null) throw new IllegalArgumentException("RedisCache.replace value is null");
         //Better with script
         try (Jedis jedis = jedisPool.getResource()) {
             String current = jedis.get(resolveKey(key));
@@ -529,7 +528,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
                 SetParams setParams = new SetParams().px(timeOutMs);
                 jedis.set(resolveKey(key), value, setParams);
                 if (cacheWriter != null) {
-                    LOGGER.debug("writeThrougth key {} value {}", key, value);
+                    LOGGER.debug("write-through replace key {} value {}", key, value);
                     cacheWriter.write(key, value);
                 }
                 return true;
@@ -551,15 +550,15 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      *     return null
      *   }
      *
-     * writethrough: If the value is going to be updated in redis, in external system too
+     * write-through: If the value is going to be updated in redis, in external system too
      * @param key Key to be modified
      * @param value New value to be updated
      * @return Old value in cache
      */
     public String getAndReplace(String key, String value) {
         checkClosed();
-        if (key == null) throw new NullPointerException("RedisCache.getAndReplace key is null");
-        if (value == null) throw new NullPointerException("RedisCache.getAndReplace value is null");
+        if (key == null) throw new IllegalArgumentException("RedisCache.getAndReplace key is null");
+        if (value == null) throw new IllegalArgumentException("RedisCache.getAndReplace value is null");
         //Better with script
         try (Jedis jedis = jedisPool.getResource()) {
             String current = jedis.get(resolveKey(key));
@@ -567,7 +566,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
                 SetParams setParams = new SetParams().px(timeOutMs);
                 jedis.set(resolveKey(key), value, setParams);
                 if (cacheWriter != null) {
-                    LOGGER.debug("writeThrougth key {} value {}", key, value);
+                    LOGGER.debug("write-through replace key {} value {}", key, value);
                     cacheWriter.write(key, value);
                 }
                 return current;
@@ -579,12 +578,13 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Will remove entries from redis with the given keys
-     * writethrough: If a cacheWriter is present, all external values wil be deleted
+     * write-through: If a cacheWriter is present, all external values wil be deleted
      * @param keys keys to remove
      */
     public void removeAll(Set<String> keys) {
+        if (keys == null) throw new IllegalArgumentException("Keys must be not null");
         checkClosed();
-        if (keys == null) throw new NullPointerException("RedisCache.removeAll keys is null");
+        if (keys == null) throw new IllegalArgumentException("RedisCache.removeAll keys is null");
         String[] keysAsArray = keys.toArray(new String[0]);
         for(int i=0; i < keysAsArray.length; i++) {
             keysAsArray[i] = resolveKey(keysAsArray[i]);
@@ -593,7 +593,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
             jedis.del(keysAsArray);
         }
         if (cacheWriter != null) {
-            LOGGER.debug("deleteThrougth keys {} ", keys);
+            LOGGER.debug("write-through delete keys {} ", keys);
             cacheWriter.deleteAll(keys);
         }
     }
@@ -608,7 +608,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
 
     /**
      * Will remove ALL entries from redis
-     * writethrough: If a cacheWriter is present, all external values wil be deleted
+     * write-through: If a cacheWriter is present, all external values wil be deleted
      */
     public void removeAll() {
         removeAll(true);
@@ -631,7 +631,7 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
                 List<String> unresolved = scanned.stream().
                         map(this::unresolveKey).
                         collect(Collectors.toList());
-                LOGGER.debug("deleteThrougth key {} ", unresolved);
+                LOGGER.debug("write-through delete key {} ", unresolved);
                 cacheWriter.deleteAll(unresolved);
             }
         }

@@ -300,6 +300,7 @@ public class SimpleCacheTest {
     public void clearEmptyTest() {
         SimpleCache simpleCache = createNewCache();
         simpleCache.clear();
+        assertTrue(simpleCache.keys().isEmpty());
     }
 
 
@@ -396,6 +397,7 @@ public class SimpleCacheTest {
         map.put("b","B1");
     }
 
+    @Test
     public void doNotClose() {
         SimpleCache simpleCache = createNewCache();
         assertFalse(simpleCache.isClosed());

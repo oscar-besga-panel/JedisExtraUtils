@@ -151,7 +151,7 @@ public class MockOfJedisForSimpleCacheTest {
     }
 
 
-        @Test
+    @Test
     public void testTransactionInsertionRecovery(){
         mockOfJedisForSimpleCache.put("a","A1");
         Transaction t = mockOfJedisForSimpleCache.getJedis().multi();
@@ -160,8 +160,10 @@ public class MockOfJedisForSimpleCacheTest {
         try {
             response1.get();
             fail("Should have a JedisDataException by now");
+        } catch (JedisDataException e) {
+            assertNotNull(e.getMessage());
         } catch (Exception e) {
-            assertTrue( e instanceof JedisDataException);
+            fail("Should have a JedisDataException by now");
         }
         t.exec();
         assertEquals("A1", response1.get());
