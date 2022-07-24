@@ -40,7 +40,11 @@ As java collections, you also can rely on iterator and streams to operate (be aw
 
 Also you have iteators por SCAN, HSCAN, SCAN and ZSCAN operations. The iterable-iterator pair will 
 give you easy Java control and semantics over iterating an scan operation in redis.
+Also you can have all the data in a list/map with a simple method.
 
+You can use a simple cache implementation on redis. This is done in a javax.cache fashion but simpler (you don't have factories, events, mxbeans, statistics included)
+It can load and write data in external datasource at your choice, automatically when retrieving or storing data.
+Or iterate by the keys and values stored in the cache.
   
 All classes have tests, unit and functional ones.   
 You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
@@ -81,6 +85,10 @@ It's barely working, so it is not production ready.
 
 On branch ``cache`` I want to implement a javax.cache (JSR107 API and SPI 1.0.0 API) class based on redis; with the most simple 
 and straigthforward implementation. Also some simple caches for everyday use.  
+
+On branch ``develop/lockNotification`` I want to implement lock with messages and notifications instead of pooling
+
+
 
 
 
