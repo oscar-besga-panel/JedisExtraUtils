@@ -273,13 +273,16 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
     public void loadAll(Set<String> keys, boolean replaceExistingValues) {
         checkClosed();
         if (cacheLoader != null) {
+            Set<String> toBeLoadedKeys;
             if (!replaceExistingValues) {
-                keys = keys.stream().
+                toBeLoadedKeys = keys.stream().
                         filter(k -> !containsKey(k)).
                         collect(Collectors.toSet());
+            } else {
+                toBeLoadedKeys = keys;
             }
-            LOGGER.debug("read-through load keys {}", keys);
-            Map<String, String> newKeyValues = cacheLoader.loadAll(keys);
+            LOGGER.debug("read-through load keys {}", toBeLoadedKeys);
+            Map<String, String> newKeyValues = cacheLoader.loadAll(toBeLoadedKeys);
             putAll(newKeyValues, false);
         }
     }
@@ -582,7 +585,6 @@ public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listabl
      * @param keys keys to remove
      */
     public void removeAll(Set<String> keys) {
-        if (keys == null) throw new IllegalArgumentException("Keys must be not null");
         checkClosed();
         if (keys == null) throw new IllegalArgumentException("RedisCache.removeAll keys is null");
         String[] keysAsArray = keys.toArray(new String[0]);
