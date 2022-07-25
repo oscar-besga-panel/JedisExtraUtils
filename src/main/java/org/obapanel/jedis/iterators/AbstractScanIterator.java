@@ -15,9 +15,8 @@ import java.util.*;
  * It is abstract so it can be applied to SCAN, HSCAN, SSCAN
  */
 abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
-
-
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractScanIterator.class);
+
 
     public static final int DEFAULT_RESULTS_PER_SCAN_ITERATORS = 50;
 

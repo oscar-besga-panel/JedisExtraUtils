@@ -85,6 +85,19 @@ public class FunctionalZscanIterableTest {
         assertTrue(num == 0);
     }
 
+    @Test
+    public void iteratorEmpty2Test() {
+        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName,  50);
+        List<Tuple> data = zscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    public void iteratorEmpty3Test() {
+        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName);
+        List<Tuple> data = zscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
 
     @Test
     public void iteratorWithResultsTest() {
@@ -201,6 +214,13 @@ public class FunctionalZscanIterableTest {
             assertTrue(letters.contains(tuple.getElement()));
         });
         assertEquals(letters.size(), data.size());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void errorInDeleteTest() {
+        ZScanIterable zscanIterable = new ZScanIterable(jedisPool, zscanitName, 20);
+        Iterator<Tuple> iterator = zscanIterable.iterator();
+        iterator.remove();
     }
 
 }

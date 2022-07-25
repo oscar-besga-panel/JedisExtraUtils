@@ -78,4 +78,5 @@ public class FunctionalSimplePubSubTest {
             jedis.subscribe(simplePubSub, channelName);
         }
     }
+
 }

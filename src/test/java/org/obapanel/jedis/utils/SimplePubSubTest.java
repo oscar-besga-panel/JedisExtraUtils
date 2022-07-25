@@ -69,4 +69,5 @@ public class SimplePubSubTest {
             jedis.subscribe(simplePubSub, "channel1");
         }
     }
+
 }

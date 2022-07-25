@@ -48,7 +48,7 @@ Or iterate by the keys and values stored in the cache.
   
 All classes have tests, unit and functional ones.   
 You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
-There are more than 300 working tests, so the code is pretty secure.
+There are **more than 500 working tests**, so the code is pretty secure.
 
   
    

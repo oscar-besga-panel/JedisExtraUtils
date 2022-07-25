@@ -72,13 +72,26 @@ public class ZscanIterableTest {
         while(iterator.hasNext()) {
             num++;
             Tuple next = iterator.next();
-            sb.append(next.getElement() + ":" + next.getScore());
+            sb.append(next.getElement()).append(":").append(next.getScore());
         }
         assertNotNull(iterator);
         assertTrue(sb.length() == 0);
         assertTrue(num == 0);
     }
 
+    @Test
+    public void iteratorEmpty2Test() {
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName,  50);
+        List<Tuple> data = zscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    public void iteratorEmpty3Test() {
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName);
+        List<Tuple> data = zscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
 
     @Test
     public void iteratorWithResultsTest() {
@@ -195,6 +208,13 @@ public class ZscanIterableTest {
             assertTrue(letters.contains(tuple.getElement()));
         });
         assertEquals(letters.size(), data.size());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void errorInDeleteTest() {
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPool(), zscanitName, 20);
+        Iterator<Tuple> iterator = zscanIterable.iterator();
+        iterator.remove();
     }
 
 }

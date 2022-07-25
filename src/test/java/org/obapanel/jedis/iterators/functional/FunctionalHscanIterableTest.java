@@ -77,6 +77,27 @@ public class FunctionalHscanIterableTest {
     }
 
     @Test
+    public void iteratorEmpty2Test() {
+        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName , 20);
+        List<Map.Entry<String,String>> data = hscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    public void iteratorEmpty3Test() {
+        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName);
+        List<Map.Entry<String,String>> data = hscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    public void iteratorEmpty4Test() {
+        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName);
+        Map<String, String> data = hscanIterable.asMap();
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
     public void iteratorWithResultsTest() {
         createABCData();
         int num = 0;
@@ -201,6 +222,13 @@ public class FunctionalHscanIterableTest {
             assertTrue(data.get(letter).equals(letter));
         });
         assertEquals(letters.size(), data.size());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void errorInDeleteTest() {
+        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName, 50);
+        Iterator<Map.Entry<String,String>> iterator = hscanIterable.iterator();
+        iterator.remove();
     }
 
 }
