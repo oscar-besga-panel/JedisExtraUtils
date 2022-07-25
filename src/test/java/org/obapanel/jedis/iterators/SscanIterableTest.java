@@ -72,6 +72,20 @@ public class SscanIterableTest {
         assertTrue(num == 0);
     }
 
+    @Test
+    public void iteratorEmpty2Test() {
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPool(),sscanitName,  20);
+        List<String> data = sscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    public void iteratorEmpty3Test() {
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPool(),sscanitName,  20);
+        List<String> data = sscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
+
 
     @Test
     public void iteratorWithResultsTest() {
@@ -183,5 +197,11 @@ public class SscanIterableTest {
         assertEquals(letters.size(), data.size());
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void errorInDeleteTest() {
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPool(), sscanitName, 20);
+        Iterator<String> iterator = sscanIterable.iterator();
+        iterator.remove();
+    }
 
 }

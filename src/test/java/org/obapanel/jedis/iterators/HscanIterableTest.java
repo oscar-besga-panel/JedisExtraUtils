@@ -53,6 +53,7 @@ public class HscanIterableTest {
         }
     }
 
+
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
@@ -88,6 +89,28 @@ public class HscanIterableTest {
         });
         assertTrue(num == letters.size());
     }
+
+    @Test
+    public void iteratorEmpty2Test() {
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPool(), hscanitName , 20);
+        List<Map.Entry<String,String>> data = hscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    public void iteratorEmpty3Test() {
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPool(), hscanitName);
+        List<Map.Entry<String,String>> data = hscanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    public void iteratorEmpty4Test() {
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPool(), hscanitName);
+        Map<String, String> data = hscanIterable.asMap();
+        assertTrue(data.isEmpty());
+    }
+
 
     @Test
     public void iteratorWithResultKeysTest() {
@@ -172,6 +195,13 @@ public class HscanIterableTest {
             assertTrue(data.get(letter).equals(letter));
         });
         assertEquals(letters.size(), data.size());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void errorInDeleteTest() {
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPool(),hscanitName, 50);
+        Iterator<Map.Entry<String,String>> iterator = hscanIterable.iterator();
+        iterator.remove();
     }
 
 }

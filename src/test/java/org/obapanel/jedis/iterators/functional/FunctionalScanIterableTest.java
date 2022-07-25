@@ -75,6 +75,12 @@ public class FunctionalScanIterableTest {
         assertTrue(num == 0);
     }
 
+    @Test
+    public void iteratorEmpty2Test() {
+        ScanIterable scanIterable = new ScanIterable(jedisPool, scanitName + ":*");
+        List<String> data = scanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
 
     @Test
     public void iteratorWithResultsTest() {
@@ -169,6 +175,13 @@ public class FunctionalScanIterableTest {
         try(Jedis jedis = jedisPool.getResource()){
             return jedis.get(key);
         }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void errorInDeleteTest() {
+        ScanIterable scanIterable = new ScanIterable(jedisPool);
+        Iterator<String> iterator = scanIterable.iterator();
+        iterator.remove();
     }
 
 }

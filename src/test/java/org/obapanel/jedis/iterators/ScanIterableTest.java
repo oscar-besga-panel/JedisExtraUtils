@@ -74,6 +74,13 @@ public class ScanIterableTest {
         assertTrue(num == 0);
     }
 
+    @Test
+    public void iteratorEmpty2Test() {
+        ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
+        List<String> data = scanIterable.asList();
+        assertTrue(data.isEmpty());
+    }
+
 
     @Test
     public void iteratorWithResultsTest() {
@@ -140,9 +147,9 @@ public class ScanIterableTest {
         createABCData();
         List<String> deleted = new ArrayList<>();
         ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
-        Iterator iterator = scanIterable.iterator();
+        Iterator<String> iterator = scanIterable.iterator();
         while (iterator.hasNext()) {
-            deleted.add((String) iterator.next());
+            deleted.add(iterator.next());
             iterator.remove();
         }
         scanIterable.forEach( key -> {
@@ -162,6 +169,13 @@ public class ScanIterableTest {
             assertTrue(letters.contains(value));
         });
         assertEquals(letters.size(), data.size());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void errorInDeleteTest() {
+        ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool());
+        Iterator<String> iterator = scanIterable.iterator();
+        iterator.remove();
     }
 
 
