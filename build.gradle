@@ -17,8 +17,8 @@ repositories {
 
 dependencies {
     implementation 'redis.clients:jedis:3.8.0'
-    implementation 'org.slf4j:slf4j-api:1.7.32'
-    implementation 'org.slf4j:slf4j-simple:1.7.32'
+    implementation 'org.slf4j:slf4j-api:1.7.36'
+    implementation 'org.slf4j:slf4j-simple:1.7.36'
     implementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
