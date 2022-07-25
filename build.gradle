@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'org.obapanel.jedis'
-version '3.0.0'
+version '3.0.2'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
