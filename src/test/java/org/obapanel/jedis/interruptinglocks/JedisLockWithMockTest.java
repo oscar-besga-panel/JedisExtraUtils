@@ -3,8 +3,13 @@ package org.obapanel.jedis.interruptinglocks;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ThreadLocalRandom;
@@ -19,6 +24,8 @@ import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.getJedisLockValue;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
 public class JedisLockWithMockTest {
 
     private MockOfJedis mockOfJedis;

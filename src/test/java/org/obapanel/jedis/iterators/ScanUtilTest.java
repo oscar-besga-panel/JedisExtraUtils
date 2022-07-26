@@ -3,7 +3,6 @@ package org.obapanel.jedis.iterators;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.obapanel.jedis.utils.MockOfJedis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -24,7 +23,7 @@ public class ScanUtilTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanUtilTest.class);
 
-    private org.obapanel.jedis.utils.MockOfJedis mockOfJedis;
+    private MockOfJedis mockOfJedis;
     private JedisPool jedisPool;
 
 
@@ -85,8 +84,7 @@ public class ScanUtilTest {
             jedis.set("b","2");
             jedis.set("c","3");
         }
-        // Hey ! here, because we use Java mocks, we use Java regexp !!
-        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPool, "a.*");
+        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPool, "a*");
         assertEquals(1, keys.size());
         assertTrue(keys.contains("a"));
     }
@@ -139,7 +137,7 @@ public class ScanUtilTest {
             jedis.set("c","3");
         }
         List<String> keys = new ArrayList<>();
-        ScanUtil.useListOfKeys(jedisPool, "c.*", k -> {
+        ScanUtil.useListOfKeys(jedisPool, "c*", k -> {
             if ( k != null && !k.isEmpty()) {
                 keys.add(k);
             }

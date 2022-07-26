@@ -3,9 +3,14 @@ package org.obapanel.jedis.collections;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -17,6 +22,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.collections.MockOfJedisForList.unitTestEnabledForList;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
 public class MockOfJedisForMapTest {
 
 

@@ -3,8 +3,13 @@ package org.obapanel.jedis.interruptinglocks;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +23,8 @@ import static org.obapanel.jedis.interruptinglocks.MockOfJedis.UNIT_TEST_CYCLES;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.checkLock;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
-
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
 public class JedisLocksOnCriticalZoneTest {
 
 

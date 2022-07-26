@@ -2,12 +2,15 @@ package org.obapanel.jedis.collections;
 
 import org.mockito.Mockito;
 import org.obapanel.jedis.common.test.TransactionOrder;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.ListPosition;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
+import redis.clients.jedis.args.ListPosition;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.ArrayList;
@@ -45,19 +48,20 @@ public class MockOfJedisForList {
 
     private final Jedis jedis;
     private final JedisPool jedisPool;
-    private final Transaction transaction;
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
 
     public MockOfJedisForList() {
+        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+
         timer = new Timer();
 
         jedis = Mockito.mock(Jedis.class);
         jedisPool = Mockito.mock(JedisPool.class);
         when(jedisPool.getResource()).thenReturn(jedis);
 
-        transaction = Mockito.mock(Transaction.class);
+        Transaction transaction = PowerMockito.mock(Transaction.class);
 
         when(jedis.multi()).thenReturn(transaction);
         when(jedis.exists(anyString())).thenAnswer(ioc -> {
@@ -149,7 +153,10 @@ public class MockOfJedisForList {
             String value = ioc.getArgument(2);
             return TransactionOrder.quickReponseExecuted(mockListLlrem(key, count, value));
         });
+        PowerMockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
+
     }
+
 
 
     Jedis getJedis(){
@@ -325,6 +332,10 @@ public class MockOfJedisForList {
         return response;
     }
 
+    private Object mockTransactionExec() {
+        LOGGER.debug("mockTransactionExec do nothing");
+        return new ArrayList<Object>(0);
+    }
 
 
 

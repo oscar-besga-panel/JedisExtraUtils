@@ -3,7 +3,11 @@ package org.obapanel.jedis.collections;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +22,8 @@ import static org.junit.Assert.fail;
 import static org.obapanel.jedis.collections.MockOfJedisForList.unitTestEnabledForList;
 
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
 public class JedisListTest {
 
 

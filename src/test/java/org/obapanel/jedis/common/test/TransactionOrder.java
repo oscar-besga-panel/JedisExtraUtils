@@ -13,9 +13,6 @@ public final class TransactionOrder<T> extends Builder<T> {
     }
 
 
-    public static <Q> Response<Q> quickReponse(Q data) {
-        return quickTransactionOrder(data).getResponse();
-    }
 
     public static <Q> Response<Q> quickReponseExecuted(Q data) {
         TransactionOrder<Q> transactionOrder = quickTransactionOrder(data);

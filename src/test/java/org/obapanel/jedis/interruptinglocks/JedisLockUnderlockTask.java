@@ -3,7 +3,13 @@ package org.obapanel.jedis.interruptinglocks;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.obapanel.jedis.utils.JedisPoolAdapter;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -11,6 +17,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore("javax.management.*")
+@PrepareForTest({Transaction.class, TransactionBase.class })
 public class JedisLockUnderlockTask {
 
     private String lockName;
@@ -34,7 +43,7 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLockTask() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() ->
+        JedisLockUtils.underLockTask(mockOfJedis.getJedisPool(), lockName,() ->
             result1.set(true)
         );
         boolean result2 = JedisLockUtils.underLockTask(mockOfJedis.getJedisPool(), lockName,() -> true);
@@ -45,7 +54,9 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLockTaskSc() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() -> result1.set(true));
+        JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() ->
+                result1.set(true)
+        );
         boolean result2 = JedisLockUtils.underLockTask(mockOfJedis.getJedis(), lockName,() -> true);
         assertTrue(result1.get());
         assertTrue(result2);

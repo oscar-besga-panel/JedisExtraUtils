@@ -5,17 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 
 public class JedisSet implements Set<String> {
@@ -73,7 +67,8 @@ public class JedisSet implements Set<String> {
     @Override
     public int size() {
         try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.scard(name).intValue();
+            long value = jedis.scard(name);
+            return Long.valueOf(value).intValue();
         }
     }
 

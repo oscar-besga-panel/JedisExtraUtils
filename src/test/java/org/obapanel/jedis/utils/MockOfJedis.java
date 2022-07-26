@@ -3,10 +3,20 @@ package org.obapanel.jedis.utils;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.*;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPubSub;
+import redis.clients.jedis.JedisSentinelPool;
+import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
+import redis.clients.jedis.resps.ScanResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
@@ -222,17 +232,13 @@ public class MockOfJedis {
     }
 
     public static String extractPatternFromScanParams(ScanParams scanParams) {
-        boolean nextIsPattern = false;
-        String pattern = "";
-        for(byte[] p : scanParams.getParams()) {
-            String s = new String(p).intern();
-            if (nextIsPattern) {
-                pattern = s;
-            }
-            nextIsPattern = Protocol.Keyword.MATCH.name().equalsIgnoreCase(s);
-        }
+        String pattern = scanParams.match();
         if (pattern.equals("*")) {
             pattern = ".*";
+        } else if (pattern.endsWith("*")) {
+            pattern = pattern.replace("*",".*");
+        } else if (pattern == null) {
+            pattern = "";
         }
         return pattern;
     }
