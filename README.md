@@ -88,7 +88,8 @@ and straigthforward implementation. Also some simple caches for everyday use.
 
 On branch ``develop/lockNotification`` I want to implement lock with messages and notifications instead of pooling
 
-
+On branch ``develop/to_jedis_4.2.3`` there is the implementation to the lastest version on jedis library.
+Code is amended to compile and work against the latest version.
 
 
 
