@@ -2,13 +2,14 @@ plugins {
     id 'java'
     id 'jacoco'
     id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version "${shadowVersion}"
 }
 
 group 'org.obapanel.jedis'
-version '3.0.2'
+version "${projectVersion}"
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = "${javaVersion}"
+targetCompatibility = "${javaVersion}"
 
 repositories {
     mavenLocal()
@@ -16,16 +17,16 @@ repositories {
 }
 
 dependencies {
-    implementation 'redis.clients:jedis:3.8.0'
-    implementation 'org.slf4j:slf4j-api:1.7.36'
-    implementation 'org.slf4j:slf4j-simple:1.7.36'
-    implementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
+    implementation "redis.clients:jedis:${jedisVersion}"
+    implementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    implementation "org.slf4j:slf4j-simple:${slf4jVersion}"
+    implementation group: 'org.javassist', name: 'javassist', version: "${javassistVersion}"
 
-    testImplementation group: 'junit', name: 'junit', version: '4.12'
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
-    testImplementation group: 'org.powermock', name: 'powermock-core', version: '2.0.9'
-    testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.9'
-    testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.9'
+    testImplementation group: 'junit', name: 'junit', version: "${junitVersion}"
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: "${mockitoVersion}"
+    testImplementation group: 'org.powermock', name: 'powermock-core', version: "${powermockVersion}"
+    testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: "${powermockVersion}"
+    testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: "${powermockVersion}"
 
     // sadly doesnt work => testImplementation 'com.github.fppt:jedis-mock:0.1.14'
 }
@@ -47,5 +48,11 @@ publishing {
                 password = System.getenv("GITHUB_TOKEN")
             }
         }
+    }
+}
+
+shadowJar {
+    manifest {
+        attributes 'Description': 'Interrupting Locks all'
     }
 }
