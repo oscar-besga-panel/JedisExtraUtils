@@ -2,17 +2,25 @@ package org.obapanel.jedis.interruptinglocks;
 
 import org.mockito.Mockito;
 import org.obapanel.jedis.common.test.TransactionOrder;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 import redis.clients.jedis.params.SetParams;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -74,16 +82,19 @@ public class MockOfJedis {
 
     private final Jedis jedis;
     private final JedisPool jedisPool;
-    private final Transaction transaction;
     private final List<TransactionOrder<String>> transactionActions = new ArrayList<>();
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
     public MockOfJedis() {
+        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+
         timer = new Timer();
         jedis = Mockito.mock(Jedis.class);
         jedisPool = Mockito.mock(JedisPool.class);
-        transaction = Mockito.mock(Transaction.class);
+        Transaction transaction = PowerMockito.mock(Transaction.class);
+
+
         Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);

@@ -2,13 +2,16 @@ package org.obapanel.jedis.collections;
 
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -46,16 +48,17 @@ public class MockOfJedisForSet {
 
     private final Jedis jedis;
     private final JedisPool jedisPool;
-    private final Transaction transaction;
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
 
     public MockOfJedisForSet() {
+        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+
 
         jedis = Mockito.mock(Jedis.class);
         jedisPool = Mockito.mock(JedisPool.class);
         when(jedisPool.getResource()).thenReturn(jedis);
 
-        transaction = Mockito.mock(Transaction.class);
+        Transaction transaction = PowerMockito.mock(Transaction.class);
 
         when(jedis.multi()).thenReturn(transaction);
         when(jedis.exists(anyString())).thenAnswer(ioc -> {
@@ -112,6 +115,7 @@ public class MockOfJedisForSet {
             ScanParams scanParams = ioc.getArgument(2);
             return mockSscan(key, cursor, scanParams);
         });
+        PowerMockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
     }
 
     private Long iocSadd(InvocationOnMock ioc){
@@ -226,6 +230,11 @@ public class MockOfJedisForSet {
             }
         }
         return num;
+    }
+
+    private Object mockTransactionExec() {
+        LOGGER.debug("mockTransactionExec do nothing");
+        return new ArrayList<Object>(0);
     }
 
 }

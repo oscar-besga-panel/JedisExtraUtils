@@ -3,17 +3,20 @@ package org.obapanel.jedis.iterators;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
-import redis.clients.jedis.Tuple;
+import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
+import redis.clients.jedis.resps.ScanResult;
+import redis.clients.jedis.resps.Tuple;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.iterators.MockOfJedis.unitTestEnabled;
 
 public class MockOfJedisTest {
@@ -73,9 +76,9 @@ public class MockOfJedisTest {
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
         Thread.sleep(1000);
         assertNull(mockOfJedis.getCurrentData().get("c"));
-        assertEquals(Long.valueOf(1), mockOfJedis.getJedis().del("a"));
+        assertEquals(1L, mockOfJedis.getJedis().del("a"));
         assertNull(mockOfJedis.getCurrentData().get("a"));
-        assertEquals(Long.valueOf(0), mockOfJedis.getJedis().del("a"));
+        assertEquals(0L, mockOfJedis.getJedis().del("a"));
     }
 
     @Test
@@ -83,6 +86,7 @@ public class MockOfJedisTest {
         mockOfJedis.getJedis().set("a", "A1", new SetParams());
         mockOfJedis.getJedis().set("b", "B1", new SetParams());
         mockOfJedis.getJedis().set("c", "C1", new SetParams());
+        //ScanResult<String> result = mockOfJedis.getJedis().scan("", new ScanParams().match("*"));
         ScanResult<String> result = mockOfJedis.getJedis().scan("");
         assertEquals(ScanParams.SCAN_POINTER_START, result.getCursor());
         assertTrue( result.getResult().contains("a"));
@@ -144,8 +148,8 @@ public class MockOfJedisTest {
         assertFalse(mockOfJedis.getJedis().sismember("set1","d"));
         assertFalse(mockOfJedis.getJedis().sismember("set2","a"));
         assertTrue(mockOfJedis.getJedis().sismember("set2","d"));
-        assertEquals(1L, mockOfJedis.getJedis().srem("set1", "c").longValue());
-        assertEquals(0L, mockOfJedis.getJedis().srem("set2", "c").longValue());
+        assertEquals(1L, mockOfJedis.getJedis().srem("set1", "c"));
+        assertEquals(0L, mockOfJedis.getJedis().srem("set2", "c"));
         assertFalse(mockOfJedis.getJedis().sismember("set1","c"));
         mockOfJedis.getJedis().del("set2");
         assertFalse(mockOfJedis.getJedis().sismember("set2","d"));

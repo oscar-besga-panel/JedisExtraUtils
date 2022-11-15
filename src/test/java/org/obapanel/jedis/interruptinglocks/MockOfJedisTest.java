@@ -3,15 +3,23 @@ package org.obapanel.jedis.interruptinglocks;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.interruptinglocks.MockOfJedis.unitTestEnabled;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
 public class MockOfJedisTest {
 
 

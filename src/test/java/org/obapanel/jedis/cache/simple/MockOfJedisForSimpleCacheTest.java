@@ -4,22 +4,29 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.obapanel.jedis.interruptinglocks.JedisLock;
 import org.obapanel.jedis.iterators.ScanUtil;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.TransactionBase;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.obapanel.jedis.cache.simple.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
 public class MockOfJedisForSimpleCacheTest {
 
     private MockOfJedisForSimpleCache mockOfJedisForSimpleCache;
@@ -160,7 +167,7 @@ public class MockOfJedisForSimpleCacheTest {
         try {
             response1.get();
             fail("Should have a JedisDataException by now");
-        } catch (JedisDataException e) {
+        } catch (IllegalStateException e) {
             assertNotNull(e.getMessage());
         } catch (Exception e) {
             fail("Should have a JedisDataException by now");

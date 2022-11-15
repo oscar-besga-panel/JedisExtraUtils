@@ -28,6 +28,12 @@ dependencies {
     testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: "${powermockVersion}"
     testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: "${powermockVersion}"
 
+    /*
+    To #mockitoVersion=4.7.0 or more
+            testImplementation group: 'org.mockito', name: 'mockito-core', version: "${mockitoVersion}"
+        testImplementation group: 'org.mockito', name: 'mockito-inline', version: "${mockitoVersion}"
+     */
+
     // sadly doesnt work => testImplementation 'com.github.fppt:jedis-mock:0.1.14'
 }
 

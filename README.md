@@ -78,7 +78,7 @@ See also
 - A lock (and other synchronization primitives) server based in Java which can be used with RMI, gRPC or REST [LockFactoryServer](https://github.com/oscar-besga-panel/LockFactoryServer)
 
 ## How to build
-This project uses JDK8 and Gradle (provided gradlew 7.0.2)
+This project uses JDK11 and Gradle (provided gradlew 7.0.2), and its build top of jedis 4.X libraries
 
 Also, you will find a little Groovy and a docker composer to setup a testing redis server.
 
@@ -92,7 +92,8 @@ and straigthforward implementation. Also some simple caches for everyday use.
 
 On branch ``develop/lockNotification`` I want to implement lock with messages and notifications instead of pooling
 
-
+On branch ``develop/to_jedis_4.2.3`` there is the implementation to the lastest version on jedis library.
+Code is amended to compile and work against the latest version.
 
 
 

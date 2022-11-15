@@ -3,9 +3,9 @@ package org.obapanel.jedis.utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
+import redis.clients.jedis.resps.ScanResult;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -88,7 +88,7 @@ public class MockOfJedisTest {
         mockOfJedis.getJedis().set("a", "7", new SetParams().nx());
         assertEquals("5", mockOfJedis.getCurrentData().get("a"));
         assertEquals("5", mockOfJedis.getJedis().get("a"));
-        assertEquals(Long.valueOf(1L), mockOfJedis.getJedis().del("a"));
+        assertEquals(1L, mockOfJedis.getJedis().del("a"));
         assertNull(mockOfJedis.getCurrentData().get("a"));
     }
 

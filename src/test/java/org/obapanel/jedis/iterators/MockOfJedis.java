@@ -3,14 +3,30 @@ package org.obapanel.jedis.iterators;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.*;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
+import redis.clients.jedis.resps.ScanResult;
+import redis.clients.jedis.resps.Tuple;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Timer;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.obapanel.jedis.common.test.TTL.wrapTTL;
 
 /**
@@ -80,7 +96,7 @@ public class MockOfJedis {
         });
         Mockito.when(jedis.scan(anyString())).thenAnswer(ioc -> {
             String pattern = ioc.getArgument(0);
-            ScanParams scanParams = new ScanParams();
+            ScanParams scanParams = new ScanParams().match("*");
             return mockScan(pattern, scanParams);
         });
         Mockito.when(jedis.hget(anyString(), anyString())).thenAnswer(ioc -> {
@@ -263,9 +279,21 @@ public class MockOfJedis {
         return new ScanResult<Map.Entry<String,String>>(ScanParams.SCAN_POINTER_START, results);
     }
 
-    private ScanResult<String> mockScan(String pattern, ScanParams scanParams) {
-        List<String> results = new ArrayList<>(data.keySet());
-        return new ScanResult<String>(ScanParams.SCAN_POINTER_START, results);
+//    private ScanResult<String> mockScan(String pattern, ScanParams scanParams) {
+//        List<String> results = new ArrayList<>(data.keySet());
+//
+//        return new ScanResult<String>(ScanParams.SCAN_POINTER_START, results);
+//    }
+
+    private ScanResult<String> mockScan(String cursor, ScanParams scanParams) {
+        if (!cursor.equals("0")) {
+            LOGGER.warn("Cursor inited wirh value {}", cursor);
+        }
+        String pattern = extractPatternFromScanParams(scanParams);
+        List<String> keys = data.keySet().stream().
+                filter( k -> k.matches(pattern) ).
+                collect(Collectors.toList());
+        return new ScanResult<>(ScanParams.SCAN_POINTER_START, keys);
     }
 
 
@@ -358,6 +386,18 @@ public class MockOfJedis {
             result.add(String.valueOf(ABC.toCharArray()[i]));
         }
         return result;
+    }
+
+    public static String extractPatternFromScanParams(ScanParams scanParams) {
+        String pattern = scanParams.match();
+        if (pattern.equals("*")) {
+            pattern = ".*";
+        } else if (pattern.endsWith("*")) {
+            pattern = pattern.replace("*",".*");
+        } else if (pattern == null) {
+            pattern = "";
+        }
+        return pattern;
     }
 
 }

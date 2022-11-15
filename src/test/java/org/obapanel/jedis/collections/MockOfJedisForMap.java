@@ -1,15 +1,17 @@
 package org.obapanel.jedis.collections;
 
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Builder;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,18 +44,20 @@ public class MockOfJedisForMap {
 
     private final Jedis jedis;
     private final JedisPool jedisPool;
-    private final Transaction transaction;
+
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
     public MockOfJedisForMap() {
+        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+
         timer = new Timer();
 
         jedis = Mockito.mock(Jedis.class);
         jedisPool = Mockito.mock(JedisPool.class);
         when(jedisPool.getResource()).thenReturn(jedis);
 
-        transaction = Mockito.mock(Transaction.class);
+        Transaction transaction = PowerMockito.mock(Transaction.class);
 
         when(jedis.multi()).thenReturn(transaction);
         when(jedis.exists(anyString())).thenAnswer(ioc -> {
@@ -117,6 +121,7 @@ public class MockOfJedisForMap {
             String name = ioc.getArgument(1);
             return mockTransactionHdel(key, name);
         });
+        PowerMockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
     }
 
 
@@ -206,6 +211,11 @@ public class MockOfJedisForMap {
         Map<String, String> map = getStringStringMap(key);
         List<Map.Entry<String, String>> results = new ArrayList<>(map.entrySet());
         return new ScanResult<Map.Entry<String, String>>(ScanParams.SCAN_POINTER_START, results);
+    }
+
+    private Object mockTransactionExec() {
+        LOGGER.debug("mockTransactionExec do nothing");
+        return new ArrayList<Object>(0);
     }
 
 }

@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.exceptions.JedisExhaustedPoolException;
 
 import java.io.IOException;
 
@@ -89,7 +88,7 @@ public class FunctionalJedisConnectionProxyTest {
         assertEquals("1", jedis.get(varName + "a"));
     }
 
-    @Test(expected = JedisExhaustedPoolException.class)
+    @Test(expected = IllegalStateException.class)
     public void testProxy4() {
         JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
         jedisPool.close();

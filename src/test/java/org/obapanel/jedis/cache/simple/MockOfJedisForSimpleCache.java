@@ -3,10 +3,14 @@ package org.obapanel.jedis.cache.simple;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.obapanel.jedis.common.test.TransactionOrder;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.*;
+import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
+import redis.clients.jedis.resps.ScanResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,12 +49,18 @@ public class MockOfJedisForSimpleCache {
 
 
     public MockOfJedisForSimpleCache() {
+        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+
+
         timer = new Timer();
 
+
         jedis = Mockito.mock(Jedis.class);
+        Connection connection = Mockito.mock(Connection.class);
+        when(jedis.getConnection()).thenReturn(connection);
         jedisPool = Mockito.mock(JedisPool.class);
         when(jedisPool.getResource()).thenReturn(jedis);
-        Transaction transaction = Mockito.mock(Transaction.class);
+        Transaction transaction = PowerMockito.mock(Transaction.class);
         when(jedis.multi()).thenReturn(transaction);
 
         when(jedis.exists(anyString())).thenAnswer(ioc -> {
@@ -125,7 +135,7 @@ public class MockOfJedisForSimpleCache {
                 throw new UnsupportedOperationException("Mock jedis transaction del. Dont know what is Object arg1: " + arg1);
             }
         });
-        Mockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
+        PowerMockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
 
         when(jedis.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> null);
 
@@ -263,20 +273,13 @@ public class MockOfJedisForSimpleCache {
     }
 
     public static String extractPatternFromScanParams(ScanParams scanParams) {
-        boolean nextIsPattern = false;
-        String pattern = "";
-        for(byte[] p : scanParams.getParams()) {
-            String s = new String(p).intern();
-            if (nextIsPattern) {
-                pattern = s;
-            }
-            nextIsPattern = Protocol.Keyword.MATCH.name().equalsIgnoreCase(s);
-        }
+        String pattern = scanParams.match();
         if (pattern.equals("*")) {
             pattern = ".*";
-        }
-        if (pattern.endsWith("*")) {
-            pattern = pattern.replace("*", ".*");
+        } else if (pattern.endsWith("*")) {
+            pattern = pattern.replace("*",".*");
+        } else if (pattern == null) {
+            pattern = "";
         }
         return pattern;
     }

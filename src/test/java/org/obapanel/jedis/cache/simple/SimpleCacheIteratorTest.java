@@ -5,16 +5,28 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.obapanel.jedis.utils.SimpleEntry;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.obapanel.jedis.cache.simple.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
 public class SimpleCacheIteratorTest {
 
 

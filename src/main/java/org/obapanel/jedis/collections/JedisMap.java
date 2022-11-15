@@ -6,11 +6,13 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class JedisMap implements Map<String, String> {
@@ -94,7 +96,8 @@ public class JedisMap implements Map<String, String> {
     @Override
     public int size() {
         try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.hlen(name).intValue();
+            long value = jedis.hlen(name);
+            return Long.valueOf(value).intValue();
         }
     }
 

@@ -86,32 +86,12 @@ public class JedisSentinelPoolAdapter extends JedisPool {
     @Override
     public void close() {
         jedisSentinelPool.close();
-    }
-
-    @Override
-    public boolean isClosed() {
-        return jedisSentinelPool.isClosed();
-    }
-
-
-    @Override
-    protected void returnResourceObject(Jedis resource) {
-        //NOPE
+        super.close();
     }
 
     @Override
     public void destroy() {
         jedisSentinelPool.destroy();
-    }
-
-    @Override
-    protected void returnBrokenResourceObject(Jedis resource) {
-        // NOPE
-    }
-
-    @Override
-    protected void closeInternalPool() {
-        // NOPE
     }
 
     @Override
@@ -127,16 +107,6 @@ public class JedisSentinelPoolAdapter extends JedisPool {
     @Override
     public int getNumWaiters() {
         return jedisSentinelPool.getNumWaiters();
-    }
-
-    @Override
-    public long getMeanBorrowWaitTimeMillis() {
-        return jedisSentinelPool.getMeanBorrowWaitTimeMillis();
-    }
-
-    @Override
-    public long getMaxBorrowWaitTimeMillis() {
-        return jedisSentinelPool.getMaxBorrowWaitTimeMillis();
     }
 
     @Override

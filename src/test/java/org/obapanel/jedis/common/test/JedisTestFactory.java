@@ -34,6 +34,14 @@ public class JedisTestFactory {
 
     private static final String PREFIX = "jedis.test.";
 
+    private static final int DEFAULT_FUNCTIONAL_TEST_CYCLES = 0;
+    private static final String DEFAULT_HOST = "127.0.0.1";
+    private static final int DEFAULT_PORT = 6379;
+    private static final String DEFAULT_PASS = "";
+    private static final boolean DEFAULT_ENABLE_SENTINEL = false;
+    private static final String DEFAULT_SENTINEL_HOSTS = "";
+    private static final String DEFAULT_SENTINEL_MASTER = "";
+    private static final String DEFAULT_SEMTIMEL_PASS = "";
 
     public static JedisTestFactory get() {
         return JedisTestFactoryHolder.instance;
@@ -43,14 +51,14 @@ public class JedisTestFactory {
         static JedisTestFactory instance = new JedisTestFactory();
     }
 
-    private int functionalTestCycles = 0;
-    private String host = "127.0.0.1";
-    private int port = 6379;
-    private String pass = "";
-    private boolean enableSentinel = false;
-    private String sentinelHosts = "";
-    private String sentinelMaster = "";
-    private String sentinelPass = "";
+    private int functionalTestCycles = DEFAULT_FUNCTIONAL_TEST_CYCLES;
+    private String host = DEFAULT_HOST;
+    private int port = DEFAULT_PORT;
+    private String pass = DEFAULT_PASS;
+    private boolean enableSentinel = DEFAULT_ENABLE_SENTINEL;
+    private String sentinelHosts = DEFAULT_SENTINEL_HOSTS;
+    private String sentinelMaster = DEFAULT_SENTINEL_MASTER;
+    private String sentinelPass = DEFAULT_SEMTIMEL_PASS;
 
 
     private boolean testConnectionOk = true;
@@ -64,7 +72,7 @@ public class JedisTestFactory {
         if (properties == null) {
             properties = readFromClasspath();
         }
-        if (properties!=null) {
+        if (properties != null) {
             assignProperties(properties);
         }
         try {
@@ -101,16 +109,17 @@ public class JedisTestFactory {
         }
     }
 
-
     private void assignProperties(Properties properties) {
-        functionalTestCycles = Integer.parseInt(properties.getProperty(PREFIX + "functionalTestCycles"));
-        host = properties.getProperty(PREFIX + "host");
-        port = Integer.parseInt(properties.getProperty(PREFIX + "port"));
-        pass = properties.getProperty(PREFIX + "pass");
-        enableSentinel = "true".equalsIgnoreCase(properties.getProperty(PREFIX + "enableSentinel", "false"));
-        sentinelHosts = properties.getProperty(PREFIX + "sentinel.hosts");
-        sentinelMaster = properties.getProperty(PREFIX + "sentinel.master");
-        sentinelPass = properties.getProperty(PREFIX + "sentinel.pass");
+        functionalTestCycles = Integer.parseInt(properties.getProperty(PREFIX + "functionalTestCycles",
+                String.valueOf(DEFAULT_FUNCTIONAL_TEST_CYCLES)));
+        host = properties.getProperty(PREFIX + "host", DEFAULT_HOST);
+        port = Integer.parseInt(properties.getProperty(PREFIX + "port", String.valueOf(DEFAULT_PORT)));
+        pass = properties.getProperty(PREFIX + "pass", DEFAULT_PASS);
+        enableSentinel = "true".equalsIgnoreCase(properties.getProperty(PREFIX + "enableSentinel",
+                String.valueOf(DEFAULT_ENABLE_SENTINEL)));
+        sentinelHosts = properties.getProperty(PREFIX + "sentinel.hosts", DEFAULT_SENTINEL_HOSTS);
+        sentinelMaster = properties.getProperty(PREFIX + "sentinel.master", DEFAULT_SENTINEL_MASTER);
+        sentinelPass = properties.getProperty(PREFIX + "sentinel.pass", DEFAULT_SEMTIMEL_PASS);
     }
 
 

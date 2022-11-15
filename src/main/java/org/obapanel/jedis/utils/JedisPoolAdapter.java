@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.exceptions.JedisExhaustedPoolException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -89,7 +88,7 @@ public class JedisPoolAdapter extends JedisPool {
     @Override
     public Jedis getResource() {
         if (isClosedStatus.get()) {
-            throw new JedisExhaustedPoolException("JedisPoolAdapter already closed");
+            throw new IllegalStateException("JedisPoolAdapter already closed");
         }
         return createDynamicProxyFromJedis(jedis);
     }
@@ -107,33 +106,21 @@ public class JedisPoolAdapter extends JedisPool {
     @Override
     public void close() {
         isClosedStatus.set(true);
+        super.close();
     }
 
-    @Override
-    public boolean isClosed() {
-        return isClosedStatus.get();
-    }
+//    @Override
+//    public boolean isClosed() {
+//        return isClosedStatus.get();
+//    }
 
 
-    @Override
-    protected void returnResourceObject(Jedis resource) {
-        // NOPE
-    }
 
-    @Override
-    public void destroy() {
-        close();
-    }
 
-    @Override
-    protected void returnBrokenResourceObject(Jedis resource) {
-        // NOPE
-    }
-
-    @Override
-    protected void closeInternalPool() {
-        // NOPE
-    }
+//    @Override
+//    public void destroy() {
+//        super.close();
+//    }
 
     @Override
     public int getNumActive() {
@@ -148,16 +135,6 @@ public class JedisPoolAdapter extends JedisPool {
     @Override
     public int getNumWaiters() {
         return 0;
-    }
-
-    @Override
-    public long getMeanBorrowWaitTimeMillis() {
-        return 0L;
-    }
-
-    @Override
-    public long getMaxBorrowWaitTimeMillis() {
-        return 0L;
     }
 
     @Override

@@ -2,7 +2,7 @@ package org.obapanel.jedis.iterators;
 
 import org.obapanel.jedis.utils.Listable;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Tuple;
+import redis.clients.jedis.resps.Tuple;
 
 import java.util.List;
 
