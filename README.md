@@ -1,13 +1,13 @@
 # InterruptingJedisLocks
 
+[![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+
 _Project information_        
 [![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://opensource.org/licenses/MIT)
 ![Top languaje](https://img.shields.io/github/languages/top/oscar-besga-panel/InterruptingJedisLocks)
 [![Wiki](https://badgen.net/badge/icon/wiki?icon=wiki&label)](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki)
 [![Github Web page](https://badgen.net/badge/github/website?icon=github)](https://oscar-besga-panel.github.io/InterruptingJedisLocks)
-[![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
-
-
+[![OpenHub](https://badgen.net/badge/%20/openhub/purple?icon=awesome)](https://openhub.net/p/InterruptingJedisLocks)
 
 
 _Current Build_  
@@ -75,8 +75,12 @@ Made with
 See also
 - [Awesome-redis](https://github.com/JamzyWang/awesome-redis)
 - And redis/jedis tutorial made by me [YaitRedisAndJedis](https://github.com/oscar-besga-panel/YaitRedisAndJedis)
+- A lock (and other synchronization primitives) server based in Java which can be used with RMI, gRPC or REST [LockFactoryServer](https://github.com/oscar-besga-panel/LockFactoryServer)
 
+## How to build
+This project uses JDK8 and Gradle (provided gradlew 7.0.2)
 
+Also, you will find a little Groovy and a docker composer to setup a testing redis server.
 
 ## TODOs
 
