@@ -78,7 +78,7 @@ See also
 - A lock (and other synchronization primitives) server based in Java which can be used with RMI, gRPC or REST [LockFactoryServer](https://github.com/oscar-besga-panel/LockFactoryServer)
 
 ## How to build
-This project uses JDK11 and Gradle (provided gradlew 7.0.2), and its build top of jedis 4.X libraries
+This project uses JDK11 and Gradle (provided gradlew 7.5.1), and its build top of jedis 4.X libraries
 
 Also, you will find a little Groovy and a docker composer to setup a testing redis server.
 
