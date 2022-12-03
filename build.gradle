@@ -19,7 +19,6 @@ repositories {
 dependencies {
     implementation "redis.clients:jedis:${jedisVersion}"
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
-    implementation "org.slf4j:slf4j-simple:${slf4jVersion}"
     implementation group: 'org.javassist', name: 'javassist', version: "${javassistVersion}"
 
     testImplementation group: 'junit', name: 'junit', version: "${junitVersion}"
@@ -27,6 +26,7 @@ dependencies {
     testImplementation group: 'org.powermock', name: 'powermock-core', version: "${powermockVersion}"
     testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: "${powermockVersion}"
     testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: "${powermockVersion}"
+    testImplementation "org.slf4j:slf4j-simple:${slf4jVersion}"
 
     /*
     To #mockitoVersion=4.7.0 or more

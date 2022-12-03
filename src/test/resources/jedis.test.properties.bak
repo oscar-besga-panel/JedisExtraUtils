@@ -9,11 +9,11 @@ jedis.test.pass=
 
 
 # If we use sentinel for our tests. Default empty or false
-jedis.test.enableSentinel=false
+# jedis.test.enableSentinel=false
 # Comma separated values with host:port. Default  empty
-jedis.test.sentinel.hosts=
+# jedis.test.sentinel.hosts=
 # Name of sentinel master host. Default empty
-jedis.test.sentinel.master=
+# jedis.test.sentinel.master=
 # Sentinel host use AUTH, put here. Default empty
-jedis.test.sentinel.pass=
+# jedis.test.sentinel.pass=
 

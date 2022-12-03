@@ -242,11 +242,17 @@ public class JedisTestFactory {
         InputStream get() throws IOException;
     }
 
+    /**
+     * Main method
+     * Run only if avalible connnection on jedis.test.properties file
+     * @param args arguments
+     */
     public static void main(String[] args) {
+        LOGGER.debug("main ini >>>> ");
         JedisTestFactory jedisTestFactory = JedisTestFactory.get();
         jedisTestFactory.testConnection();
         jedisTestFactory.testPoolConnection();
-
+        LOGGER.debug("main fin <<<< ");
     }
 
 

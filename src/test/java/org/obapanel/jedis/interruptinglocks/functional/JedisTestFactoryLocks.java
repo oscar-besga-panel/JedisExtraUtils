@@ -7,7 +7,8 @@ import org.obapanel.jedis.interruptinglocks.Lock;
 import org.obapanel.jedis.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.*;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 public class JedisTestFactoryLocks {
 
@@ -43,8 +44,13 @@ public class JedisTestFactoryLocks {
     }
 
 
-
+    /**
+     * Main method
+     * Run only if avalible connnection on jedis.test.properties file
+     * @param args arguments
+     */
     public static void main(String[] args) {
+        LOGGER.debug("main ini >>>> ");
         JedisTestFactory jtfTest = JedisTestFactory.get();
         Jedis jedis = jtfTest.createJedisClient();
         jtfTest.testConnection();
@@ -65,6 +71,7 @@ public class JedisTestFactoryLocks {
         jedisPoolLock.unlock();
         jedisPool.close();
         System.out.println("JEDISPOOLLOCK " + plocked + " " + preallyLocked);
+        LOGGER.debug("main fin <<<< ");
 
     }
 
