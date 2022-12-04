@@ -82,20 +82,11 @@ This project uses JDK11 and Gradle (provided gradlew 7.5.1), and its build top o
 
 Also, you will find a little Groovy and a docker composer to setup a testing redis server.
 
-## TODOs
 
-On branch ``develop/mapper`` I'm trying to make a POJO <-> RedisObject mapper to store objects in Redis directly.  
-It's barely working, so it is not production ready.  
+## Miscelanea
 
-On branch ``cache`` I want to implement a javax.cache (JSR107 API and SPI 1.0.0 API) class based on redis; with the most simple 
-and straigthforward implementation. Also some simple caches for everyday use.  
-
-On branch ``develop/lockNotification`` I want to implement lock with messages and notifications instead of pooling
-
-On branch ``develop/to_jedis_4.2.3`` there is the implementation to the lastest version on jedis library.
-Code is amended to compile and work against the latest version.
-
-
+As Redis stores data into Strings, you may need to convert from POJO to String and viceversa.   
+This library doesn't help with that, but in this [wiki page](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki/POJO-Mapping) you may find some clues on how to do it.
 
 Help, suggestions, critics and tests will be greatly appreciated.
 
