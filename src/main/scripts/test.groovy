@@ -1,3 +1,4 @@
+import org.oba.jedis.extra.utils.iterators.ScanIterator
 @Grab(group='redis.clients', module='jedis', version='3.6.3')
 @Grab(group='org.obapanel.jedis', module='interruptinglocks', version='2.12.0')
 

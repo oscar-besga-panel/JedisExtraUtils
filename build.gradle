@@ -5,7 +5,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version "${shadowVersion}"
 }
 
-group 'org.obapanel.jedis'
+group 'org.oba.jedis.extra.utils'
 version "${projectVersion}"
 
 sourceCompatibility = "${javaVersion}"
