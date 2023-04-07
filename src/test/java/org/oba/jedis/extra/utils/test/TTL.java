@@ -6,11 +6,9 @@ import java.util.TimerTask;
 
 public class TTL extends TimerTask {
 
-
     public static TimerTask wrapTTL(Runnable r) {
         return new TTL(r);
     }
-
 
     private final Runnable runnable;
 
@@ -22,6 +20,7 @@ public class TTL extends TimerTask {
     public void run() {
         runnable.run();
     }
+
 }
 
 

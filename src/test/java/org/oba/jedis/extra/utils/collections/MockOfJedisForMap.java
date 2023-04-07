@@ -124,8 +124,6 @@ public class MockOfJedisForMap {
         PowerMockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
     }
 
-
-
     Jedis getJedis(){
         return jedis;
     }
@@ -138,8 +136,9 @@ public class MockOfJedisForMap {
         return (Map<String, String>) data.computeIfAbsent(key, k -> new HashMap<String, String>());
     }
 
-    synchronized void clearData(){
+    synchronized void clearDataAndStop(){
         data.clear();
+        timer.cancel();
     }
 
 

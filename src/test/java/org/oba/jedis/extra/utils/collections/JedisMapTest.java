@@ -26,7 +26,8 @@ import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.unitTestE
 @PrepareForTest({Transaction.class, TransactionBase.class })
 public class JedisMapTest {
 
-    private String mapName, mapName2;
+    private String mapName;
+    private String mapName2;
     private MockOfJedisForMap mockOfJedisForMap;
 
     @Before
@@ -40,7 +41,9 @@ public class JedisMapTest {
 
     @After
     public void after() {
-        if (mockOfJedisForMap != null) mockOfJedisForMap.clearData();
+        if (mockOfJedisForMap != null) {
+            mockOfJedisForMap.clearDataAndStop();
+        }
     }
 
 

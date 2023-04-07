@@ -163,7 +163,7 @@ public class JedisTestFactory {
         Set<String> sentinels = new HashSet<>();
         Collections.addAll(sentinels, sentinelHosts.split(","));
         JedisSentinelPool jedisSentinelPool;
-        if (sentinelPass != null || !sentinelPass.trim().isEmpty()) {
+        if (sentinelPass != null && !sentinelPass.isBlank()) {
             jedisSentinelPool = new JedisSentinelPool(sentinelMaster, sentinels, jedisPoolConfig,sentinelPass);
         } else {
             jedisSentinelPool = new JedisSentinelPool(sentinelMaster, sentinels, jedisPoolConfig);

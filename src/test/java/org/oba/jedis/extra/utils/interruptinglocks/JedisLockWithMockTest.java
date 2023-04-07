@@ -1,7 +1,6 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,7 +59,7 @@ public class JedisLockWithMockTest {
         JedisLock jedisLock = new JedisLock(jedisPool,lockname);
         jedisLock.lock();
         assertTrue(jedisLock.isLocked());
-        Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock), mockOfJedis.getCurrentData().get(jedisLock.getName()));
+        assertEquals(MockOfJedis.getJedisLockValue(jedisLock), mockOfJedis.getCurrentData().get(jedisLock.getName()));
         jedisLock.unlock();
         assertFalse(jedisLock.isLocked());
         assertNull(mockOfJedis.getCurrentData().get(jedisLock.getName()));
@@ -73,12 +72,12 @@ public class JedisLockWithMockTest {
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
+        assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
         JedisLock jedisLock2 = new JedisLock(jedisPool,lockname);
         boolean result2 = jedisLock2.tryLock();
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);
-        Assert.assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
+        assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
         jedisLock1.unlock();
     }
 
@@ -89,12 +88,12 @@ public class JedisLockWithMockTest {
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
+        assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
         JedisLock jedisLock2 = new JedisLock(jedisPool,lockname);
         boolean result2 = jedisLock2.tryLockForAWhile(1, TimeUnit.SECONDS);
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);
-        Assert.assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
+        assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
         jedisLock1.unlock();
     }
 
@@ -105,7 +104,7 @@ public class JedisLockWithMockTest {
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
+        assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
         JedisLock jedisLock2 = new JedisLock(jedisPool, lockname);
         final AtomicBoolean triedLock = new AtomicBoolean(false);
         final AtomicBoolean interrupted = new AtomicBoolean(false);
@@ -124,7 +123,7 @@ public class JedisLockWithMockTest {
         Thread.sleep(25);
 
         assertFalse(jedisLock2.isLocked());
-        Assert.assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
+        assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
         assertTrue(triedLock.get());
         assertTrue(interrupted.get());
         jedisLock1.unlock();
@@ -138,7 +137,7 @@ public class JedisLockWithMockTest {
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
+        assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
         JedisLock jedisLock2 = new JedisLock(jedisPool, lockname);
         final AtomicBoolean triedLock = new AtomicBoolean(false);
         final AtomicBoolean interrupted = new AtomicBoolean(false);
@@ -157,7 +156,7 @@ public class JedisLockWithMockTest {
         Thread.sleep(25);
 
         //assertFalse(jedisLock2.isLocked());
-        Assert.assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
+        assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
         assertTrue(triedLock.get());
         assertFalse(interrupted.get());
         jedisLock1.unlock();
@@ -170,9 +169,9 @@ public class JedisLockWithMockTest {
         boolean result1 = jedisLock1.tryLock();
         assertTrue(result1);
         assertTrue(jedisLock1.isLocked());
-        Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
+        assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
         Thread.sleep(5500);
-        Assert.assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
+        assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
         assertNull(mockOfJedis.getCurrentData().get(jedisLock1.getName()));
         assertFalse(jedisLock1.isLocked());
     }
@@ -184,18 +183,18 @@ public class JedisLockWithMockTest {
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
+        assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
         JedisLock jedisLock2 = new JedisLock(jedisPool, lockname);
         boolean result2 = jedisLock2.tryLockForAWhile(1, TimeUnit.SECONDS);
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);
-        Assert.assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
+        assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), mockOfJedis.getCurrentData().get(jedisLock2.getName()));
         Thread.sleep(5000);
         JedisLock jedisLock3 = new JedisLock(jedisPool, lockname);
         boolean result3 = jedisLock3.tryLockForAWhile(1, TimeUnit.SECONDS);
         assertTrue(jedisLock3.isLocked());
         assertTrue(result3);
-        Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock3), mockOfJedis.getCurrentData().get(jedisLock3.getName()));
+        assertEquals(MockOfJedis.getJedisLockValue(jedisLock3), mockOfJedis.getCurrentData().get(jedisLock3.getName()));
         assertFalse(jedisLock1.isLocked());
         jedisLock1.unlock();
         jedisLock3.unlock();

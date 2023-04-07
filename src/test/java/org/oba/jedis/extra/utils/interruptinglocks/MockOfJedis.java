@@ -133,11 +133,10 @@ public class MockOfJedis {
 
     private synchronized Object mockEval(String script, List<String> keys, List<String> values) {
         Object response = null;
-        if (script.equalsIgnoreCase(JedisLock.UNLOCK_LUA_SCRIPT)) {
-            if (values.get(0).equalsIgnoreCase(data.get(keys.get(0)))){
-                String removed = data.remove(keys.get(0));
-                response = removed != null ? 1 : 0;
-            }
+        if (script.equalsIgnoreCase(JedisLock.UNLOCK_LUA_SCRIPT) &&
+                values.get(0).equalsIgnoreCase(data.get(keys.get(0))) ){
+            String removed = data.remove(keys.get(0));
+            response = removed != null ? 1 : 0;
         }
         return response;
     }

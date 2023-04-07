@@ -351,10 +351,10 @@ public final class JedisList implements List<String> {
     @Override
     public List<String> subList(int fromIndex, int toIndex) {
         try (Jedis jedis = jedisPool.getResource()) {
-            toIndex--;
+            int effectiveIndex = toIndex - 1;
             checkIndex(fromIndex);
-            checkIndex(toIndex);
-            return jedis.lrange(name, fromIndex, toIndex);
+            checkIndex(effectiveIndex);
+            return jedis.lrange(name, fromIndex, effectiveIndex);
         }
     }
 

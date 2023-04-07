@@ -1,7 +1,5 @@
 package org.oba.jedis.extra.utils.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisSentinelPool;
@@ -18,10 +16,6 @@ import java.util.function.Function;
  * Use with caution
  */
 public class JedisSentinelPoolAdapter extends JedisPool {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JedisSentinelPoolAdapter.class);
-
-    private static final String CLOSE = "close";
 
     private final JedisSentinelPool jedisSentinelPool;
 

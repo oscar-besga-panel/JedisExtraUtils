@@ -38,7 +38,7 @@ public class MockOfJedisForMapTest {
     @After
     public void tearDown() {
         if (mockOfJedis != null) {
-            mockOfJedis.clearData();
+            mockOfJedis.clearDataAndStop();
         }
     }
 

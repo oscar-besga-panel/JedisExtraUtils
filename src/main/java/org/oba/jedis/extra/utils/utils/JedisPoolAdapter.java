@@ -109,19 +109,6 @@ public class JedisPoolAdapter extends JedisPool {
         super.close();
     }
 
-//    @Override
-//    public boolean isClosed() {
-//        return isClosedStatus.get();
-//    }
-
-
-
-
-//    @Override
-//    public void destroy() {
-//        super.close();
-//    }
-
     @Override
     public int getNumActive() {
         return 1;
@@ -174,7 +161,7 @@ public class JedisPoolAdapter extends JedisPool {
             };
             return (Jedis) factory.create(new Class<?>[0], new Object[0], handler);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException("Error in jedis dynamic proxy", e);
+            throw new IllegalStateException("Error in jedis dynamic proxy", e);
         }
     }
 
