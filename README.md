@@ -7,6 +7,26 @@ Plz have patience with the operation
 
 # Jedis Extra Utils
 
+
+[![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+
+_Project information_        
+[![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://opensource.org/licenses/MIT)
+![Top languaje](https://img.shields.io/github/languages/top/oscar-besga-panel/JedisExtraUtils)
+[![Wiki](https://badgen.net/badge/icon/wiki?icon=wiki&label)](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki)
+[![Github Web page](https://badgen.net/badge/github/website?icon=github)](https://oscar-besga-panel.github.io/JedisExtraUtils)
+[![OpenHub](https://badgen.net/badge/%20/openhub/purple?icon=awesome)](https://openhub.net/p/JedisExtraUtils)
+
+
+_Current Build_  
+[![Build Status](https://app.travis-ci.com/oscar-besga-panel/InterruptingJedisLocks.svg?branch=master)](https://app.travis-ci.com/github/oscar-besga-panel/InterruptingJedisLocks)
+![Issues](https://img.shields.io/github/issues/oscar-besga-panel/InterruptingJedisLocks)
+[![codecov](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks)
+[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/oscar-besga-panel/InterruptingJedisLocks.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/oscar-besga-panel/InterruptingJedisLocks/context:java)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/010964cad8f94b07838e53aa41259792)](https://www.codacy.com/gh/oscar-besga-panel/InterruptingJedisLocks/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=oscar-besga-panel/InterruptingJedisLocks&amp;utm_campaign=Badge_Grade)
+
+
+
 This is a Java project based on a collection of utilities and helpers to be used with Redis and with Jedis libraries.
 
 Originally conceived as a group of locks, then some synchronization primitives, it has grown until having a respectable collection of utilities.
@@ -32,49 +52,25 @@ These include
   * SimplePubSub: a simple pub/sub that only consumes messages via a BiConsumer function
 
 
-# OLD ! InterruptingJedisLocks
-
-[![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
-
-_Project information_        
-[![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://opensource.org/licenses/MIT)
-![Top languaje](https://img.shields.io/github/languages/top/oscar-besga-panel/InterruptingJedisLocks)
-[![Wiki](https://badgen.net/badge/icon/wiki?icon=wiki&label)](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki)
-[![Github Web page](https://badgen.net/badge/github/website?icon=github)](https://oscar-besga-panel.github.io/InterruptingJedisLocks)
-[![OpenHub](https://badgen.net/badge/%20/openhub/purple?icon=awesome)](https://openhub.net/p/InterruptingJedisLocks)
-
-
-_Current Build_  
-[![Build Status](https://app.travis-ci.com/oscar-besga-panel/InterruptingJedisLocks.svg?branch=master)](https://app.travis-ci.com/github/oscar-besga-panel/InterruptingJedisLocks)
-![Issues](https://img.shields.io/github/issues/oscar-besga-panel/InterruptingJedisLocks)
-[![codecov](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks)
-[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/oscar-besga-panel/InterruptingJedisLocks.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/oscar-besga-panel/InterruptingJedisLocks/context:java)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/010964cad8f94b07838e53aa41259792)](https://www.codacy.com/gh/oscar-besga-panel/InterruptingJedisLocks/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=oscar-besga-panel/InterruptingJedisLocks&amp;utm_campaign=Badge_Grade)
-
-
-## OLD ! Introduction
-
-If you want to use Redis and java library Jedis to control resources and locks between threads and processes, take a look into this library.  
-It contains the next distributed synchronization classes:
-- Locks
-- Semaphores
-- CountDownLatch
-
 All this classes use a Jedis pool connection to make them thread-safe and more efficient.
 
-Also it contains collections that have a direct Redis storage, with no (or very little, as needed) local data.
+
+
+Jedis collections have a direct Redis storage, with no (or very little, as needed) local data.
 All changes and operations are made to the underlying redis collection type, but following strictly the interface contract.
 The implementations are
 - JedisList for java List
 - JedisMap for java Map
 - JedisSet for java Set
 
-As java collections, you also can rely on iterator and streams to operate (be aware that under the hood there is a redis connection)
+As java collections, you also can rely on iterator and streams to operate
+(be aware that under the hood there is a redis connection, and parallel streams are not recommended)
 
 
 Also you have iteators por SCAN, HSCAN, SCAN and ZSCAN operations. The iterable-iterator pair will 
 give you easy Java control and semantics over iterating an scan operation in redis.
-Also you can have all the data in a list/map with a simple method.
+Also you can have all the data in a list/map with a simple method (the data will be recovered in multiple xSCAN operations 
+to avoid blocking Redis)
 
 You can use a simple cache implementation on redis. This is done in a javax.cache fashion but simpler (you don't have factories, events, mxbeans, statistics included)
 It can load and write data in external datasource at your choice, automatically when retrieving or storing data.
@@ -120,7 +116,7 @@ Also, you will find a little Groovy and a docker composer to setup a testing red
 ## Miscelanea
 
 As Redis stores data into Strings, you may need to convert from POJO to String and viceversa.   
-This library doesn't help with that, but in this [wiki page](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki/POJO-Mapping) you may find some clues on how to do it.
+This library doesn't help with that, but in this [wiki page](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/POJO-Mapping) you may find some clues on how to do it.
 
 Help, suggestions, critics and tests will be greatly appreciated.
 

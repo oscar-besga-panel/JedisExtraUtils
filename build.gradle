@@ -48,7 +48,7 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/oscar-besga-panel/InterruptingJedisLocks")
+            url = uri("https://maven.pkg.github.com/oscar-besga-panel/JedisExtraUtils")
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
                 password = System.getenv("GITHUB_TOKEN")
@@ -59,6 +59,6 @@ publishing {
 
 shadowJar {
     manifest {
-        attributes 'Description': 'Interrupting Locks all'
+        attributes 'Description': 'https://github.com/oscar-besga-panel/JedisExtraUtils'
     }
 }
