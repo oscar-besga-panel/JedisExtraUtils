@@ -1,3 +1,37 @@
+# Warning ! Renaming or moving project !
+
+The project currently or formerly known as *InterruptingJedisLocks* is being renamed to *Jedis Extra Utils*  
+(if the rename does not work, it'll be moved)  
+
+Plz have patience with the operation
+
+# Jedis Extra Utils
+
+This is a Java project based on a collection of utilities and helpers to be used with Redis and with Jedis libraries.
+
+Originally conceived as a group of locks, then some synchronization primitives, it has grown until having a respectable collection of utilities.
+
+These include
+
+* Synchronization: primitives to synchronize process and threads one with other
+* * Lock: exclusive locks. Normal locks, also interrupting locks and a java Lock implementation.
+* * Semaphores
+* * CountDownLatch: count down to open the flood gates and allow all waiters to progress
+* Collections: redis-backed implementation of Java collection interfaces, with all data stored on Redis, like
+* * Lists
+* * Map
+* * Set
+* Iterator: free yourself from Redis SCAN internal hassle and use easy Java iterables or iterators for these operations:
+* * HScanIterable: To scan maps
+* * ScanIterable: To scan all keys
+* * SScanIterable: To scan sets
+* * ZScanIterable: To scan ordered sets
+* * Some utils more
+* Cache: A simple cache with readthrougth and writethrougth operations
+* More utils like
+* * SimplePubSub: a simple pub/sub that only consumes messages via a BiConsumer function
+
+
 # InterruptingJedisLocks
 
 [![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
