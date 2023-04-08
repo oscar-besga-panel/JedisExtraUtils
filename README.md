@@ -53,6 +53,18 @@ All this classes use a Jedis pool connection to make them thread-safe and more e
 
 It's intended to make possible distributes locking and synchronization, share data across process and aid with distributed computing.
 
+All classes have tests, unit and functional ones.   
+You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
+There are **more than 500 working tests**, so the code is pretty secure.
+
+
+**See the [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki) for more documentation**
+
+
+## In depth
+
+
+### Collections
 
 Jedis collections have a direct Redis storage, with no (or very little, as needed) local data.
 All changes and operations are made to the underlying redis collection type, but following strictly the interface contract.
@@ -64,26 +76,18 @@ The implementations are
 As java collections, you also can rely on iterator and streams to operate
 (be aware that under the hood there is a redis connection, and parallel streams are not recommended)
 
+### Scan iterators
 
-Also you have iteators por SCAN, HSCAN, SCAN and ZSCAN operations. The iterable-iterator pair will 
+Also you have iterators por SCAN, HSCAN, SCAN and ZSCAN operations. The iterable-iterator pair will 
 give you easy Java control and semantics over iterating an scan operation in redis.
 Also you can have all the data in a list/map with a simple method (the data will be recovered in multiple xSCAN operations 
 to avoid blocking Redis)
 
+### Cache
+
 You can use a simple cache implementation on redis. This is done in a javax.cache fashion but simpler (you don't have factories, events, mxbeans, statistics included)
 It can load and write data in external datasource at your choice, automatically when retrieving or storing data.
 Or iterate by the keys and values stored in the cache.
-  
-All classes have tests, unit and functional ones.   
-You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
-There are **more than 500 working tests**, so the code is pretty secure.
-
-  
-   
-
-**See the [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki) for more documentation**
-
-
 
 
 ## Made with
