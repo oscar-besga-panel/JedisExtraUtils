@@ -14,17 +14,14 @@ _Project information_
 [![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://opensource.org/licenses/MIT)
 ![Top languaje](https://img.shields.io/github/languages/top/oscar-besga-panel/JedisExtraUtils)
 [![Wiki](https://badgen.net/badge/icon/wiki?icon=wiki&label)](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki)
-[![Github Web page](https://badgen.net/badge/github/website?icon=github)](https://oscar-besga-panel.github.io/JedisExtraUtils)
 [![OpenHub](https://badgen.net/badge/%20/openhub/purple?icon=awesome)](https://openhub.net/p/JedisExtraUtils)
 
 
 _Current Build_  
 [![Build Status](https://app.travis-ci.com/oscar-besga-panel/InterruptingJedisLocks.svg?branch=master)](https://app.travis-ci.com/github/oscar-besga-panel/InterruptingJedisLocks)
 ![Issues](https://img.shields.io/github/issues/oscar-besga-panel/InterruptingJedisLocks)
-[![codecov](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/InterruptingJedisLocks)
-[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/oscar-besga-panel/InterruptingJedisLocks.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/oscar-besga-panel/InterruptingJedisLocks/context:java)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/010964cad8f94b07838e53aa41259792)](https://www.codacy.com/gh/oscar-besga-panel/InterruptingJedisLocks/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=oscar-besga-panel/InterruptingJedisLocks&amp;utm_campaign=Badge_Grade)
-
+[![codecov](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/010964cad8f94b07838e53aa41259792)](https://app.codacy.com/gh/oscar-besga-panel/JedisExtraUtils/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 
 This is a Java project based on a collection of utilities and helpers to be used with Redis and with Jedis libraries.
@@ -54,6 +51,7 @@ These include
 
 All this classes use a Jedis pool connection to make them thread-safe and more efficient.
 
+It's intended to make possible distributes locking and synchronization, share data across process and aid with distributed computing.
 
 
 Jedis collections have a direct Redis storage, with no (or very little, as needed) local data.
@@ -83,7 +81,7 @@ There are **more than 500 working tests**, so the code is pretty secure.
   
    
 
-**See the [wiki](https://github.com/oscar-besga-panel/InterruptingJedisLocks/wiki) for more documentation**
+**See the [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki) for more documentation**
 
 
 
@@ -122,4 +120,9 @@ Help, suggestions, critics and tests will be greatly appreciated.
 
 ## Others
 
-There are other jedis utl
+There are other jedis utils in github, most notably
+- [siahsang red utils](https://github.com/siahsang/red-utils): redis safe lock
+- [yatechorg jedis-utils](https://github.com/yatechorg/jedis-utils): set, list, map, key scanner, lua script util
+- [andrepnh jedis-utils](https://github.com/andrepnh/jedis-utils): command blocks
+- [vnechiporenko jedis-utils](https://github.com/vnechiporenko/jedis-utils): distributed locks 
+- and more....
