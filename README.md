@@ -1,12 +1,3 @@
-# Warning ! Renaming or moving project !
-
-The project currently or formerly known as *InterruptingJedisLocks* is being renamed to *Jedis Extra Utils*  
-(if the rename does not work, it'll be moved)  
-
-Plz have patience with the operation
-
-# Jedis Extra Utils
-
 
 [![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
@@ -23,6 +14,7 @@ _Current Build_
 [![codecov](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/010964cad8f94b07838e53aa41259792)](https://app.codacy.com/gh/oscar-besga-panel/JedisExtraUtils/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
+# Introduction to Jedis Extra Utils
 
 This is a Java project based on a collection of utilities and helpers to be used with Redis and with Jedis libraries.
 
@@ -61,33 +53,6 @@ There are **more than 500 working tests**, so the code is pretty secure.
 **See the [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki) for more documentation**
 
 
-## In depth
-
-
-### Collections
-
-Jedis collections have a direct Redis storage, with no (or very little, as needed) local data.
-All changes and operations are made to the underlying redis collection type, but following strictly the interface contract.
-The implementations are
-- JedisList for java List
-- JedisMap for java Map
-- JedisSet for java Set
-
-As java collections, you also can rely on iterator and streams to operate
-(be aware that under the hood there is a redis connection, and parallel streams are not recommended)
-
-### Scan iterators
-
-Also you have iterators por SCAN, HSCAN, SCAN and ZSCAN operations. The iterable-iterator pair will 
-give you easy Java control and semantics over iterating an scan operation in redis.
-Also you can have all the data in a list/map with a simple method (the data will be recovered in multiple xSCAN operations 
-to avoid blocking Redis)
-
-### Cache
-
-You can use a simple cache implementation on redis. This is done in a javax.cache fashion but simpler (you don't have factories, events, mxbeans, statistics included)
-It can load and write data in external datasource at your choice, automatically when retrieving or storing data.
-Or iterate by the keys and values stored in the cache.
 
 
 ## Made with
@@ -117,6 +82,9 @@ Also, you will find a little Groovy and a docker composer to setup a testing red
 
 ## Miscelanea
 
+This project was formerly known as *InterruptingJedisLocks*, and it was renamed to *Jedis Extra Utils*
+
+
 As Redis stores data into Strings, you may need to convert from POJO to String and viceversa.   
 This library doesn't help with that, but in this [wiki page](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/POJO-Mapping) you may find some clues on how to do it.
 
@@ -130,3 +98,42 @@ There are other jedis utils in github, most notably
 - [andrepnh jedis-utils](https://github.com/andrepnh/jedis-utils): command blocks
 - [vnechiporenko jedis-utils](https://github.com/vnechiporenko/jedis-utils): distributed locks 
 - and more....
+
+
+## In depth
+
+### Locks
+
+See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/Locks) for more information and schemas 
+
+### Collections
+
+Jedis collections have a direct Redis storage, with no (or very little, as needed) local data.
+All changes and operations are made to the underlying redis collection type, but following strictly the interface contract.
+The implementations are
+- JedisList for java List
+- JedisMap for java Map
+- JedisSet for java Set
+
+As java collections, you also can rely on iterator and streams to operate
+(be aware that under the hood there is a redis connection, and parallel streams are not recommended)
+
+See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/Collections) for more information
+
+### Scan iterators
+
+Also you have iterators por SCAN, HSCAN, SCAN and ZSCAN operations. The iterable-iterator pair will
+give you easy Java control and semantics over iterating an scan operation in redis.
+Also you can have all the data in a list/map with a simple method (the data will be recovered in multiple xSCAN operations
+to avoid blocking Redis)
+
+See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/Collections) for more information
+
+
+### Cache
+
+You can use a simple cache implementation on redis. This is done in a javax.cache fashion but simpler (you don't have factories, events, mxbeans, statistics included)
+It can load and write data in external datasource at your choice, automatically when retrieving or storing data.
+Or iterate by the keys and values stored in the cache.
+
+See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/Iterators) for more information
