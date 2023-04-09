@@ -19,7 +19,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.unitTestEnabledForList;
 
 
 @RunWith(PowerMockRunner.class)
@@ -32,8 +31,6 @@ public class JedisListTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(unitTestEnabledForList());
-        if (!unitTestEnabledForList()) return;
         listName = "list:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedisForList = new MockOfJedisForList();
     }

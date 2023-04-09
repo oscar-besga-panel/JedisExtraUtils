@@ -80,6 +80,7 @@ public class HScanIterable implements Iterable<Map.Entry<String,String>>,
         return iterator().asList();
     }
 
+    @Override
     public Map<String, String> asMap() {
         return iterator().asMap();
     }

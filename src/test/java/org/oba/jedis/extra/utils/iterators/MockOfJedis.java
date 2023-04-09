@@ -390,12 +390,12 @@ public class MockOfJedis {
 
     public static String extractPatternFromScanParams(ScanParams scanParams) {
         String pattern = scanParams.match();
-        if (pattern.equals("*")) {
+        if (pattern == null) {
+            pattern = "";
+        } else if (pattern.equals("*")) {
             pattern = ".*";
         } else if (pattern.endsWith("*")) {
             pattern = pattern.replace("*",".*");
-        } else if (pattern == null) {
-            pattern = "";
         }
         return pattern;
     }

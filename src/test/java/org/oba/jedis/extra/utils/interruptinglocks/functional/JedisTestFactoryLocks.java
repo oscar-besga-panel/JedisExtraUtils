@@ -2,7 +2,7 @@ package org.oba.jedis.extra.utils.interruptinglocks.functional;
 
 import org.oba.jedis.extra.utils.interruptinglocks.IJedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
-import org.oba.jedis.extra.utils.interruptinglocks.Lock;
+import org.oba.jedis.extra.utils.interruptinglocks.LockFromRedis;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
@@ -27,14 +27,14 @@ public class JedisTestFactoryLocks {
     }
 
     static boolean checkLock(java.util.concurrent.locks.Lock lock){
-        if (lock instanceof Lock) {
-            Lock jedisLock = (Lock) lock;
-            LOGGER.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
-            if (jedisLock.isLocked()) {
+        if (lock instanceof LockFromRedis) {
+            LockFromRedis jedisLockFromRedis = (LockFromRedis) lock;
+            LOGGER.info("interruptingLock.isLocked() " + jedisLockFromRedis.isLocked() + " for thread " + Thread.currentThread().getName());
+            if (jedisLockFromRedis.isLocked()) {
                 LOGGER.debug("LOCKED");
                 return true;
             } else {
-                IllegalStateException ise =  new IllegalStateException("LOCK NOT ADQUIRED isLocked " + jedisLock.isLocked());
+                IllegalStateException ise =  new IllegalStateException("LOCK NOT ADQUIRED isLocked " + jedisLockFromRedis.isLocked());
                 LOGGER.error("ERROR LOCK NOT ADQUIRED e {} ", ise.getMessage(), ise);
                 throw ise;
             }
@@ -55,17 +55,17 @@ public class JedisTestFactoryLocks {
         Jedis jedis = jtfTest.createJedisClient();
         jtfTest.testConnection();
         JedisPoolAdapter jedisPoolAdapter = JedisPoolAdapter.poolFromJedis(jedis);
-        Lock jedisLock = new JedisLock(jedisPoolAdapter,"jedisLockSc").asConcurrentLock();
-        boolean locked = jedisLock.tryLock();
-        boolean reallyLocked = jedisLock.isLocked();
-        jedisLock.unlock();
+        LockFromRedis jedisLockFromRedis = new JedisLock(jedisPoolAdapter,"jedisLockSc").asConcurrentLock();
+        boolean locked = jedisLockFromRedis.tryLock();
+        boolean reallyLocked = jedisLockFromRedis.isLocked();
+        jedisLockFromRedis.unlock();
         jedisPoolAdapter.close();
         jedis.close();
         System.out.println("JEDISLOCK " + locked + " " + reallyLocked);
 
         jtfTest.testPoolConnection();
         JedisPool jedisPool = jtfTest.createJedisPool();
-        Lock jedisPoolLock = new JedisLock(jedisPool,"jedisPoolLock").asConcurrentLock();
+        LockFromRedis jedisPoolLock = new JedisLock(jedisPool,"jedisPoolLock").asConcurrentLock();
         boolean plocked = jedisPoolLock.tryLock();
         boolean preallyLocked = jedisPoolLock.isLocked();
         jedisPoolLock.unlock();

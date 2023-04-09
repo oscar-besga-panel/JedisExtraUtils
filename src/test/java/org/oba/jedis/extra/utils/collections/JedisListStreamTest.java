@@ -24,8 +24,6 @@ public class JedisListStreamTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(MockOfJedisForList.unitTestEnabledForList());
-        if (!MockOfJedisForList.unitTestEnabledForList()) return;
         listName = "list:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedisForList = new MockOfJedisForList();
     }

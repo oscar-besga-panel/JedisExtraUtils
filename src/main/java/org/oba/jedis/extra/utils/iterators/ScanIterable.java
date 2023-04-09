@@ -68,6 +68,7 @@ public class ScanIterable implements Iterable<String>, Listable<String> {
      * The list is unmodificable and contains no repeated elements
      * @return list with values
      */
+    @Override
     public List<String> asList() {
         return iterator().asList();
     }

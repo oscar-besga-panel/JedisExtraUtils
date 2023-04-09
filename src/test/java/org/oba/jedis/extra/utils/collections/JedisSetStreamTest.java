@@ -25,8 +25,6 @@ public class JedisSetStreamTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(MockOfJedisForList.unitTestEnabledForList());
-        if (!MockOfJedisForList.unitTestEnabledForList()) return;
         setName = "set:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedisForSet = new MockOfJedisForSet();
     }

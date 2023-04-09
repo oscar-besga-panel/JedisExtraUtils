@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
+import org.oba.jedis.extra.utils.interruptinglocks.LockFromRedis;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
@@ -88,7 +89,7 @@ public class FunctionalLocksScOnCriticalZoneTest {
             t3.join();
             assertFalse(errorInCriticalZone.get());
             assertFalse(otherError.get());
-            assertFalse(lockList.stream().anyMatch(il -> il != null && ((org.oba.jedis.extra.utils.interruptinglocks.Lock) il).isLocked()));
+            assertFalse(lockList.stream().anyMatch(il -> il != null && ((LockFromRedis) il).isLocked()));
         }
     }
 

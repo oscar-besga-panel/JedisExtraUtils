@@ -102,7 +102,7 @@ public class JedisSet implements Set<String> {
     @Override
     public boolean add(String value) {
         try (Jedis jedis = jedisPool.getResource()) {
-            Long result = jedis.sadd(name, value);
+            long result = jedis.sadd(name, value);
             return result != 0L;
         }
     }
@@ -110,7 +110,7 @@ public class JedisSet implements Set<String> {
     @Override
     public boolean remove(Object o) {
         try (Jedis jedis = jedisPool.getResource()) {
-            Long result = jedis.srem(name, (String) o);
+            long result = jedis.srem(name, (String) o);
             return result != 0L;
         }
     }
@@ -136,7 +136,7 @@ public class JedisSet implements Set<String> {
         } else {
             String[] arrayValues = values.toArray(new String[0]);
             try (Jedis jedis = jedisPool.getResource()) {
-                Long result = jedis.sadd(name, arrayValues);
+                long result = jedis.sadd(name, arrayValues);
                 return result != 0L;
             }
         }
@@ -161,7 +161,7 @@ public class JedisSet implements Set<String> {
     public boolean removeAll(Collection<?> c) {
         try (Jedis jedis = jedisPool.getResource()) {
             String[] a = c.toArray(new String[0]);
-            Long result = jedis.srem(name, a);
+            long result = jedis.srem(name, a);
             return result != 0L;
         }
     }

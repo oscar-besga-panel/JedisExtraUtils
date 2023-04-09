@@ -23,7 +23,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.CLIENT_RESPONSE_KO;
 import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.CLIENT_RESPONSE_OK;
-import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.unitTestEnabledForList;
+
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Transaction.class, TransactionBase.class })
@@ -34,8 +34,6 @@ public class MockOfJedisForListTest {
 
     @Before
     public void setup() {
-        org.junit.Assume.assumeTrue(unitTestEnabledForList());
-        if (!unitTestEnabledForList()) return;
         mockOfJedis = new MockOfJedisForList();
     }
 

@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  * https://redis.io/topics/distlock
  *
  */
-public class JedisLock implements IJedisLock {
+public class    JedisLock implements IJedisLock {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisLock.class);
 
@@ -194,6 +194,7 @@ public class JedisLock implements IJedisLock {
         redisUnlock();
     }
 
+    @Override
     public synchronized void underLock(Runnable task)  {
         try (JedisLock jl = this) {
             jl.lock();
@@ -201,6 +202,7 @@ public class JedisLock implements IJedisLock {
         }
     }
 
+    @Override
     public synchronized <T> T underLock(Supplier<T> task) {
         try (JedisLock jl = this){
             jl.lock();
@@ -315,9 +317,11 @@ public class JedisLock implements IJedisLock {
      *
      * @return Lock of JedisLock
      */
-    public Lock asConcurrentLock(){
-        if (leaseTime != null) throw new IllegalStateException("A JedisLock with leaseTime can not be a concurrent lock");
-        return new Lock(this);
+    public LockFromRedis asConcurrentLock(){
+        if (leaseTime != null) {
+            throw new IllegalStateException("A JedisLock with leaseTime can not be a concurrent lock");
+        }
+        return new LockFromRedis(this);
     }
 
     @Override

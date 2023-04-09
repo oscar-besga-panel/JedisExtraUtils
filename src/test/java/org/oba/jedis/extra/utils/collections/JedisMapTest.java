@@ -20,7 +20,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.unitTestEnabledForList;
+
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Transaction.class, TransactionBase.class })
@@ -32,8 +32,6 @@ public class JedisMapTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(unitTestEnabledForList());
-        if (!unitTestEnabledForList()) return;
         mapName = "map:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mapName2 = "map2:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedisForMap = new MockOfJedisForMap();

@@ -64,14 +64,14 @@ public class MockOfJedis {
     }
 
     static boolean checkLock(java.util.concurrent.locks.Lock lock){
-        if (lock instanceof Lock) {
-            Lock jedisLock = (Lock) lock;
-            LOGGER.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
-            if (jedisLock.isLocked()) {
+        if (lock instanceof LockFromRedis) {
+            LockFromRedis jedisLockFromRedis = (LockFromRedis) lock;
+            LOGGER.info("interruptingLock.isLocked() " + jedisLockFromRedis.isLocked() + " for thread " + Thread.currentThread().getName());
+            if (jedisLockFromRedis.isLocked()) {
                 LOGGER.debug("LOCKED");
                 return true;
             } else {
-                IllegalStateException ise =  new IllegalStateException("LOCK NOT ADQUIRED isLocked " + jedisLock.isLocked());
+                IllegalStateException ise =  new IllegalStateException("LOCK NOT ADQUIRED isLocked " + jedisLockFromRedis.isLocked());
                 LOGGER.error("ERROR LOCK NOT ADQUIRED e {} ", ise.getMessage(), ise);
                 throw ise;
             }

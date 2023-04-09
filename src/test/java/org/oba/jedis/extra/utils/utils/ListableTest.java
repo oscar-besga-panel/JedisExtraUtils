@@ -16,7 +16,7 @@ public class ListableTest {
 
     @Test
     public void asListTest() {
-        MyListable myListable = new MyListable(Arrays.asList("a","b","c","a"));
+        MyListable myListable = new MyListable(Arrays.asList("a", "b", "c", "a"));
         List<String> result = myListable.asList();
         assertEquals(3, result.size());
         assertTrue(result.contains("a"));
@@ -26,14 +26,14 @@ public class ListableTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void asListModifyTest() {
-        MyListable myListable = new MyListable(Arrays.asList("a","b","c","a"));
+        MyListable myListable = new MyListable(Arrays.asList("a", "b", "c", "a"));
         List<String> result = myListable.asList();
         result.add("d");
     }
 
 
 
-    private class MyListable implements Listable<String> {
+    private static class MyListable implements Listable<String> {
 
 
         private Iterable<String> orign;

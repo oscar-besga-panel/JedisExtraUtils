@@ -29,19 +29,6 @@ public class MockOfJedisForMap {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedisForMap.class);
 
-    public static final String CLIENT_RESPONSE_OK = "OK";
-    public static final String CLIENT_RESPONSE_KO = "KO";
-
-
-    // Zero to prevent some unit test
-    // One to one pass
-    // More to more passes
-    static final int UNIT_TEST_CYCLES_LIST = 1;
-
-    static boolean unitTestEnabledForList(){
-        return UNIT_TEST_CYCLES_LIST > 0;
-    }
-
     private final Jedis jedis;
     private final JedisPool jedisPool;
 

@@ -25,8 +25,6 @@ public class JedisSetTest {
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(MockOfJedisForList.unitTestEnabledForList());
-        if (!MockOfJedisForList.unitTestEnabledForList()) return;
         setName = "set:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedisForSet = new MockOfJedisForSet();
     }

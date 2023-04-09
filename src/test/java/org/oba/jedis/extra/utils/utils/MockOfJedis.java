@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 /**
  * Mock of jedis methods used by the lock
  */
-public class MockOfJedis {
+public final class MockOfJedis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedis.class);
 

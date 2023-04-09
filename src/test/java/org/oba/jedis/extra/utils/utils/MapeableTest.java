@@ -38,7 +38,7 @@ public class MapeableTest {
         return data.entrySet();
     }
 
-    private class MyMapeable implements Mapeable<String, String> {
+    private static class MyMapeable implements Mapeable<String, String> {
 
         private Iterable<Map.Entry<String, String>> origin;
 

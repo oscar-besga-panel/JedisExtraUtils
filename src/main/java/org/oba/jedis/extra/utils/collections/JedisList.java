@@ -167,8 +167,8 @@ public final class JedisList implements List<String> {
     @Override
     public int size() {
         try (Jedis jedis = jedisPool.getResource()) {
-            Long l = jedis.llen(name);
-            return l != null ? l.intValue() : 0;
+            long len = jedis.llen(name);
+            return Long.valueOf(len).intValue();
         }
     }
 

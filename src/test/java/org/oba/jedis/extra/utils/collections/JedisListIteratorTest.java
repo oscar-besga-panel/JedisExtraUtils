@@ -24,14 +24,11 @@ import static org.junit.Assert.fail;
 @PrepareForTest({Transaction.class, TransactionBase.class })
 public class JedisListIteratorTest {
 
-
     private String listName;
     private MockOfJedisForList mockOfJedisForList;
 
     @Before
     public void before() {
-        org.junit.Assume.assumeTrue(MockOfJedisForList.unitTestEnabledForList());
-        if (!MockOfJedisForList.unitTestEnabledForList()) return;
         listName = "list:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mockOfJedisForList = new MockOfJedisForList();
     }

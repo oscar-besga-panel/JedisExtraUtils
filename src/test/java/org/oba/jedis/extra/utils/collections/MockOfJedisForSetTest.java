@@ -23,8 +23,6 @@ public class MockOfJedisForSetTest {
 
     @Before
     public void setup() {
-        org.junit.Assume.assumeTrue(MockOfJedisForList.unitTestEnabledForList());
-        if (!MockOfJedisForList.unitTestEnabledForList()) return;
         mockOfJedis = new MockOfJedisForSet();
     }
 

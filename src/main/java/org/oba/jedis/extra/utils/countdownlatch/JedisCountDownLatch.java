@@ -102,9 +102,9 @@ public class JedisCountDownLatch {
      */
     public long countDown() {
         try (Jedis jedis = jedisPool.getResource()) {
-            Long value = jedis.decr(name);
+            long value = jedis.decr(name);
             LOGGER.debug("countDown name {} value {}", name, value);
-            return value != null ? value : -1;
+            return value;
         }
     }
 

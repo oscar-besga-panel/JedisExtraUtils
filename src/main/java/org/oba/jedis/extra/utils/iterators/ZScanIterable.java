@@ -79,6 +79,7 @@ public class ZScanIterable implements Iterable<Tuple>, Listable<Tuple> {
      * The list is unmodificable and contains no repeated elements
      * @return list with values
      */
+    @Override
     public List<Tuple> asList() {
         return iterator().asList();
     }

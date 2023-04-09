@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.oba.jedis.extra.utils.iterators.MockOfJedis.unitTestEnabled;
@@ -132,11 +133,11 @@ public class SscanIterableTest {
             num.incrementAndGet();
             sb.append(key);
         });
-        assertFalse(sb.length() == 0);
+        assertNotEquals(0, sb.length());
         letters.forEach( letter -> {
             assertTrue(sb.indexOf(letter) >= 0);
         });
-        assertTrue(num.get() == letters.size());
+        assertEquals(num.get(), letters.size());
     }
 
     @Test

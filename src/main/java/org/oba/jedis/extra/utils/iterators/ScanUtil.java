@@ -72,5 +72,9 @@ public class ScanUtil {
         useListOfKeys( JedisPoolAdapter.poolFromJedis(jedis), pattern, action);
     }
 
+    private ScanUtil() {
+        //Empty on purpose
+    }
+
 
 }
