@@ -41,6 +41,7 @@ public class MockOfJedisForSetTest {
         jedisSet.add("a");
         assertTrue(mockOfJedis.mockExists("set1"));
         assertEquals( Long.valueOf(1L), mockOfJedis.mockScard("set1"));
+        assertEquals(1, jedisSet.size());
     }
 
     @Test
@@ -53,6 +54,7 @@ public class MockOfJedisForSetTest {
         assertEquals(Long.valueOf(1L), result);
         assertFalse(mockOfJedis.mockExists("set1"));
         assertEquals( Long.valueOf(0L), mockOfJedis.mockScard("set1"));
+        assertEquals(0, jedisSet.size());
     }
 
     @Test

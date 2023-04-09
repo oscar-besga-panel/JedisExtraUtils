@@ -148,6 +148,7 @@ public class FunctionalScanIterableTest {
     @Test
     public void iteratorRemoveForEachTest() {
         createABCData();
+        int originalSize = letters.size();
         List<String> deleted = new ArrayList<>();
         ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
         Iterator<String> iterator = scanIterable.iterator();
@@ -160,6 +161,7 @@ public class FunctionalScanIterableTest {
                 assertFalse( jedis.exists(key));
             }
         });
+        assertEquals(originalSize, deleted.size());
     }
 
     @Test

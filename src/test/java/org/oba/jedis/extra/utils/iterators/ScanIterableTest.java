@@ -148,6 +148,7 @@ public class ScanIterableTest {
     @Test
     public void iteratorRemoveForEachTest() {
         createABCData();
+        int originalSize = letters.size();
         List<String> deleted = new ArrayList<>();
         ScanIterable scanIterable = new ScanIterable(mockOfJedis.getJedisPool(),scanitName + ":*");
         Iterator<String> iterator = scanIterable.iterator();
@@ -160,6 +161,8 @@ public class ScanIterableTest {
                 assertFalse( jedis.exists(key));
             }
         });
+        assertEquals(originalSize, deleted.size());
+
     }
 
     @Test

@@ -283,7 +283,7 @@ public class MockOfJedisForList {
     synchronized Long mockListLlrem(String key, long count, String value) {
         List<String> list = dataToList(key);
         long numOfDeletes = 0;
-        for(int i=0; i < count; i++){
+        for(long i=0; i < count; i++){
             boolean removed = list.remove(value);
             if (removed) {
                 numOfDeletes++;
