@@ -137,3 +137,10 @@ It can load and write data in external datasource at your choice, automatically 
 Or iterate by the keys and values stored in the cache.
 
 See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/Iterators) for more information
+
+
+### Rate Limiters (coming soon)
+
+_For now in *rateLimiter* branch_
+
+Rate limiters, as bucket and throttling type on redis. 

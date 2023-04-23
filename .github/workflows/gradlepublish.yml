@@ -29,6 +29,10 @@ jobs:
     # The USERNAME and PASSWORD need to correspond to the credentials environment variables used in
     # the publishing section of your build.gradle
     - name: Publish to GitHub Packages
-      run: ./gradlew publish
+      run: ./gradlew --rerun-tasks publish
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Publish to GitHub Packages publishAllPublicationsToGitHubPackagesRepository
+      run: ./gradlew --rerun-tasks publishAllPublicationsToGitHubPackagesRepository
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
