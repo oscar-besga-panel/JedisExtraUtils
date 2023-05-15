@@ -14,9 +14,10 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.*;
 
 /**
  * See reference on
@@ -28,8 +29,8 @@ public class BucketRateLimiter implements JedisPoolUser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BucketRateLimiter.class);
 
-    public static final String SCRIPT_NAME = "acquire.lua";
-    public static final String FILE_PATH = "./src/main/resources/acquire.lua";
+    public static final String SCRIPT_NAME = "bucketRateLimiter.lua";
+    public static final String FILE_PATH = "./src/main/resources/bucketRateLimiter.lua";
 
     enum Mode {
         GREEDY, INTERVAL;
@@ -58,27 +59,26 @@ public class BucketRateLimiter implements JedisPoolUser {
         return jedisPool;
     }
 
-    public void create(long capacity, Mode mode, long timeToRefillMillis) {
+    public boolean exists() {
+        return withJedisPoolGet( jedis -> jedis.exists(name));
+    }
+
+    public BucketRateLimiter create(long capacity, Mode mode, long timeToRefillMillis) {
         this.create(capacity, mode, timeToRefillMillis, TimeUnit.MILLISECONDS);
+        return this;
     }
 
-    public void create(long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
-        withJedisPoolDo( jedis -> {
-            createWithJedis(jedis, capacity, mode, timeToRefill, timeUnit);
-        });
+    public BucketRateLimiter create(long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
+        withJedisPoolDo( jedis ->
+            createWithJedis(jedis, capacity, mode, timeToRefill, timeUnit)
+        );
+        return this;
     }
-
-    public static final BigInteger BI_MILLION = BigInteger.valueOf(1_000_000L);
-    public static final BigInteger BI_THOUSAND = BigInteger.valueOf(1_000L);
-
-
 
     private void createWithJedis(Jedis jedis, long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
         if (!jedis.exists(name)) {
-            List<String> tmp = jedis.time();
-            BigInteger timeToRefillMicros = BigInteger.valueOf(timeUnit.toMillis(timeToRefill)).multiply(BI_THOUSAND);
-            BigInteger redisTimestampMicros = BigInteger.valueOf(Long.parseLong(tmp.get(0))).multiply(BI_MILLION).
-                    add(BigInteger.valueOf(Long.parseLong(tmp.get(1))));
+            BigInteger timeToRefillMicros = toRedisMicros(timeToRefill, timeUnit);
+            BigInteger redisTimestampMicros = fromRedisTimestampAsMicros(jedis);
             Map<String, String> internalData = new HashMap<>();
             internalData.put(CAPACITY, Long.toString(capacity));
             internalData.put(AVAILABLE, Long.toString(capacity));
@@ -91,68 +91,20 @@ public class BucketRateLimiter implements JedisPoolUser {
         }
     }
 
-    public boolean exists() {
-        return withJedisPoolGet( j -> j.exists(name));
-    }
 
     public boolean acquire() {
         return acquire(1L);
     }
 
-    public static final Long LUA_1_TRUE = Long.valueOf(1L);
-    public static final String LUA_1_TRUE_STRING = "1";
 
 
     public boolean acquire(long permits) {
         Object result = script.evalSha(Collections.singletonList(name), Collections.singletonList(Long.toString(permits)));
-        if (result == null) {
-            return false;
-        } else if (result.equals(LUA_1_TRUE) || result.equals(LUA_1_TRUE_STRING)) {
-            return true;
-        } else {
-            return Boolean.parseBoolean(result.toString());
-        }
+        LOGGER.debug("permits {} result {}", permits, result);
+        return scriptResultAsBoolean(result);
     }
 
-/*
 
-    public static final String ACQUIRE = "" +
-            "" + "\n" +
-            "local name = KEYS[1]" + "\n" +
-            "local permits = tonumber(ARGV[1])"  + "\n" +
-        "redis.log(redis.LOG_WARNING, 'name ' .. name .. ' permits ' .. permits)"  + "\n" +
-        "redis.call('ECHO', 'name ' .. name .. ' permits ' .. permits)"  + "\n" +
-            "-- refill" + "\n" +
-            "local tst = redis.call('time')" + "\n" +
-            "local ts = tst[1] * 1000000 + tst[2]" + "\n" +
-            "local refill = false" + "\n" +
-            "local numRefill = 0" + "\n" +
-            "local mode = redis.call('hget', name, 'mode')"  + "\n" +
-        "redis.log(redis.LOG_WARNING, 'ts ' .. ts .. ' mode ' .. mode)"  + "\n" +
-        "redis.call('ECHO', 'ts ' .. ts .. ' mode ' .. mode)"  + "\n" +
-            "if refill then"  + "\n" +
-        "redis.log(redis.LOG_WARNING, 'refill ok ')"  + "\n" +
-        "redis.call('ECHO', 'refill ok')"  + "\n" +
-            "  local newAvailable = numRefill + tonumber(redis.call('hget', name, 'available'))" + "\n" +
-            "  redis.call('hset', name, 'available', newAvailable)" + "\n" +
-         "redis.log(redis.LOG_WARNING, 'newAvailable ' .. newAvailable)"  + "\n" +
-         "redis.call('ECHO', 'newAvailable .. ' + newAvailable)"  + "\n" +
-            "end" + "\n" +
-
-            "-- try acquire" + "\n" +
-            "local acquire = false" + "\n" +
-            "local available = tonumber(redis.call('hget', name, 'available'))" + "\n" +
-          "redis.log(redis.LOG_WARNING, 'available ' .. available .. ' permits ' .. permits)"  + "\n" +
-          "redis.call('ECHO',  'available ' .. available .. ' permits ' .. permits)"  + "\n" +
-            "if (available >= permits) then" + "\n" +
-            "  available = available - permits" + "\n" +
-            "  redis.call('hset', name, 'available', available)" + "\n" +
-            "  acquire = true" + "\n" +
-          "redis.log(redis.LOG_WARNING, 'available ' .. available .. ' acquire ' .. tostring(acquire))"  + "\n" +
-          "redis.call('ECHO',  'available ' .. available .. ' acquire ' .. tostring(acquire))"  + "\n" +
-            "end" + "\n" +
-            "return acquire";
-*/
     /**
      * https://redis.io/docs/manual/programmability/lua-debugging/
      * https://redis.com/blog/5-6-7-methods-for-tracing-and-debugging-redis-lua-scripts/

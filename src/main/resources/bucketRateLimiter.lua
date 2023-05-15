@@ -1,7 +1,10 @@
+-- for class org.oba.jedis.extra.utils.rateLimiter.BucketRateLimiter
+
+
   local name = KEYS[1]
   local permits = tonumber(ARGV[1])
-redis.log(redis.LOG_WARNING, 'name ' .. name .. ' permits ' .. permits)
-redis.call('ECHO', 'name ' .. name .. ' permits ' .. permits)
+redis.log(redis.LOG_WARNING, 'bucketRateLimiter.lua > name ' .. name .. ' permits ' .. permits)
+redis.call('ECHO', 'bucketRateLimiter.lua > name ' .. name .. ' permits ' .. permits)
   -- refill
   local tst = redis.call('time')
   local ts = tst[1] * 1000000 + tst[2]
@@ -27,7 +30,10 @@ redis.call('ECHO',  'available ' .. available .. ' permits ' .. permits)
     available = available - permits
     redis.call('hset', name, 'available', available)
     acquire = true
-redis.log(redis.LOG_WARNING, 'available ' .. available .. ' acquire ' .. tostring(acquire))
-redis.call('ECHO',  'available ' .. available .. ' acquire ' .. tostring(acquire))
+    redis.log(redis.LOG_WARNING, 'bucketRateLimiter.lua < acquiredOk available ' .. available .. ' acquire ' .. tostring(acquire))
+    redis.call('ECHO',  'bucketRateLimiter.lua < acquiredOk available ' .. available .. ' acquire ' .. tostring(acquire))
+  else
+    redis.log(redis.LOG_WARNING, 'bucketRateLimiter.lua < acquiredNO available ' .. available .. ' acquire ' .. tostring(acquire))
+    redis.call('ECHO',  'bucketRateLimiter.lua < acquiredNO available ' .. available .. ' acquire ' .. tostring(acquire))
   end
   return acquire
