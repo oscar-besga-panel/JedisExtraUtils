@@ -1,6 +1,8 @@
 package org.oba.jedis.extra.utils.rateLimiter;
 
 import org.oba.jedis.extra.utils.utils.JedisPoolUser;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -26,6 +28,8 @@ public class BucketRateLimiter implements JedisPoolUser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BucketRateLimiter.class);
 
+    public static final String SCRIPT_NAME = "acquire.lua";
+    public static final String FILE_PATH = "./src/main/resources/acquire.lua";
 
     enum Mode {
         GREEDY, INTERVAL;
@@ -39,10 +43,14 @@ public class BucketRateLimiter implements JedisPoolUser {
 
     private final JedisPool jedisPool;
     private final String name;
+    private final ScriptEvalSha1 script;
 
     public BucketRateLimiter(JedisPool jedisPool, String name) {
         this.jedisPool = jedisPool;
         this.name = name;
+        this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
+                withResoruce(SCRIPT_NAME).
+                withFile(FILE_PATH));
     }
 
     @Override
@@ -96,9 +104,7 @@ public class BucketRateLimiter implements JedisPoolUser {
 
 
     public boolean acquire(long permits) {
-        Object result = withJedisPoolGet(jedis ->
-                jedis.eval(ACQUIRE, Collections.singletonList(name), Collections.singletonList(Long.toString(permits)))
-        );
+        Object result = script.evalSha(Collections.singletonList(name), Collections.singletonList(Long.toString(permits)));
         if (result == null) {
             return false;
         } else if (result.equals(LUA_1_TRUE) || result.equals(LUA_1_TRUE_STRING)) {
@@ -108,7 +114,7 @@ public class BucketRateLimiter implements JedisPoolUser {
         }
     }
 
-
+/*
 
     public static final String ACQUIRE = "" +
             "" + "\n" +
@@ -120,13 +126,19 @@ public class BucketRateLimiter implements JedisPoolUser {
             "local tst = redis.call('time')" + "\n" +
             "local ts = tst[1] * 1000000 + tst[2]" + "\n" +
             "local refill = false" + "\n" +
+            "local numRefill = 0" + "\n" +
             "local mode = redis.call('hget', name, 'mode')"  + "\n" +
         "redis.log(redis.LOG_WARNING, 'ts ' .. ts .. ' mode ' .. mode)"  + "\n" +
         "redis.call('ECHO', 'ts ' .. ts .. ' mode ' .. mode)"  + "\n" +
             "if refill then"  + "\n" +
         "redis.log(redis.LOG_WARNING, 'refill ok ')"  + "\n" +
         "redis.call('ECHO', 'refill ok')"  + "\n" +
+            "  local newAvailable = numRefill + tonumber(redis.call('hget', name, 'available'))" + "\n" +
+            "  redis.call('hset', name, 'available', newAvailable)" + "\n" +
+         "redis.log(redis.LOG_WARNING, 'newAvailable ' .. newAvailable)"  + "\n" +
+         "redis.call('ECHO', 'newAvailable .. ' + newAvailable)"  + "\n" +
             "end" + "\n" +
+
             "-- try acquire" + "\n" +
             "local acquire = false" + "\n" +
             "local available = tonumber(redis.call('hget', name, 'available'))" + "\n" +
@@ -140,7 +152,7 @@ public class BucketRateLimiter implements JedisPoolUser {
           "redis.call('ECHO',  'available ' .. available .. ' acquire ' .. tostring(acquire))"  + "\n" +
             "end" + "\n" +
             "return acquire";
-
+*/
     /**
      * https://redis.io/docs/manual/programmability/lua-debugging/
      * https://redis.com/blog/5-6-7-methods-for-tracing-and-debugging-redis-lua-scripts/
@@ -193,6 +205,8 @@ public class BucketRateLimiter implements JedisPoolUser {
         } else {
             jedisPool = new JedisPool(jedisPoolConfig, host, port);
         }
+
+
         BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, "bucketRateLimiter:test_" + System.currentTimeMillis());
         bucketRateLimiter.create(10, Mode.GREEDY, 1, TimeUnit.SECONDS);
         boolean result1 = bucketRateLimiter.acquire();
@@ -200,6 +214,8 @@ public class BucketRateLimiter implements JedisPoolUser {
 
         System.out.println("Acquire result " + result1);
         System.out.println("Acquire result " + result100);
+        System.out.println("-");
+        //System.out.println(ACQUIRE);
     }
 
 
