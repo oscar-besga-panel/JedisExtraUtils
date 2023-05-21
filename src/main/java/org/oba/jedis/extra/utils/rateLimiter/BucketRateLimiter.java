@@ -162,10 +162,10 @@ public class BucketRateLimiter implements JedisPoolUser {
         BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, "bucketRateLimiter:test_" + System.currentTimeMillis());
         bucketRateLimiter.create(10, Mode.GREEDY, 1, TimeUnit.SECONDS);
         boolean result1 = bucketRateLimiter.acquire();
-        boolean result100 = bucketRateLimiter.acquire(100);
+        //boolean result100 = bucketRateLimiter.acquire(100);
 
         System.out.println("Acquire result " + result1);
-        System.out.println("Acquire result " + result100);
+        //System.out.println("Acquire result " + result100);
         System.out.println("-");
         //System.out.println(ACQUIRE);
     }

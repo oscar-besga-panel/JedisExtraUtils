@@ -1,5 +1,8 @@
 package org.oba.jedis.extra.utils.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -12,6 +15,7 @@ import java.util.stream.Collectors;
  */
 public class UniversalReader {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(UniversalReader.class);
 
     enum Type { RESOURCE, FILE, VALUE}
 
@@ -57,13 +61,14 @@ public class UniversalReader {
             case FILE:
                 return readFromFileName(source.getV());
             case VALUE:
-                return source.getV();
+                return readFromValue(source.getV());
             default:
                 return null;
         }
     }
 
     String readFromResource(String resource) {
+        LOGGER.debug("read from {} resource {} ", Type.RESOURCE, resource);
         String result = null;
         InputStream resoureStream = null;
         InputStreamReader inputStreamReader = null;
@@ -87,6 +92,7 @@ public class UniversalReader {
     }
 
     String readFromFileName(String fileName) {
+        LOGGER.debug("read from {} fileName {} ", Type.FILE, fileName);
         try {
             String result = null;
             File file = new File(fileName);
@@ -98,6 +104,11 @@ public class UniversalReader {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    String readFromValue(String value) {
+        LOGGER.debug("read from {} value {} ", Type.VALUE, value);
+        return value;
     }
 
 }

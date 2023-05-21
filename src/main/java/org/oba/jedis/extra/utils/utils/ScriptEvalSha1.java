@@ -1,5 +1,7 @@
 package org.oba.jedis.extra.utils.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
 
 import java.math.BigInteger;
@@ -9,6 +11,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public class ScriptEvalSha1 implements JedisPoolUser {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScriptEvalSha1.class);
 
     private final JedisPool jedisPool;
     private final UniversalReader scriptSource;
@@ -35,6 +39,10 @@ public class ScriptEvalSha1 implements JedisPoolUser {
                 throw new IllegalArgumentException("Script to load cannot be null nor empty");
             }
             sha1Digest = withJedisPoolGet(jedis -> jedis.scriptLoad(scriptToLoad));
+            LOGGER.debug("SHA1 load from script {}", sha1Digest);
+            if (!sha1Digest.equals(sha1(scriptToLoad))) {
+                LOGGER.error("SHA1 from reddit and local doesn't match !");
+            }
         }
         return sha1Digest != null;
     }
@@ -43,6 +51,7 @@ public class ScriptEvalSha1 implements JedisPoolUser {
         if (sha1Digest == null) {
             load();
         }
+        LOGGER.debug("SHA1 eval {}", sha1Digest);
         return withJedisPoolGet(jedis -> jedis.evalsha(sha1Digest, keys, params));
     }
 
