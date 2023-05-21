@@ -1,4 +1,4 @@
-package org.oba.jedis.extra.utils.simple.functional;
+package org.oba.jedis.extra.utils.cache.functional;
 
 import org.junit.After;
 import org.junit.Before;
@@ -11,19 +11,9 @@ import org.oba.jedis.extra.utils.utils.SimpleEntry;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FunctionalSimpleCacheTest {

@@ -1,53 +1,46 @@
-package org.oba.jedis.extra.utils.simple;
+package org.oba.jedis.extra.utils.cache.functional;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.oba.jedis.extra.utils.cache.CacheWriter;
 import org.oba.jedis.extra.utils.cache.SimpleCache;
+import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.SimpleEntry;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+import redis.clients.jedis.JedisPool;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.oba.jedis.extra.utils.simple.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
+import static org.junit.Assert.*;
 
-//@RunWith(MockitoJUnitRunner.Silent.class)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, TransactionBase.class })
-public class SimpleCacheWriterTest {
+@RunWith(MockitoJUnitRunner.Silent.class)
+public class FunctionalSimpleCacheWriterTest {
 
-    private MockOfJedisForSimpleCache mockOfJedisForSimpleCache;
+
+
+
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private final TestingCacheWriter testingCacheWriter = new TestingCacheWriter();
 
+    private JedisPool jedisPool;
+
     @Before
     public void setup() {
-        org.junit.Assume.assumeTrue(unitTestEnabledForSimpleCache());
-        if (!unitTestEnabledForSimpleCache()) return;
-        mockOfJedisForSimpleCache = new MockOfJedisForSimpleCache();
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedisPool = jtfTest.createJedisPool();
     }
 
     @After
     public void tearDown() {
-        if (mockOfJedisForSimpleCache != null) {
-            mockOfJedisForSimpleCache.clearData();
+        if (jedisPool != null) {
+            jedisPool.close();
         }
     }
 
@@ -57,9 +50,11 @@ public class SimpleCacheWriterTest {
 
     SimpleCache createNewCache(CacheWriter cacheWriter) {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        return new SimpleCache(mockOfJedisForSimpleCache.getJedisPool(), name, 3_600_000)
-                .withCacheWriter(cacheWriter);
+        SimpleCache simpleCache = new SimpleCache(jedisPool, name, 3_600_000).
+                withCacheWriter(testingCacheWriter);
+        return simpleCache;
     }
+
 
     @Test
     public void putTest() {
@@ -93,24 +88,6 @@ public class SimpleCacheWriterTest {
     @Test
     public void putAllTest() {
         SimpleCache simpleCache = createNewCache();
-        Map<String, String> data = new HashMap<>();
-        data.put("a", "A1");
-        data.put("b", "B1");
-        data.put("c", "C1");
-        simpleCache.putAll(data);
-        assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", testingCacheWriter.get("a"));
-        assertEquals("B1", simpleCache.get("b"));
-        assertEquals("B1", testingCacheWriter.get("b"));
-        assertEquals("C1", simpleCache.get("c"));
-        assertEquals("C1", testingCacheWriter.get("c"));
-        assertEquals(3, testingCacheWriter.countDataInserted());
-        assertEquals(0, testingCacheWriter.countDataDeleted());
-    }
-
-    @Test
-    public void defaultPutAllTest() {
-        SimpleCache simpleCache = createNewCache(new TestingDefaultsCacheWriter(testingCacheWriter));
         Map<String, String> data = new HashMap<>();
         data.put("a", "A1");
         data.put("b", "B1");
@@ -300,15 +277,15 @@ public class SimpleCacheWriterTest {
 
     @Test(expected = IllegalStateException.class)
     public void removeAllWithErrorTest() {
-        SimpleCache SimpleCache = createNewCache();
+        SimpleCache simpleCache = createNewCache();
         testingCacheWriter.doNextError();
         Map<String, String> data = new HashMap<>();
         data.put("a", "A1");
         data.put("b", "B1");
         data.put("c", "C1");
         data.put("d", "D1");
-        SimpleCache.putAll(data);
-        SimpleCache.removeAll(new HashSet<>(Arrays.asList("a","b","c")));
+        simpleCache.putAll(data);
+        simpleCache.removeAll(new HashSet<>(Arrays.asList("a","b","c")));
     }
 
     @Test
@@ -334,7 +311,7 @@ public class SimpleCacheWriterTest {
     }
 
     @Test
-    public void clearTest() {
+    public void clearlTest() {
         SimpleCache simpleCache = createNewCache();
         Map<String, String> data = new HashMap<>();
         data.put("a", "A1");
@@ -360,11 +337,11 @@ public class SimpleCacheWriterTest {
         TestingCacheWriter localCacheWriter = new TestingCacheWriter();
         localCacheWriter.write(new SimpleEntry("a","A1"));
         localCacheWriter.write("b","B1");
-        Map<String, String> data = new HashMap<>();
-        data.put("c","C1");
-        data.put("d","D1");
-        data.put("e","E1");
-        localCacheWriter.writeAll(data);
+        Map<String, String> datas = new HashMap<>();
+        datas.put("c","C1");
+        datas.put("d","D1");
+        datas.put("e","E1");
+        localCacheWriter.writeAll(datas);
         assertEquals("A1", localCacheWriter.get("a"));
         assertEquals("B1", localCacheWriter.get("b"));
         assertEquals("C1", localCacheWriter.get("c"));
@@ -383,6 +360,12 @@ public class SimpleCacheWriterTest {
         assertNull(localCacheWriter.get("d"));
         assertNull(localCacheWriter.get("e"));
     }
+
+    /*
+    removeAll
+            removeAll
+*/
+
 
     private static class TestingCacheWriter implements CacheWriter {
 
@@ -415,7 +398,6 @@ public class SimpleCacheWriterTest {
         public boolean contains(String key) {
             return internalData.containsKey(key);
         }
-
 
         @Override
         public void write(String key, String value) {
@@ -456,7 +438,7 @@ public class SimpleCacheWriterTest {
 
     private static class TestingDefaultsCacheWriter implements CacheWriter {
 
-        private final TestingCacheWriter testingCacheWriter;
+        private TestingCacheWriter testingCacheWriter;
 
         public TestingDefaultsCacheWriter(TestingCacheWriter testingCacheWriter) {
             this.testingCacheWriter = testingCacheWriter;

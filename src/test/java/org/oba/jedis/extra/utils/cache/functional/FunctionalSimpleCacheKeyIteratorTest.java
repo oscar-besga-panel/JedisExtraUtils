@@ -1,4 +1,4 @@
-package org.oba.jedis.extra.utils.simple.functional;
+package org.oba.jedis.extra.utils.cache.functional;
 
 
 import org.junit.After;
@@ -17,9 +17,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FunctionalSimpleCacheKeyIteratorTest {
