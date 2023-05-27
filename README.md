@@ -68,6 +68,8 @@ Made with
 - Diagrams with [Draw io](https://app.diagrams.net/)
 - Bages from [awesome-badges](https://github.com/badges/awesome-badges) and [badgen](https://badgen.net/) and [open-source-badges](https://github.com/ellerbrock/open-source-badges/) 
 - Help from Stackoveflow, forums like [Jedis redis forum](https://groups.google.com/g/jedis_redis)
+- SHA1 code from [olivertech](http://oliviertech.com/es/java/generate-SHA1-hash-from-a-String/)
+- Rate limiters ideas from [Bucket4j](https://bucket4j.com/) and [vbukhtoyarov-java](https://vbukhtoyarov-java.blogspot.com/2021/11/non-formal-overview-of-token-bucket.html)
 
 See also
 - [Awesome-redis](https://github.com/JamzyWang/awesome-redis)

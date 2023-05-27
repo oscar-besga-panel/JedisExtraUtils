@@ -6,6 +6,9 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/**
+ *
+ */
 class CommonRateLimiter {
 
     public static final BigInteger BI_MILLION = BigInteger.valueOf(1_000_000L);

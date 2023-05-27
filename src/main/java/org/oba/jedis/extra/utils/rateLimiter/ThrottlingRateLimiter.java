@@ -15,10 +15,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.fromRedisTimestampAsMicros;
-import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.scriptResultAsBoolean;
-import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.toRedisMicros;
+import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.*;
 
+/**
+ * Idea form https://bucket4j.com/
+ */
 public class ThrottlingRateLimiter implements JedisPoolUser, Named {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ThrottlingRateLimiter.class);

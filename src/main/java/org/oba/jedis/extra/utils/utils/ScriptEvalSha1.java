@@ -10,9 +10,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+/**
+ * As seen in http://oliviertech.com/es/java/generate-SHA1-hash-from-a-String/
+ */
 public class ScriptEvalSha1 implements JedisPoolUser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptEvalSha1.class);
+    public static final String SHA_1 = "SHA-1";
 
     private final JedisPool jedisPool;
     private final UniversalReader scriptSource;
@@ -57,9 +61,14 @@ public class ScriptEvalSha1 implements JedisPoolUser {
         return withJedisPoolGet(jedis -> jedis.evalsha(sha1Digest, keys, params));
     }
 
+    /**
+     * As seen in http://oliviertech.com/es/java/generate-SHA1-hash-from-a-String/
+     * @param script
+     * @return
+     */
     public static String sha1(String script) {
         try {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
+            MessageDigest messageDigest = MessageDigest.getInstance(SHA_1);
             messageDigest.reset();
             messageDigest.update(script.getBytes(StandardCharsets.UTF_8));
             return String.format("%040x", new BigInteger(1, messageDigest.digest()));

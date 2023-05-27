@@ -12,17 +12,10 @@ import redis.clients.jedis.JedisPool;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.*;
 
 public class FunctionalBucketRateLimiterTest {
 
@@ -50,7 +43,7 @@ public class FunctionalBucketRateLimiterTest {
     }
 
     @Test
-    public void bucketBasicTest() throws InterruptedException {
+    public void bucketBasic01Test() throws InterruptedException {
         BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
                 create(1, BucketRateLimiter.Mode.INTERVAL, 500, TimeUnit.MILLISECONDS);
         boolean result1 = bucketRateLimiter.acquire();
@@ -65,36 +58,76 @@ public class FunctionalBucketRateLimiterTest {
     }
 
     @Test
-    public void bucketAdvancedTest() throws InterruptedException {
+    public void bucketBasic03Test() throws InterruptedException {
         BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
-                create(2, BucketRateLimiter.Mode.INTERVAL, 100, TimeUnit.MILLISECONDS);
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(5);
-        Callable<Boolean> tryAcquire = () -> this.tryAcquire(bucketRateLimiter);
+                create(1, BucketRateLimiter.Mode.GREEDY, 500, TimeUnit.MILLISECONDS);
+        boolean result1 = bucketRateLimiter.acquire();
+        Thread.sleep(200);
+        boolean result2 = bucketRateLimiter.acquire();
+        Thread.sleep(400);
+        boolean result3 = bucketRateLimiter.acquire();
+        assertTrue(bucketRateLimiter.exists());
+        assertTrue(result1);
+        assertFalse(result2);
+        assertTrue(result3);
+    }
+
+    @Test
+    public void bucketAdvanced01Test() throws InterruptedException {
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
+                create(1, BucketRateLimiter.Mode.INTERVAL, 1000, TimeUnit.MILLISECONDS);
+
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(105);
         List<ScheduledFuture<Boolean>> scheduledFutureList = new ArrayList<>();
         for(int i= 0; i < 100; i++) {
-            long wait = 1000L + (i % 3);
-            ScheduledFuture<Boolean> scheduledFuture = executorService.schedule(tryAcquire, wait, TimeUnit.MILLISECONDS);
+            long wait = 500L + (i % 3)*1000 + ThreadLocalRandom.current().nextLong(5L,75L);
+            ScheduledFuture<Boolean> scheduledFuture = executorService.schedule(() -> tryAcquire(wait, bucketRateLimiter),
+                    wait, TimeUnit.MILLISECONDS);
             scheduledFutureList.add(scheduledFuture);
         }
         AtomicInteger count = new AtomicInteger(0);
-        scheduledFutureList.forEach( sf -> {
-            try {
-                if (sf.get()) {
-                    count.incrementAndGet();
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        assertEquals(1, count.get());
-
+        scheduledFutureList.forEach( sf -> countIfGet(count, sf));
+        LOGGER.debug("bucketAdvanced01Test count {}", count.get());
+        assertEquals(3, count.get());
     }
 
-    boolean tryAcquire(BucketRateLimiter bucketRateLimiter){
+    @Test
+    public void bucketAdvanced02Test() throws InterruptedException {
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
+                create(1, BucketRateLimiter.Mode.GREEDY, 1000, TimeUnit.MILLISECONDS);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(105);
+        List<ScheduledFuture<Boolean>> scheduledFutureList = new ArrayList<>();
+        for(int i= 0; i < 100; i++) {
+            long wait = 500L + (i % 3)*1000 + ThreadLocalRandom.current().nextLong(5L,75L);
+            ScheduledFuture<Boolean> scheduledFuture = executorService.schedule(() -> tryAcquire(wait, bucketRateLimiter),
+                    wait, TimeUnit.MILLISECONDS);
+            scheduledFutureList.add(scheduledFuture);
+        }
+        AtomicInteger count = new AtomicInteger(0);
+        scheduledFutureList.forEach( sf -> countIfGet(count, sf));
+        LOGGER.debug("bucketAdvanced02Test count {}", count.get());
+        assertTrue(count.get() >= 3);
+    }
+
+    private static boolean tryAcquire(long currentWait, BucketRateLimiter bucketRateLimiter) {
+        LOGGER.debug("tryAcquire currentWait {}", currentWait);
         boolean result = bucketRateLimiter.acquire();
+        if (result) {
+            LOGGER.debug("acquire Ok currentWait {}", currentWait);
+        }
         return result;
     }
+
+    private static void countIfGet(AtomicInteger count, ScheduledFuture<Boolean> sf) {
+        try {
+            if (sf.get()) {
+                count.incrementAndGet();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Error while getting response",e);
+            throw new RuntimeException(e);
+        }
+    }
+
 
 }

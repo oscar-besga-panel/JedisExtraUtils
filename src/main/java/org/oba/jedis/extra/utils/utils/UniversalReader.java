@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Will read the
+ * Will read a file from a resource in classpath, a file or directly from string
  */
 public class UniversalReader {
 
