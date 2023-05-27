@@ -8,12 +8,7 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -108,7 +103,8 @@ public class MockOfJedis {
     }
 
     private Object delete(String name) {
-        return data.remove(name);
+        Map<String, String> removed = data.remove(name);
+        return removed != null ? 1L : 0L;
     }
 
 
