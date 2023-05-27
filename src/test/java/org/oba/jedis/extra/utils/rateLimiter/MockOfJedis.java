@@ -1,12 +1,19 @@
 package org.oba.jedis.extra.utils.rateLimiter;
 
 import org.mockito.Mockito;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.oba.jedis.extra.utils.utils.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -36,6 +43,8 @@ public class MockOfJedis {
     private final Map<String, Map<String,String>> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
+    private TriFunction<String, List<String>, List<String>, Object> doWithEvalSha;
+
     public MockOfJedis() {
         timer = new Timer();
 
@@ -44,6 +53,10 @@ public class MockOfJedis {
         when(jedis.exists(anyString())).thenAnswer( ioc -> {
             String name = ioc.getArgument(0, String.class);
             return exists(name);
+        });
+        when(jedis.del(anyString())).thenAnswer( ioc -> {
+            String name = ioc.getArgument(0, String.class);
+            return delete(name);
         });
         when(jedis.hset(anyString(), any(Map.class))).thenAnswer( ioc ->  {
             String name = ioc.getArgument(0, String.class);
@@ -57,7 +70,22 @@ public class MockOfJedis {
             return hset(name, key, value);
         });
         when(jedis.time()).thenAnswer(ioc -> time());
+        when(jedis.scriptLoad(anyString())).thenAnswer( ioc -> {
+            String script = ioc.getArgument(0, String.class);
+            return ScriptEvalSha1.sha1(script);
+        });
+        when(jedis.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
+            String name = ioc.getArgument(0, String.class);
+            List<String> keys = ioc.getArgument(1, List.class);
+            List<String> args = ioc.getArgument(2, List.class);
+            return executeSha(name, keys, args);
+        });
         Mockito.when(jedisPool.getResource()).thenReturn(jedis);
+    }
+
+
+    private Object executeSha(String name, List<String> keys, List<String> args) {
+        return doWithEvalSha != null ? doWithEvalSha.apply(name, keys, args) : null;
     }
 
     private List<String> time() {
@@ -79,6 +107,14 @@ public class MockOfJedis {
         return 1L;
     }
 
+    private Object delete(String name) {
+        return data.remove(name);
+    }
+
+
+    public void setDoWithEvalSha(TriFunction<String, List<String>, List<String>, Object> doWithEvalSha) {
+        this.doWithEvalSha = doWithEvalSha;
+    }
 
     public Jedis getJedis(){
         return jedis;
@@ -90,10 +126,13 @@ public class MockOfJedis {
 
     public synchronized void clearData(){
         data.clear();
+        doWithEvalSha = null;
     }
 
     public Map<String, String> getData(String name) {
         return data.get(name);
     }
+
+
 
 }

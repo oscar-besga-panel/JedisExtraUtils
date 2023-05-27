@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.rateLimiter;
 
 import org.oba.jedis.extra.utils.utils.JedisPoolUser;
+import org.oba.jedis.extra.utils.utils.Named;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
@@ -17,7 +18,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.*;
+import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.fromRedisTimestampAsMicros;
+import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.scriptResultAsBoolean;
+import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.toRedisMicros;
 
 /**
  * See reference on
@@ -25,14 +28,14 @@ import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.*;
  * * https://vbukhtoyarov-java.blogspot.com/2021/11/non-formal-overview-of-token-bucket.html
  *
  */
-public class BucketRateLimiter implements JedisPoolUser {
+public class BucketRateLimiter implements JedisPoolUser, Named {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BucketRateLimiter.class);
 
     public static final String SCRIPT_NAME = "bucketRateLimiter.lua";
     public static final String FILE_PATH = "./src/main/resources/bucketRateLimiter.lua";
 
-    enum Mode {
+    public enum Mode {
         GREEDY, INTERVAL;
     }
 
@@ -52,6 +55,10 @@ public class BucketRateLimiter implements JedisPoolUser {
         this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override

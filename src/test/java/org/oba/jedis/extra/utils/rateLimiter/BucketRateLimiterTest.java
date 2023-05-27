@@ -7,8 +7,12 @@ import redis.clients.jedis.JedisPool;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class BucketRateLimiterTest {
 
@@ -56,5 +60,22 @@ public class BucketRateLimiterTest {
                 mockOfJedis.getData(rateLimiterName).get(BucketRateLimiter.MODE));
         assertNotNull(mockOfJedis.getData(rateLimiterName).get(BucketRateLimiter.LAST_REFILL_MICROS));
     }
+
+    @Test
+    public void acquireTest() {
+        AtomicReference<String> passedName = new AtomicReference<>("");
+        mockOfJedis.setDoWithEvalSha((t, u, v) -> {
+            passedName.set(u.get(0));
+            int permits = Integer.parseInt(v.get(0));
+            return Boolean.valueOf(permits % 2 == 0);
+        });
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, rateLimiterName).
+                create(5, BucketRateLimiter.Mode.GREEDY, 2, TimeUnit.SECONDS);
+        assertFalse(bucketRateLimiter.acquire());
+        assertTrue(bucketRateLimiter.acquire(2));
+        assertFalse(bucketRateLimiter.acquire(3));
+        assertEquals(bucketRateLimiter.getName(), passedName.get());
+    }
+
 
 }

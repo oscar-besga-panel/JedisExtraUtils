@@ -40,7 +40,9 @@ public class ScriptEvalSha1 implements JedisPoolUser {
             }
             sha1Digest = withJedisPoolGet(jedis -> jedis.scriptLoad(scriptToLoad));
             LOGGER.debug("SHA1 load from script {}", sha1Digest);
-            if (!sha1Digest.equals(sha1(scriptToLoad))) {
+            if (sha1Digest == null || sha1Digest.isBlank()) {
+                LOGGER.error("SHA1 from reddit is null or empty !");
+            } else if (!sha1Digest.equals(sha1(scriptToLoad))) {
                 LOGGER.error("SHA1 from reddit and local doesn't match !");
             }
         }
