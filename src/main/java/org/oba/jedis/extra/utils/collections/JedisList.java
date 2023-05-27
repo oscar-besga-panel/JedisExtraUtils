@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.collections;
 
+import org.oba.jedis.extra.utils.utils.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -33,7 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * and you can retrieve the data to a pure Java list anytime.
  * But helpers on Redis lists is not the goal of this class, rather than have a list object backed by Redis
  */
-public final class JedisList implements List<String> {
+public final class JedisList implements List<String>, Named {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisList.class);

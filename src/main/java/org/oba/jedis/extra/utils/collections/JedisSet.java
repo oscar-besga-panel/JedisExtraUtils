@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.collections;
 
 import org.oba.jedis.extra.utils.iterators.SScanIterator;
+import org.oba.jedis.extra.utils.utils.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -12,7 +13,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-public class JedisSet implements Set<String> {
+public class JedisSet implements Set<String>, Named {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisSet.class);
 

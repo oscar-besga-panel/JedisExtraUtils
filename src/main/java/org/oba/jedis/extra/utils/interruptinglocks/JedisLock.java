@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  * https://redis.io/topics/distlock
  *
  */
-public class    JedisLock implements IJedisLock {
+public class JedisLock implements IJedisLock {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisLock.class);
 

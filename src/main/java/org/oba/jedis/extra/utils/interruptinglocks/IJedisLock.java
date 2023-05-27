@@ -1,19 +1,15 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
 
+import org.oba.jedis.extra.utils.utils.Named;
+
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
  * Interface for locks on redis
  */
-public interface IJedisLock extends AutoCloseable {
-
-    /**
-     * Name of the lock. Can not be null
-     * @return name
-     */
-    String getName();
+public interface IJedisLock extends AutoCloseable, Named {
 
     /**
      * Lease time of the lock, null if none
