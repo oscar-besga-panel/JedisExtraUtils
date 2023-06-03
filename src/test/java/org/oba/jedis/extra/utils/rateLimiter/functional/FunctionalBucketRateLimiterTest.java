@@ -12,10 +12,17 @@ import redis.clients.jedis.JedisPool;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static junit.framework.TestCase.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class FunctionalBucketRateLimiterTest {
 
@@ -40,6 +47,22 @@ public class FunctionalBucketRateLimiterTest {
         if (jedisPool != null) {
             jedisPool.close();
         }
+    }
+
+    @Test
+    public void create0Test() {
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
+                create(10, BucketRateLimiter.Mode.INTERVAL, 1 , TimeUnit.SECONDS);
+        assertTrue(bucketRateLimiter.exists());
+        bucketRateLimiter.delete();
+        assertFalse(bucketRateLimiter.exists());
+        bucketRateLimiter.
+                createIfNotExists(10, BucketRateLimiter.Mode.INTERVAL, 1 , TimeUnit.SECONDS);
+        assertTrue(bucketRateLimiter.exists());
+        bucketRateLimiter.
+                createIfNotExists(20, BucketRateLimiter.Mode.INTERVAL, 2 , TimeUnit.SECONDS);
+        assertTrue(bucketRateLimiter.exists());
+        assertEquals("10", jedisPool.getResource().hget(bucketName, "capacity"));
     }
 
     @Test
@@ -73,7 +96,7 @@ public class FunctionalBucketRateLimiterTest {
     }
 
     @Test
-    public void bucketAdvanced01Test() throws InterruptedException {
+    public void bucketAdvanced01Test() {
         BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
                 create(1, BucketRateLimiter.Mode.INTERVAL, 1000, TimeUnit.MILLISECONDS);
 
@@ -92,7 +115,7 @@ public class FunctionalBucketRateLimiterTest {
     }
 
     @Test
-    public void bucketAdvanced02Test() throws InterruptedException {
+    public void bucketAdvanced02Test() {
         BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
                 create(1, BucketRateLimiter.Mode.GREEDY, 1000, TimeUnit.MILLISECONDS);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(105);

@@ -6,10 +6,14 @@ import org.junit.Test;
 import redis.clients.jedis.JedisPool;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ThrottlingRateLimiterTest {
 
@@ -34,7 +38,23 @@ public class ThrottlingRateLimiterTest {
     }
 
     @Test
-    public void createTest() {
+    public void create0Test() {
+        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPool, rateLimiterName).
+                create(1, TimeUnit.SECONDS);
+        assertTrue(throttlingRateLimiter.exists());
+        throttlingRateLimiter.delete();
+        assertFalse(throttlingRateLimiter.exists());
+        throttlingRateLimiter.
+                createIfNotExists(1500);
+        assertTrue(throttlingRateLimiter.exists());
+        throttlingRateLimiter.
+                createIfNotExists(2, TimeUnit.SECONDS);
+        assertTrue(throttlingRateLimiter.exists());
+        assertEquals("1500000", mockOfJedis.getData(rateLimiterName).get("allow_micros"));
+    }
+
+    @Test
+    public void create1Test() {
         ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPool, rateLimiterName).
                 create(1000);
         assertTrue(throttlingRateLimiter.exists());

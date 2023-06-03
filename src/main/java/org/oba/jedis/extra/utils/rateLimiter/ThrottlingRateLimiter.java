@@ -15,7 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.*;
+import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.fromRedisTimestampAsMicros;
+import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.scriptResultAsBoolean;
+import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.toRedisMicros;
 
 /**
  * Idea form https://bucket4j.com/
@@ -56,8 +58,24 @@ public class ThrottlingRateLimiter implements JedisPoolUser, Named {
         return withJedisPoolGet( jedis -> jedis.exists(name));
     }
 
+    public ThrottlingRateLimiter createIfNotExists(long timeToAllowMillis) {
+        if (!exists()) {
+            return create(timeToAllowMillis, TimeUnit.MILLISECONDS);
+        } else {
+            return this;
+        }
+    }
+
     public ThrottlingRateLimiter create(long timeToAllowMillis) {
         return this.create(timeToAllowMillis, TimeUnit.MILLISECONDS);
+    }
+
+    public ThrottlingRateLimiter createIfNotExists(long timeToAllow, TimeUnit timeUnit) {
+        if (!exists()) {
+            return create(timeToAllow, timeUnit);
+        } else {
+            return this;
+        }
     }
 
     public ThrottlingRateLimiter create(long timeToAllow, TimeUnit timeUnit) {

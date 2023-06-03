@@ -8,11 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.Protocol;
 
 import java.math.BigInteger;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,9 +67,25 @@ public class BucketRateLimiter implements JedisPoolUser, Named {
         return withJedisPoolGet( jedis -> jedis.exists(name));
     }
 
+    public BucketRateLimiter createIfNotExists(long capacity, Mode mode, long timeToRefillMillis) {
+        if (!exists()) {
+            return create(capacity, mode, timeToRefillMillis, TimeUnit.MILLISECONDS);
+        } else {
+            return this;
+        }
+    }
+
     public BucketRateLimiter create(long capacity, Mode mode, long timeToRefillMillis) {
         this.create(capacity, mode, timeToRefillMillis, TimeUnit.MILLISECONDS);
         return this;
+    }
+
+    public BucketRateLimiter createIfNotExists(long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
+        if (!exists()) {
+            return create(capacity, mode, timeToRefill, timeUnit);
+        } else {
+            return this;
+        }
     }
 
     public BucketRateLimiter create(long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
@@ -98,12 +111,9 @@ public class BucketRateLimiter implements JedisPoolUser, Named {
         }
     }
 
-
     public boolean acquire() {
         return acquire(1L);
     }
-
-
 
     public boolean acquire(long permits) {
         Object result = script.evalSha(Collections.singletonList(name), Collections.singletonList(Long.toString(permits)));
@@ -111,72 +121,10 @@ public class BucketRateLimiter implements JedisPoolUser, Named {
         return scriptResultAsBoolean(result);
     }
 
-
-    /**
-     * https://redis.io/docs/manual/programmability/lua-debugging/
-     * https://redis.com/blog/5-6-7-methods-for-tracing-and-debugging-redis-lua-scripts/
-     */
-
-/*
-    synchronized public boolean tryConsume(int numberTokens) {
-        refill();
-        if (availableTokens < numberTokens) {
-            return false;
-        } else {
-            availableTokens -= numberTokens;
-            return true;
-        }
+    public void delete() {
+        withJedisPoolDo( jedis ->
+                jedis.del(name)
+        );
     }
-
-    private void refill() {
-        long currentTimeMillis = System.currentTimeMillis();
-        if (currentTimeMillis > lastRefillTimestamp) {
-            long millisSinceLastRefill = currentTimeMillis - lastRefillTimestamp;
-            double refill = millisSinceLastRefill * refillTokensPerOneMillis;
-            this.availableTokens = Math.min(capacity, availableTokens + refill);
-            this.lastRefillTimestamp = currentTimeMillis;
-        }
-    }
- */
-    public static void main(String[] args) {
-
-        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-        jedisPoolConfig.setMaxTotal(24); // original 128
-        jedisPoolConfig.setMaxIdle(24); // original 128
-        jedisPoolConfig.setMinIdle(4); // original 16
-        // High performance
-//        jedisPoolConfig.setMaxTotal(128);
-//        jedisPoolConfig.setMaxIdle(128);
-//        jedisPoolConfig.setMinIdle(16);
-        jedisPoolConfig.setTestOnBorrow(true);
-        jedisPoolConfig.setTestOnReturn(true);
-        jedisPoolConfig.setTestWhileIdle(true);
-        jedisPoolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(30).toMillis());
-        jedisPoolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(10).toMillis());
-        jedisPoolConfig.setNumTestsPerEvictionRun(1);
-        jedisPoolConfig.setBlockWhenExhausted(true);
-        String host = "127.0.0.1";
-        int port = 6379;
-        String pass = "";
-        JedisPool jedisPool = null;
-        if (pass != null && !pass.trim().isEmpty()) {
-            jedisPool = new JedisPool(jedisPoolConfig, host, port, Protocol.DEFAULT_TIMEOUT, pass);
-        } else {
-            jedisPool = new JedisPool(jedisPoolConfig, host, port);
-        }
-
-
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, "bucketRateLimiter:test_" + System.currentTimeMillis());
-        bucketRateLimiter.create(10, Mode.GREEDY, 1, TimeUnit.SECONDS);
-        boolean result1 = bucketRateLimiter.acquire();
-        //boolean result100 = bucketRateLimiter.acquire(100);
-
-        System.out.println("Acquire result " + result1);
-        //System.out.println("Acquire result " + result100);
-        System.out.println("-");
-        //System.out.println(ACQUIRE);
-    }
-
-
 
 }

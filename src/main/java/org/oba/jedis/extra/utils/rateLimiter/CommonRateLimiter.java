@@ -22,9 +22,9 @@ class CommonRateLimiter {
     }
 
     public static BigInteger fromRedisTimestampAsMicros(Jedis jedis) {
-        List<String> tmp = jedis.time();
-        return BigInteger.valueOf(Long.parseLong(tmp.get(0))).multiply(BI_MILLION).
-                add(BigInteger.valueOf(Long.parseLong(tmp.get(1))));
+        List<String> time = jedis.time();
+        return BigInteger.valueOf(Long.parseLong(time.get(0))).multiply(BI_MILLION).
+                add(BigInteger.valueOf(Long.parseLong(time.get(1))));
     }
 
     public static boolean scriptResultAsBoolean(Object result) {

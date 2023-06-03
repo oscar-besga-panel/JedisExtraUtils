@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.rateLimiter.functional;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.rateLimiter.ThrottlingRateLimiter;
@@ -12,10 +13,17 @@ import redis.clients.jedis.JedisPool;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class FunctionalThrottlingRateLimiterTest {
 
@@ -40,6 +48,22 @@ public class FunctionalThrottlingRateLimiterTest {
         if (jedisPool != null) {
             jedisPool.close();
         }
+    }
+
+    @Test
+    public void create0Test() {
+        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPool, throttlingName).
+                create(1, TimeUnit.SECONDS);
+        Assert.assertTrue(throttlingRateLimiter.exists());
+        throttlingRateLimiter.delete();
+        Assert.assertFalse(throttlingRateLimiter.exists());
+        throttlingRateLimiter.
+                createIfNotExists(1500);
+        Assert.assertTrue(throttlingRateLimiter.exists());
+        throttlingRateLimiter.
+                createIfNotExists(2, TimeUnit.SECONDS);
+        Assert.assertTrue(throttlingRateLimiter.exists());
+        assertEquals("1500000", jedisPool.getResource().hget(throttlingName, "allow_micros"));
     }
 
     @Test

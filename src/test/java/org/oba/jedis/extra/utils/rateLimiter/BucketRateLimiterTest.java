@@ -9,7 +9,10 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class BucketRateLimiterTest {
 
@@ -30,6 +33,22 @@ public class BucketRateLimiterTest {
     public void after() throws IOException {
         jedisPool.close();
         mockOfJedis.clearData();
+    }
+
+    @Test
+    public void create0Test() {
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, rateLimiterName).
+                create(10, BucketRateLimiter.Mode.INTERVAL, 1 , TimeUnit.SECONDS);
+        assertTrue(bucketRateLimiter.exists());
+        bucketRateLimiter.delete();
+        assertFalse(bucketRateLimiter.exists());
+        bucketRateLimiter.
+                createIfNotExists(10, BucketRateLimiter.Mode.INTERVAL, 1 , TimeUnit.SECONDS);
+        assertTrue(bucketRateLimiter.exists());
+        bucketRateLimiter.
+                createIfNotExists(20, BucketRateLimiter.Mode.INTERVAL, 2 , TimeUnit.SECONDS);
+        assertTrue(bucketRateLimiter.exists());
+        assertEquals("10", mockOfJedis.getData(rateLimiterName).get("capacity"));
     }
 
     @Test

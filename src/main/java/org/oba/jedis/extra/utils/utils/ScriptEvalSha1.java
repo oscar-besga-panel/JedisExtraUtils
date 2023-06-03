@@ -11,7 +11,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 /**
+ * Evals a script to its SHA-1 representation in redis
+ * So it can be called without uploading all of the script code to redis every time
+ *
+ * It checks it against a local SHA-1 hash in Java
  * As seen in http://oliviertech.com/es/java/generate-SHA1-hash-from-a-String/
+ *
+ * Also, see how to debug im
+ *    * https://redis.io/docs/manual/programmability/lua-debugging/
+ *    * https://redis.com/blog/5-6-7-methods-for-tracing-and-debugging-redis-lua-scripts/
+ *
+ *
  */
 public class ScriptEvalSha1 implements JedisPoolUser {
 
