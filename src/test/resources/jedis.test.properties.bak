@@ -1,12 +1,11 @@
-# default 0
-jedis.test.functionalTestCycles=0
-# default 127.0.0.1
-jedis.test.host=127.0.0.1
-# default 6379
-jedis.test.port=6379
-# default
-jedis.test.pass=
-
+### default 0
+#jedis.test.functionalTestCycles=0
+### default 127.0.0.1
+#jedis.test.host=127.0.0.1
+### default 6379
+#jedis.test.port=6379
+### default
+#jedis.test.pass=
 
 # If we use sentinel for our tests. Default empty or false
 # jedis.test.enableSentinel=false

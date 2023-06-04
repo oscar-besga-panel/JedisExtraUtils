@@ -12,12 +12,7 @@ import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
@@ -113,8 +108,19 @@ public final class MockOfJedis {
             }
             return null;
         }).when(jedis).subscribe(any(JedisPubSub.class), any());
+        Mockito.when(jedis.scriptLoad(anyString())).thenAnswer(ioc -> {
+            String script = ioc.getArgument(0, String.class);
+            return mockScriptLoad(script);
+        });
+        Mockito.when(jedis.evalsha(anyString(), any(List.class), any(List.class) )).thenAnswer(ioc -> {
+            String sha = ioc.getArgument(0, String.class);
+            List<String> keys = (List<String>) ioc.getArgument(1, List.class);
+            List<String> args = (List<String>) ioc.getArgument(2, List.class);
+            return mockScriptEvalSha(sha, keys, args);
+        });
 
     }
+
 
 
     private boolean mockExist(String key) {
@@ -191,6 +197,19 @@ public final class MockOfJedis {
         }
 
     }
+
+    public String mockScriptEvalSha(String sha1, List<String> keys, List<String> args) {
+        return new StringBuilder().
+                append(sha1).append(",").
+                append(String.join(",", keys)).append(",").
+                append(String.join(",", args)).
+                toString();
+    }
+
+    public static String mockScriptLoad(String script) {
+        return ScriptEvalSha1.sha1(script);
+    }
+
 
     public Jedis getJedis(){
         return jedis;

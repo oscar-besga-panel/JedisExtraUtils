@@ -2,6 +2,7 @@ package org.oba.jedis.extra.utils.cache;
 
 import org.oba.jedis.extra.utils.utils.Listable;
 import org.oba.jedis.extra.utils.utils.Mapeable;
+import org.oba.jedis.extra.utils.utils.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -44,7 +45,8 @@ import java.util.stream.Collectors;
  * Also a name, every instance with the same name will access the same redis data
  * And a timeout that will be applied to all data by default
  */
-public class SimpleCache  implements Iterable<Map.Entry<String,String>>, Listable<Map.Entry<String,String>>, Mapeable<String, String> {
+public class SimpleCache implements Iterable<Map.Entry<String,String>>,
+        Listable<Map.Entry<String,String>>, Mapeable<String, String>, Named {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleCache.class);
 

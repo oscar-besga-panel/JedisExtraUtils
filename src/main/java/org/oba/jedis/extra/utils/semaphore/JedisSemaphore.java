@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.semaphore;
 
 
+import org.oba.jedis.extra.utils.utils.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -30,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  *
  *
  */
-public class JedisSemaphore {
+public class JedisSemaphore implements Named {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisSemaphore.class);
 

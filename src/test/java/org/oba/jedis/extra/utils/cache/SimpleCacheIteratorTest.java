@@ -1,56 +1,46 @@
-package org.oba.jedis.extra.utils.simple.functional;
+package org.oba.jedis.extra.utils.cache;
 
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.oba.jedis.extra.utils.cache.SimpleCache;
-import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.SimpleEntry;
-import redis.clients.jedis.JedisPool;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.oba.jedis.extra.utils.cache.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
-public class FunctionalSimpleCacheIteratorTest {
-
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
+public class SimpleCacheIteratorTest {
 
 
-    private final JedisTestFactory jtfTest = JedisTestFactory.get();
-
-
-    private JedisPool jedisPool;
+    private MockOfJedisForSimpleCache mockOfJedisForSimpleCache;
 
     @Before
     public void setup() {
-        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
-        if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        org.junit.Assume.assumeTrue(unitTestEnabledForSimpleCache());
+        if (!unitTestEnabledForSimpleCache()) return;
+        mockOfJedisForSimpleCache = new MockOfJedisForSimpleCache();
     }
 
     @After
     public void tearDown() {
-        if (jedisPool != null) {
-            jedisPool.close();
+        if (mockOfJedisForSimpleCache != null) {
+            mockOfJedisForSimpleCache.clearData();
         }
     }
 
     SimpleCache createNewCache() {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        return new SimpleCache(jedisPool, name, 3_600_000);
+        return new SimpleCache(mockOfJedisForSimpleCache.getJedisPool(), name, 3_600_000);
     }
 
     @Test
@@ -94,8 +84,8 @@ public class FunctionalSimpleCacheIteratorTest {
         simpleCache.putAll(data);
         AtomicInteger count = new AtomicInteger(0);
         simpleCache.iterator().forEachRemaining( entry -> {
-            assertTrue(data.containsKey(entry.getKey()));
-            assertTrue(data.containsValue(entry.getValue()));
+            assertTrue(data.keySet().contains(entry.getKey()));
+            assertTrue(data.values().contains(entry.getValue()));
             count.incrementAndGet();
         });
         assertEquals(3, count.get());

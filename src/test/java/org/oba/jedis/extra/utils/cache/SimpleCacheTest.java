@@ -1,30 +1,19 @@
-package org.oba.jedis.extra.utils.simple;
+package org.oba.jedis.extra.utils.cache;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.oba.jedis.extra.utils.cache.SimpleCache;
 import org.oba.jedis.extra.utils.utils.SimpleEntry;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.TransactionBase;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.oba.jedis.extra.utils.simple.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
+import static org.junit.Assert.*;
+import static org.oba.jedis.extra.utils.cache.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Transaction.class, TransactionBase.class })
