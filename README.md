@@ -2,14 +2,13 @@
 [![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
 _Project information_        
-[![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://opensource.org/licenses/MIT)
+[![MIT License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
 ![Top languaje](https://img.shields.io/github/languages/top/oscar-besga-panel/JedisExtraUtils)
 [![Wiki](https://badgen.net/badge/icon/wiki?icon=wiki&label)](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki)
 [![OpenHub](https://badgen.net/badge/%20/openhub/purple?icon=awesome)](https://openhub.net/p/JedisExtraUtils)
 
 
 _Current Build_  
-[![Build Status](https://app.travis-ci.com/oscar-besga-panel/InterruptingJedisLocks.svg?branch=master)](https://app.travis-ci.com/github/oscar-besga-panel/InterruptingJedisLocks)
 ![Issues](https://img.shields.io/github/issues/oscar-besga-panel/InterruptingJedisLocks)
 [![codecov](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/010964cad8f94b07838e53aa41259792)](https://app.codacy.com/gh/oscar-besga-panel/JedisExtraUtils/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
@@ -37,6 +36,8 @@ These include
   * ZScanIterable: To scan ordered sets
   * Some utils more
 * Cache: A simple cache with readthrougth and writethrougth operations
+* Cycle: A list of elements that cycles for one to the next, and to the initial one; one result per call, in a cycle
+* RateLimiter: temporal or bucket limited distributed rate
 * More utils like
   * SimplePubSub: a simple pub/sub that only consumes messages via a BiConsumer function
 
@@ -68,6 +69,8 @@ Made with
 - Diagrams with [Draw io](https://app.diagrams.net/)
 - Bages from [awesome-badges](https://github.com/badges/awesome-badges) and [badgen](https://badgen.net/) and [open-source-badges](https://github.com/ellerbrock/open-source-badges/) 
 - Help from Stackoveflow, forums like [Jedis redis forum](https://groups.google.com/g/jedis_redis)
+- SHA1 code from [olivertech](http://oliviertech.com/es/java/generate-SHA1-hash-from-a-String/)
+- Rate limiters ideas from [Bucket4j](https://bucket4j.com/) and [vbukhtoyarov-java](https://vbukhtoyarov-java.blogspot.com/2021/11/non-formal-overview-of-token-bucket.html)
 
 See also
 - [Awesome-redis](https://github.com/JamzyWang/awesome-redis)
@@ -139,8 +142,24 @@ Or iterate by the keys and values stored in the cache.
 See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/Iterators) for more information
 
 
-### Rate Limiters (coming soon)
+### Rate Limiters 
 
-_For now in *rateLimiter* branch_
+Rate limiters, as bucket and throttling type on redis. Can help you to limit the access to a resource or the cadence of requests
+for a server.
+The throttling one limits the frequency for one on a specified time, allowing the first and discarding others in this time frame.
+The bucket one has a number of permits, that the requesters can try to get. Over time, the number of permits in the group is refilled
+(thou there are different strategies to refill). If there are no permits, the requester is not allowed.
 
-Rate limiters, as bucket and throttling type on redis. 
+See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/RateLimiters) for more information
+
+### Cycle Data
+
+A list of elements that every request gets the next element, and if it reaches the last one y cycles to the first.
+Any call gives only one result.
+It can be used with an iterator, but because the list cycles it can lead to an infinite loop, so be aware.
+
+
+See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/CycleData) for more information
+
+
+

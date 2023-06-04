@@ -7,10 +7,10 @@ import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
 
 public class MockOfJedisTest {
 
@@ -110,8 +110,20 @@ public class MockOfJedisTest {
         assertEquals(2, scanResult2.getResult().size());
         assertTrue(scanResult2.getResult().contains("a"));
         assertTrue(scanResult2.getResult().contains("b"));
-
     }
+
+    @Test
+    public void testMockScriptEvalSha() {
+        String result = mockOfJedis.mockScriptEvalSha("a", Collections.singletonList("b"), Arrays.asList("c","d"));
+        assertEquals("a,b,c,d", result);
+    }
+
+    @Test
+    public void testMockScriptLoad() {
+        String sha1 = mockOfJedis.mockScriptLoad("Hello world sha1");
+        assertEquals("13830a510bd451927a72d44de40b9a85266af06d", sha1);
+    }
+
 
 
 

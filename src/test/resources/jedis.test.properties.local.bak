@@ -1,0 +1,5 @@
+jedis.test.functionalTestCycles=1
+jedis.test.host=127.0.0.1
+jedis.test.port=6379
+jedis.test.pass=
+

@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.iterators;
 
 import org.oba.jedis.extra.utils.utils.Listable;
+import org.oba.jedis.extra.utils.utils.Named;
 import redis.clients.jedis.JedisPool;
 
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.List;
  *
  * Can return duplicated results, but is rare
  */
-public class SScanIterable implements Iterable<String>, Listable<String> {
+public class SScanIterable implements Iterable<String>, Listable<String>, Named {
 
 
     private final JedisPool jedisPool;
@@ -65,6 +66,11 @@ public class SScanIterable implements Iterable<String>, Listable<String> {
         this.name = name;
         this.pattern = pattern;
         this.resultsPerScan = resultsPerScan;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override

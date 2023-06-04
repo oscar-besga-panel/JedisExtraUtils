@@ -1,8 +1,7 @@
 package org.oba.jedis.extra.utils.iterators;
 
 import org.oba.jedis.extra.utils.utils.Mapeable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.oba.jedis.extra.utils.utils.Named;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.ScanParams;
@@ -25,10 +24,8 @@ import java.util.Map;
  *
  * Can return duplicated results, but is rare
  */
-public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String>> implements Mapeable<String, String> {
-
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(HScanIterator.class);
+public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String>>
+        implements Mapeable<String, String>, Named {
 
     private final String name;
 
@@ -71,6 +68,11 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
     public HScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
         super(jedisPool, pattern, resultsPerScan);
         this.name = name;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.oba.jedis.extra.utils.simple;
+package org.oba.jedis.extra.utils.cache;
 
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
@@ -8,22 +8,12 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Connection;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;

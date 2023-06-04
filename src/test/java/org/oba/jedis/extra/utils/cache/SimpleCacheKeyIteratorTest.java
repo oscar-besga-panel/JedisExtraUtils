@@ -1,12 +1,10 @@
-package org.oba.jedis.extra.utils.simple;
+package org.oba.jedis.extra.utils.cache;
 
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.oba.jedis.extra.utils.cache.CacheKeyIterator;
-import org.oba.jedis.extra.utils.cache.SimpleCache;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
@@ -18,10 +16,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.oba.jedis.extra.utils.simple.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
+import static org.junit.Assert.*;
+import static org.oba.jedis.extra.utils.cache.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Transaction.class, TransactionBase.class })

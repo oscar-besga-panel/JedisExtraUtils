@@ -1,7 +1,6 @@
 package org.oba.jedis.extra.utils.iterators;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.oba.jedis.extra.utils.utils.Named;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.ScanParams;
@@ -20,9 +19,7 @@ import redis.clients.jedis.resps.ScanResult;
  *
  * Can return duplicated results, but is rare
  */
-public class SScanIterator extends AbstractScanIterator<String>  {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SScanIterator.class);
+public class SScanIterator extends AbstractScanIterator<String> implements  Named {
 
     private final String name;
 
@@ -65,6 +62,11 @@ public class SScanIterator extends AbstractScanIterator<String>  {
     public SScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
         super(jedisPool, pattern, resultsPerScan);
         this.name = name;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override
