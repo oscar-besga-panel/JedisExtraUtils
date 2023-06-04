@@ -53,8 +53,6 @@ There are **more than 500 working tests**, so the code is pretty secure.
 **See the [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki) for more documentation**
 
 
-
-
 ## Made with
 
 Jedis is a Java library to use a Redis server with Java, at a low-level commands
