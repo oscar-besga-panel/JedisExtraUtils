@@ -58,7 +58,7 @@ There are **more than 500 working tests**, so the code is pretty secure.
 ## Made with
 
 Jedis is a Java library to use a Redis server with Java, at a low-level commands
-https://github.com/xetorthio/jedis.
+https://github.com/xetorthio/jedis.  
 See it on mvn repository 
 https://mvnrepository.com/artifact/redis.clients/jedis
 
