@@ -1,8 +1,6 @@
 package org.oba.jedis.extra.utils.iterators;
 
 import org.oba.jedis.extra.utils.utils.Named;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.ScanParams;
@@ -24,8 +22,6 @@ import redis.clients.jedis.resps.Tuple;
  */
 public class ZScanIterator extends AbstractScanIterator<Tuple> implements Named {
 
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ZScanIterator.class);
 
     private final String name;
 
@@ -70,6 +66,7 @@ public class ZScanIterator extends AbstractScanIterator<Tuple> implements Named 
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
     }

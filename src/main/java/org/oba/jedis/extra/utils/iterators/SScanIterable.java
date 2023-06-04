@@ -68,6 +68,7 @@ public class SScanIterable implements Iterable<String>, Listable<String>, Named 
         this.resultsPerScan = resultsPerScan;
     }
 
+    @Override
     public String getName() {
         return name;
     }

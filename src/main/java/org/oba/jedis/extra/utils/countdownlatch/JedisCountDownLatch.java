@@ -69,6 +69,7 @@ public class JedisCountDownLatch implements Named {
         }
     }
 
+    @Override
     public String getName() {
         return name;
     }

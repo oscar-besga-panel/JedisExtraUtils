@@ -70,6 +70,7 @@ public class ZScanIterable implements Iterable<Tuple>, Listable<Tuple>, Named {
         this.resultsPerScan = resultsPerScan;
     }
 
+    @Override
     public String getName() {
         return name;
     }

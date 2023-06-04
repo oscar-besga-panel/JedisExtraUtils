@@ -323,6 +323,7 @@ public final class JedisList implements List<String>, Named {
         try (Jedis jedis = jedisPool.getResource()) {
             String element = (String) o;
             Object result = jedis.eval(LUA_SCRIPT_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
+            LOGGER.debug("indexOf result {}", result);
             return ((Long) result).intValue();
         }
     }
@@ -332,6 +333,7 @@ public final class JedisList implements List<String>, Named {
         try (Jedis jedis = jedisPool.getResource()) {
             String element = (String) o;
             Object result = jedis.eval(LUA_SCRIPT_LAST_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
+            LOGGER.debug("lastIndexOf result {}", result);
             return ((Long) result).intValue();
         }
     }

@@ -2,8 +2,6 @@ package org.oba.jedis.extra.utils.iterators;
 
 import org.oba.jedis.extra.utils.utils.Mapeable;
 import org.oba.jedis.extra.utils.utils.Named;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.ScanParams;
@@ -28,9 +26,6 @@ import java.util.Map;
  */
 public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String>>
         implements Mapeable<String, String>, Named {
-
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(HScanIterator.class);
 
     private final String name;
 
@@ -75,6 +70,7 @@ public class HScanIterator extends AbstractScanIterator<Map.Entry<String, String
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
     }

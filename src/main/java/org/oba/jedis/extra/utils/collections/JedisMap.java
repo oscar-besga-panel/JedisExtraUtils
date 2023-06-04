@@ -2,8 +2,6 @@ package org.oba.jedis.extra.utils.collections;
 
 import org.oba.jedis.extra.utils.iterators.HScanIterator;
 import org.oba.jedis.extra.utils.utils.Named;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
@@ -17,8 +15,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class JedisMap implements Map<String, String>, Named {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JedisMap.class);
 
     private final JedisPool jedisPool;
     private final String name;

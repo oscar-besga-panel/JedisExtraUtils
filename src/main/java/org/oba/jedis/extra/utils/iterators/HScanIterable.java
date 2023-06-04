@@ -70,6 +70,7 @@ public class HScanIterable implements Iterable<Map.Entry<String,String>>,
         this.resultsPerScan = resultsPerScan;
     }
 
+    @Override
     public String getName() {
         return name;
     }

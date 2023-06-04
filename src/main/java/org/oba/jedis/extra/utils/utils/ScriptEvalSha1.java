@@ -63,6 +63,12 @@ public class ScriptEvalSha1 implements JedisPoolUser {
         return sha1Digest != null;
     }
 
+    /**
+     * Executes the script with sha1 digest from redis
+     * @param keys List of keys
+     * @param params List of value
+     * @return Result of execution
+     */
     public Object evalSha(List<String> keys, List<String> params) {
         if (sha1Digest == null) {
             load();
@@ -73,8 +79,9 @@ public class ScriptEvalSha1 implements JedisPoolUser {
 
     /**
      * As seen in http://oliviertech.com/es/java/generate-SHA1-hash-from-a-String/
-     * @param script
-     * @return
+     * Pure Java SHA-1 hash code
+     * @param script LUA script to digest
+     * @return SHA-1 text
      */
     public static String sha1(String script) {
         try {
@@ -83,7 +90,7 @@ public class ScriptEvalSha1 implements JedisPoolUser {
             messageDigest.update(script.getBytes(StandardCharsets.UTF_8));
             return String.format("%040x", new BigInteger(1, messageDigest.digest()));
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException("SHA-1 NoSuchAlgorithmException", e);
         }
     }
 

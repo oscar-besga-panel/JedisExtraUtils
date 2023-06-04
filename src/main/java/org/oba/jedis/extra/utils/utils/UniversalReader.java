@@ -3,7 +3,11 @@ package org.oba.jedis.extra.utils.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -20,10 +24,6 @@ public class UniversalReader {
     enum Type { RESOURCE, FILE, VALUE}
 
     private List<Pair<Type,String>> sources = new ArrayList<>();
-
-    public UniversalReader() {
-
-    }
 
     public UniversalReader withResoruce(String resource) {
         return with(Type.RESOURCE, resource);
@@ -87,7 +87,7 @@ public class UniversalReader {
             }
             return result;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException("IOException readFromResource", e);
         }
     }
 
@@ -102,7 +102,7 @@ public class UniversalReader {
             }
             return result;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException("IOException readFromFileName", e);
         }
     }
 
