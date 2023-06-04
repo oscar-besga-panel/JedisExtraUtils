@@ -7,7 +7,6 @@ _Project information_
 [![Wiki](https://badgen.net/badge/icon/wiki?icon=wiki&label)](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki)
 [![OpenHub](https://badgen.net/badge/%20/openhub/purple?icon=awesome)](https://openhub.net/p/JedisExtraUtils)
 
-
 _Current Build_  
 ![Issues](https://img.shields.io/github/issues/oscar-besga-panel/InterruptingJedisLocks)
 [![codecov](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils)

@@ -24,13 +24,15 @@ hs_err_pid*
 
 \.idea/
 \.gradle/
+\.vscode/
 out/
 build/
 build/docs/javadoc/
 build/tmp/javadoc/
+bin/
 
 tmp/
-
+temp/
 
 !gradle/wrapper/gradle-wrapper.properties
 !gradle/wrapper/gradle-wrapper.jar
