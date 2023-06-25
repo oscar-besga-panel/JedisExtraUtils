@@ -8,9 +8,7 @@ import redis.clients.jedis.params.SetParams;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class MockOfJedisTest {
 
@@ -94,7 +92,7 @@ public class MockOfJedisTest {
         assertEquals("3", mockOfJedis.getCurrentData().get("a"));
         List<String> keys = Arrays.asList("a");
         List<String> values = Arrays.asList("3");
-        Object response = mockOfJedis.getJedis().eval(JedisSemaphore.SEMAPHORE_LUA_SCRIPT, keys, values);
+        Object response = mockOfJedis.getJedis().evalsha("sha1", keys, values);
         assertEquals("0", mockOfJedis.getCurrentData().get("a"));
         assertEquals("true",response);
     }
@@ -108,7 +106,7 @@ public class MockOfJedisTest {
         assertEquals("3", mockOfJedis.getCurrentData().get("a"));
         List<String> keys = Arrays.asList("a");
         List<String> values = Arrays.asList("2");
-        Object response = mockOfJedis.getJedis().eval(JedisSemaphore.SEMAPHORE_LUA_SCRIPT, keys, values);
+        Object response = mockOfJedis.getJedis().evalsha("sha1", keys, values);
         assertEquals("1", mockOfJedis.getCurrentData().get("a"));
         assertEquals("true",response);
     }
@@ -122,7 +120,7 @@ public class MockOfJedisTest {
         assertEquals("3", mockOfJedis.getCurrentData().get("a"));
         List<String> keys = Arrays.asList("a");
         List<String> values = Arrays.asList("4");
-        Object response = mockOfJedis.getJedis().eval(JedisSemaphore.SEMAPHORE_LUA_SCRIPT, keys, values);
+        Object response = mockOfJedis.getJedis().evalsha("sha1", keys, values);
         assertEquals("3", mockOfJedis.getCurrentData().get("a"));
         assertEquals("false",response);
     }

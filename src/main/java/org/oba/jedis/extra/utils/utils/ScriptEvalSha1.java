@@ -48,6 +48,13 @@ public class ScriptEvalSha1 implements JedisPoolUser {
 
     public boolean load() {
         if (sha1Digest == null) {
+            syncLoad();
+        }
+        return sha1Digest != null;
+    }
+
+    private synchronized void syncLoad() {
+        if (sha1Digest == null) {
             String scriptToLoad = scriptSource.read();
             if (scriptToLoad == null || scriptToLoad.isBlank()) {
                 throw new IllegalArgumentException("Script to load cannot be null nor empty");
@@ -60,7 +67,6 @@ public class ScriptEvalSha1 implements JedisPoolUser {
                 LOGGER.error("SHA1 from reddit and local doesn't match !");
             }
         }
-        return sha1Digest != null;
     }
 
     /**

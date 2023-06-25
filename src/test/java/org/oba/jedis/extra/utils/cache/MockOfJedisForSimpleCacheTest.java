@@ -4,7 +4,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.iterators.ScanUtil;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -245,11 +244,11 @@ public class MockOfJedisForSimpleCacheTest {
 
 
 
-        @Test
-    public void testEval() {
+    @Test
+    public void testEvalSha() {
         List<String> keys = Collections.singletonList("a");
         List<String> values = Collections.singletonList("A1");
-        Object response = mockOfJedisForSimpleCache.getJedis().eval(JedisLock.UNLOCK_LUA_SCRIPT, keys, values);
+        Object response = mockOfJedisForSimpleCache.getJedis().eval("script", keys, values);
         assertNull( response);
     }
 

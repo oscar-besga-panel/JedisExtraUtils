@@ -3,25 +3,17 @@ package org.oba.jedis.extra.utils.interruptinglocks;
 import org.mockito.Mockito;
 import org.oba.jedis.extra.utils.test.TTL;
 import org.oba.jedis.extra.utils.test.TransactionOrder;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -107,11 +99,15 @@ public class MockOfJedis {
             String key = ioc.getArgument(0);
             return mockGet(key);
         });
-        Mockito.when(jedis.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> {
-            String script = ioc.getArgument(0);
-            List<String> keys = ioc.getArgument(1);
-            List<String> values = ioc.getArgument(2);
-            return mockEval(script, keys, values);
+        Mockito.when(jedis.scriptLoad(anyString())).thenAnswer( ioc -> {
+            String script = ioc.getArgument(0, String.class);
+            return ScriptEvalSha1.sha1(script);
+        });
+        Mockito.when(jedis.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
+            String name = ioc.getArgument(0, String.class);
+            List<String> keys = ioc.getArgument(1, List.class);
+            List<String> args = ioc.getArgument(2, List.class);
+            return mockEvalsha(keys, args);
         });
         Mockito.when(jedis.multi()).thenReturn(transaction);
         Mockito.when(transaction.get(anyString())).thenAnswer(ioc -> {
@@ -131,10 +127,9 @@ public class MockOfJedis {
         return data.get(key);
     }
 
-    private synchronized Object mockEval(String script, List<String> keys, List<String> values) {
+    private synchronized Object mockEvalsha(List<String> keys, List<String> values) {
         Object response = null;
-        if (script.equalsIgnoreCase(JedisLock.UNLOCK_LUA_SCRIPT) &&
-                values.get(0).equalsIgnoreCase(data.get(keys.get(0))) ){
+        if (values.get(0).equalsIgnoreCase(data.get(keys.get(0))) ){
             String removed = data.remove(keys.get(0));
             response = removed != null ? 1 : 0;
         }

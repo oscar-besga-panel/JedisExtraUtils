@@ -1,5 +1,7 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -21,7 +23,8 @@ import java.util.function.Supplier;
  * It is also closeable to be used in try-with-resources
  *
  * I do not recommend reuse a locked-and-unlocked JedisLock
- * Should be thread-safe, I do not recomend using between thread s
+ * Should be thread-safe, but I do not recommend using between threads
+ * Creating a new one is very, very cheap
  *
  * https://redis.io/topics/distlock
  *
@@ -32,18 +35,16 @@ public class JedisLock implements IJedisLock {
 
     public static final String CLIENT_RESPONSE_OK = "OK";
 
-    public static final String UNLOCK_LUA_SCRIPT = "" +
-            "if redis.call(\"get\",KEYS[1]) == ARGV[1] then\n" +
-            "    return redis.call(\"del\",KEYS[1])\n" +
-            "else\n" +
-            "    return 0\n" +
-            "end";
+    public static final String SCRIPT_NAME = "lockUnlock.lua";
+    public static final String FILE_PATH = "./src/main/resources/lockUnlock.lua";
+
 
     private final Long leaseTime;
     private final TimeUnit timeUnit;
     private final String name;
     private final String value;
     private final JedisPool jedisPool;
+    private final ScriptEvalSha1 script;
 
     private long leaseMoment = -1L;
     private long timeLimit = -1L;
@@ -80,6 +81,9 @@ public class JedisLock implements IJedisLock {
         this.leaseTime = leaseTime;
         this.timeUnit = timeUnit;
         this.value = getUniqueValue(name);
+        this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
+                withResoruce(SCRIPT_NAME).
+                withFile(FILE_PATH));
     }
 
     private synchronized static String getUniqueValue(String name){
@@ -255,19 +259,17 @@ public class JedisLock implements IJedisLock {
      * Attempts to unlock the lock
      */
     private synchronized void redisUnlock() {
-        try (Jedis jedis = jedisPool.getResource()){
-            if (!redisCheckLock()) return;
-            List<String> keys = Collections.singletonList(name);
-            List<String> values = Collections.singletonList(value);
-            Object response = jedis.eval(UNLOCK_LUA_SCRIPT, keys, values);
-            int num = 0;
-            if (response != null) {
-                LOGGER.debug("response {}", response);
-                num = Integer.parseInt(response.toString());
-            }
-            if (num > 0) {
-                resetLockMoment();
-            }
+        if (!redisCheckLock()) return;
+        List<String> keys = Collections.singletonList(name);
+        List<String> values = Collections.singletonList(value);
+        Object response = script.evalSha(keys, values);
+        int num = 0;
+        if (response != null) {
+            LOGGER.debug("response {}", response);
+            num = Integer.parseInt(response.toString());
+        }
+        if (num > 0) {
+            resetLockMoment();
         }
     }
 

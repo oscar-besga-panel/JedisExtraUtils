@@ -2,21 +2,17 @@ package org.oba.jedis.extra.utils.semaphore;
 
 import org.mockito.Mockito;
 import org.oba.jedis.extra.utils.test.TTL;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
  * Mock of jedis methods used by the lock
@@ -69,11 +65,21 @@ public class MockOfJedis {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
+        when(jedis.scriptLoad(anyString())).thenAnswer( ioc -> {
+            String script = ioc.getArgument(0, String.class);
+            return ScriptEvalSha1.sha1(script);
+        });
+        when(jedis.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
+            String name = ioc.getArgument(0, String.class);
+            List<String> keys = ioc.getArgument(1, List.class);
+            List<String> args = ioc.getArgument(2, List.class);
+            return mockEvalSemaphoreLuaScript(keys, args);
+        });
         Mockito.when(jedis.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> {
             String script = ioc.getArgument(0);
             List<String> keys = ioc.getArgument(1);
             List<String> values = ioc.getArgument(2);
-            return mockEval(script, keys, values);
+            return mockEvalSemaphoreLuaScript(keys, values);
         });
 
     }
@@ -91,14 +97,6 @@ public class MockOfJedis {
 
     private synchronized String mockGet(String key) {
         return data.get(key);
-    }
-
-    private synchronized Object mockEval(String script, List<String> keys, List<String> values) {
-        Object response = null;
-        if (script.equalsIgnoreCase(JedisSemaphore.SEMAPHORE_LUA_SCRIPT)) {
-            response = mockEvalSemaphoreLuaScript(keys, values);
-        }
-        return response;
     }
 
     private synchronized Object mockEvalSemaphoreLuaScript(List<String> keys, List<String> values) {

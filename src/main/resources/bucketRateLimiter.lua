@@ -1,5 +1,4 @@
 -- for class org.oba.jedis.extra.utils.rateLimiter.BucketRateLimiter
-
 -- get bucketRateLimiter name and permits to get
 local name = KEYS[1]
 local permits = tonumber(ARGV[1])

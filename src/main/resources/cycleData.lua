@@ -1,5 +1,4 @@
 -- for class org.oba.jedis.extra.utils.cycle.CycleData
-
 local name = KEYS[1]
 local current = redis.call('hget', name, 'current')
 local size = redis.call('hlen', name) - 1

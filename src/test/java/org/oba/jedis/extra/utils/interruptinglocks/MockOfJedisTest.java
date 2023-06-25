@@ -13,9 +13,7 @@ import redis.clients.jedis.params.SetParams;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.oba.jedis.extra.utils.interruptinglocks.MockOfJedis.unitTestEnabled;
 
 @RunWith(PowerMockRunner.class)
@@ -85,7 +83,7 @@ public class MockOfJedisTest {
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
         List<String> keys = Collections.singletonList("a");
         List<String> values = Collections.singletonList("A1");
-        Object response = mockOfJedis.getJedis().eval(JedisLock.UNLOCK_LUA_SCRIPT, keys, values);
+        Object response = mockOfJedis.getJedis().evalsha("sha1", keys, values);
         assertNull( mockOfJedis.getCurrentData().get("a"));
         assertEquals(1,response);
     }

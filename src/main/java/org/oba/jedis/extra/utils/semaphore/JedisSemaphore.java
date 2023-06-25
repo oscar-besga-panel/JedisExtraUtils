@@ -2,13 +2,15 @@ package org.oba.jedis.extra.utils.semaphore;
 
 
 import org.oba.jedis.extra.utils.utils.Named;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.oba.jedis.extra.utils.utils.ScriptHolder;
+import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +30,9 @@ import java.util.concurrent.TimeUnit;
  * No messages will be involved, the semaphore must check redis periodically until the
  * permits are avalible or interrupted.
  *
+ * Thanks to redisson semaphore for guidance for lua script
+ * https://github.com/redisson/redisson/blob/master/redisson/src/main/java/org/redisson/RedissonSemaphore.java
+ * https://www.javadoc.io/static/org.redisson/redisson/3.11.6/index.html?org/redisson/RedissonReadWriteLock.html
  *
  *
  */
@@ -35,20 +40,13 @@ public class JedisSemaphore implements Named {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisSemaphore.class);
 
-    // Thanks to redisson semaphore for guidance
-    // https://github.com/redisson/redisson/blob/master/redisson/src/main/java/org/redisson/RedissonSemaphore.java
-    // https://www.javadoc.io/static/org.redisson/redisson/3.11.6/index.html?org/redisson/RedissonReadWriteLock.html
-    public static final String SEMAPHORE_LUA_SCRIPT = "" +
-            "local permits = redis.call('get', KEYS[1]); " + "\n" +
-            "if (permits ~= false and tonumber(permits) >= tonumber(ARGV[1])) then " + "\n" +
-            "    redis.call('decrby', KEYS[1], ARGV[1]); " + "\n" +
-            "    return 'true'; " + "\n" +
-            "else " + "\n" +
-            "    return 'false'; "+ "\n" +
-            "end ";
+
+    public static final String SCRIPT_NAME = "semaphore.lua";
+    public static final String FILE_PATH = "./src/main/resources/semaphore.lua";
 
     private final JedisPool jedisPool;
     private final String name;
+    private final ScriptEvalSha1 script;
     private long waitingMilis = 150;
 
     /**
@@ -69,6 +67,33 @@ public class JedisSemaphore implements Named {
     public JedisSemaphore(JedisPool jedisPool, String name, int initialPermits) {
         this.jedisPool = jedisPool;
         this.name = name;
+        this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
+                withResoruce(SCRIPT_NAME).
+                withFile(FILE_PATH));
+        init(initialPermits);
+    }
+
+    /**
+     * Creates a semaphore with one permit
+     * @param scriptHolder holder with the script 'semaphore.lua'.
+     *                     The pool of the holder will be used with the semaphore
+     * @param name Name of the semaphore
+     */
+    public JedisSemaphore(ScriptHolder scriptHolder, String name) {
+        this(scriptHolder, name, 1);
+    }
+
+    /**
+     * Creates a semaphore with permits
+     * @param scriptHolder holder with the script 'semaphore.lua'.
+     *                     The pool of the holder will be used with the semaphore
+     * @param name Name of the semaphore
+     * @param initialPermits Initial permits of the semaphore
+     */
+    public JedisSemaphore(ScriptHolder scriptHolder, String name, int initialPermits) {
+        this.jedisPool = scriptHolder.getJedisPool();
+        this.name = name;
+        this.script = scriptHolder.getScript(SCRIPT_NAME);
         init(initialPermits);
     }
 
@@ -173,11 +198,10 @@ public class JedisSemaphore implements Named {
         if (permits <= 0){
             throw new IllegalArgumentException("permits to acquire on semaphore must be always more than zero");
         }
-        try (Jedis jedis = jedisPool.getResource()) {
-            Object oresult = jedis.eval(SEMAPHORE_LUA_SCRIPT, Arrays.asList(name), Collections.singletonList(String.valueOf(permits)));
-            String result = (String) oresult;
-            return Boolean.parseBoolean(result);
-        }
+        Object oresult = script.evalSha(Collections.singletonList(name),
+                Collections.singletonList(String.valueOf(permits)));
+        String result = (String) oresult;
+        return Boolean.parseBoolean(result);
     }
 
 

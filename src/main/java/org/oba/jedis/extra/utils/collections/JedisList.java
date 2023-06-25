@@ -1,6 +1,8 @@
 package org.oba.jedis.extra.utils.collections;
 
 import org.oba.jedis.extra.utils.utils.Named;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -9,11 +11,7 @@ import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.args.ListPosition;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -33,38 +31,22 @@ import java.util.concurrent.ThreadLocalRandom;
  * There are a few Redis-exclusive operations that will help to operate with Redis backed lists,
  * and you can retrieve the data to a pure Java list anytime.
  * But helpers on Redis lists is not the goal of this class, rather than have a list object backed by Redis
+ *
+ * Scripts from stackoverflow for indexof
+ * https://stackoverflow.com/questions/8899111/get-the-index-of-an-item-by-value-in-a-redis-list
  */
 public final class JedisList implements List<String>, Named {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisList.class);
 
+    public static final String SCRIPT_NAME_INDEX_OF = "list.indexOf.lua";
+    public static final String FILE_PATH_INDEX_OF = "./src/main/resources/list.indexOf.lua";
+
+    public static final String SCRIPT_NAME_LAST_INDEX_OF = "list.lastIndexOf.lua";
+    public static final String FILE_PATH_LAST_INDEX_OF = "./src/main/resources/list.lastIndexOf.lua";
 
     private static final String TO_DELETE = "TO_DELETE";
-
-    // https://stackoverflow.com/questions/8899111/get-the-index-of-an-item-by-value-in-a-redis-list
-    static final String LUA_SCRIPT_INDEX_OF = "" +
-            "local key = KEYS[1]\n" +
-            "local obj = ARGV[1]\n" +
-            "local items = redis.call('lrange', key, 0, -1)\n" +
-            "for i=1,#items do\n" +
-            "    if items[i] == obj then\n" +
-            "        return i - 1\n" +
-            "    end\n" +
-            "end \n" +
-            "return -1";
-
-    static final String LUA_SCRIPT_LAST_INDEX_OF = "" +
-            "local key = KEYS[1]\n" +
-            "local obj = ARGV[1]\n" +
-            "local poss = -1\n" +
-            "local items = redis.call('lrange', key, 0, -1)\n" +
-            "for i=1,#items do\n" +
-            "    if items[i] == obj then\n" +
-            "        poss = i - 1\n" +
-            "    end\n" +
-            "end \n" +
-            "return poss";
 
     private static synchronized String generateToDelete() {
         return TO_DELETE + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt();
@@ -72,6 +54,8 @@ public final class JedisList implements List<String>, Named {
 
     private final JedisPool jedisPool;
     private final String name;
+    private final ScriptEvalSha1 scriptIndexOf;
+    private final ScriptEvalSha1 scriptLastIndexOf;
 
     /**
      * Creates a new list in jedis with given name, or references an existing one
@@ -84,6 +68,13 @@ public final class JedisList implements List<String>, Named {
     public JedisList(JedisPool jedisPool, String name){
         this.jedisPool = jedisPool;
         this.name = name;
+        this.scriptIndexOf = new ScriptEvalSha1(jedisPool, new UniversalReader().
+                withResoruce(SCRIPT_NAME_INDEX_OF).
+                withFile(FILE_PATH_INDEX_OF));
+        this.scriptLastIndexOf = new ScriptEvalSha1(jedisPool, new UniversalReader().
+                withResoruce(SCRIPT_NAME_LAST_INDEX_OF).
+                withFile(FILE_PATH_LAST_INDEX_OF));
+
     }
 
     /**
@@ -320,22 +311,18 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public int indexOf(Object o) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            String element = (String) o;
-            Object result = jedis.eval(LUA_SCRIPT_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
-            LOGGER.debug("indexOf result {}", result);
-            return ((Long) result).intValue();
-        }
+        String element = (String) o;
+        Object result = scriptIndexOf.evalSha(Collections.singletonList(name), Collections.singletonList(element));
+        LOGGER.debug("indexOf result {}", result);
+        return ((Long) result).intValue();
     }
 
     @Override
     public int lastIndexOf(Object o) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            String element = (String) o;
-            Object result = jedis.eval(LUA_SCRIPT_LAST_INDEX_OF, Collections.singletonList(name), Collections.singletonList(element));
-            LOGGER.debug("lastIndexOf result {}", result);
-            return ((Long) result).intValue();
-        }
+        String element = (String) o;
+        Object result = scriptLastIndexOf.evalSha(Collections.singletonList(name), Collections.singletonList(element));
+        LOGGER.debug("lastIndexOf result {}", result);
+        return ((Long) result).intValue();
     }
 
     @Override
@@ -360,7 +347,6 @@ public final class JedisList implements List<String>, Named {
             return jedis.lrange(name, fromIndex, effectiveIndex);
         }
     }
-
 
 
     /**
