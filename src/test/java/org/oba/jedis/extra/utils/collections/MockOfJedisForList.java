@@ -3,6 +3,7 @@ package org.oba.jedis.extra.utils.collections;
 import org.mockito.Mockito;
 import org.oba.jedis.extra.utils.test.TTL;
 import org.oba.jedis.extra.utils.test.TransactionOrder;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
@@ -41,6 +42,8 @@ public class MockOfJedisForList {
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
+    private String sha1IndexOf = "x";
+    private String sha1LastIndexOf = "y";
 
     public MockOfJedisForList() {
         PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
@@ -120,11 +123,22 @@ public class MockOfJedisForList {
             String argument = ioc.getArgument(3);
             return mockListLlinsert(key, listPosition, pivot, argument);
         });
-        when(jedis.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> {
+        PowerMockito.when(jedis.scriptLoad(anyString())).thenAnswer(ioc -> {
+            String script = ioc.getArgument(0, String.class);
+            return mockScriptLoad(script);
+        });
+        PowerMockito.when(jedis.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer(ioc -> {
+            String sha1 = ioc.getArgument(0, String.class);
+            List<String> keys = ioc.getArgument(1, List.class);
+            List<String> args = ioc.getArgument(2, List.class);
+            return mockEvalSha(sha1, keys, args);
+        });
+        Mockito.when(jedis.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> {
             String script = ioc.getArgument(0);
+            String sha1 = ScriptEvalSha1.sha1(script);
             List<String> keys = ioc.getArgument(1);
             List<String> values = ioc.getArgument(2);
-            return mockEval(script, keys, values);
+            return mockEvalSha(sha1, keys, values);
         });
         when(transaction.lindex(anyString(), anyLong())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
@@ -310,12 +324,23 @@ public class MockOfJedisForList {
         return CLIENT_RESPONSE_OK;
     }
 
-    synchronized Object mockEval(String script, List<String> keys, List<String> values) {
+    synchronized String mockScriptLoad(String script) {
+        String sha1 = ScriptEvalSha1.sha1(script);
+        if (script.contains(" indexOf")) {
+            sha1IndexOf = sha1;
+        }
+        if (script.contains(" lastIndexOf")) {
+            sha1LastIndexOf = sha1;
+        }
+        return sha1;
+    }
+
+    synchronized Object mockEvalSha(String sha1, List<String> keys, List<String> values) {
         Object response = null;
-        if (script.equalsIgnoreCase(JedisList.LUA_SCRIPT_INDEX_OF)) {
+       if (sha1.equalsIgnoreCase(sha1IndexOf)) {
             ArrayList<String> data = dataToList(keys.get(0));
             response = (long)data.indexOf(values.get(0));
-        } else if (script.equalsIgnoreCase(JedisList.LUA_SCRIPT_LAST_INDEX_OF)) {
+        } else if (sha1.equalsIgnoreCase(sha1LastIndexOf)) {
             ArrayList<String> data = dataToList(keys.get(0));
             response = (long)data.lastIndexOf(values.get(0));
         }

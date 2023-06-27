@@ -213,9 +213,11 @@ public class MockOfJedisForListTest {
 
     @Test
     public void testMockEval() {
+        String sha1IndexOf = mockOfJedis.mockScriptLoad("mock indexOf");
+        String sha1LastIndexOf = mockOfJedis.mockScriptLoad("mock lastIndexOf");
         mockOfJedis.put("data1", new ArrayList<>(Arrays.asList("a","b","c","d","b")));
-        Object result1 = mockOfJedis.mockEval(JedisList.LUA_SCRIPT_INDEX_OF, Collections.singletonList("data1"), Collections.singletonList("b"));
-        Object result2 = mockOfJedis.mockEval(JedisList.LUA_SCRIPT_LAST_INDEX_OF, Collections.singletonList("data1"), Collections.singletonList("b"));
+        Object result1 = mockOfJedis.mockEvalSha(sha1IndexOf, Collections.singletonList("data1"), Collections.singletonList("b"));
+        Object result2 = mockOfJedis.mockEvalSha(sha1LastIndexOf, Collections.singletonList("data1"), Collections.singletonList("b"));
         assertEquals(Long.valueOf(1), (Long) result1);
         assertEquals(Long.valueOf(4), (Long) result2);
     }

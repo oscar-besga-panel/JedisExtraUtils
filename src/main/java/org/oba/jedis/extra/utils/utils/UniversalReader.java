@@ -23,7 +23,7 @@ public class UniversalReader {
 
     enum Type { RESOURCE, FILE, VALUE}
 
-    private List<Pair<Type,String>> sources = new ArrayList<>();
+    private final List<SimpleEntry> sources = new ArrayList<>();
 
     public UniversalReader withResoruce(String resource) {
         return with(Type.RESOURCE, resource);
@@ -38,14 +38,14 @@ public class UniversalReader {
     }
 
 
-    public UniversalReader with(Type type, String file) {
-        sources.add(new Pair(type, file));
+    private UniversalReader with(Type type, String file) {
+        sources.add(new SimpleEntry(type.name(), file));
         return this;
     }
 
     public String read() {
         String result = null;
-        for(Pair<Type,String> source: sources) {
+        for(SimpleEntry source: sources) {
             result = readElement(source);
             if (result != null) {
                 break;
@@ -54,14 +54,15 @@ public class UniversalReader {
         return result;
     }
 
-    String readElement(Pair<Type,String> source) {
-        switch (source.getK()) {
+    String readElement(SimpleEntry source) {
+        Type type = Type.valueOf(source.getKey());
+        switch (type) {
             case RESOURCE:
-                return readFromResource(source.getV());
+                return readFromResource(source.getValue());
             case FILE:
-                return readFromFileName(source.getV());
+                return readFromFileName(source.getValue());
             case VALUE:
-                return readFromValue(source.getV());
+                return readFromValue(source.getValue());
             default:
                 return null;
         }
