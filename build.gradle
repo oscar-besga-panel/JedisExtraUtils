@@ -40,7 +40,7 @@ dependencies {
 jacocoTestReport {
     reports {
         xml.enabled true
-        html.enabled false
+        html.enabled true
     }
 }
 
@@ -62,3 +62,5 @@ shadowJar {
         attributes 'Description': 'https://github.com/oscar-besga-panel/JedisExtraUtils'
     }
 }
+
+check.dependsOn jacocoTestReport

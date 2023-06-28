@@ -11,7 +11,11 @@ import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.args.ListPosition;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -47,10 +51,6 @@ public final class JedisList implements List<String>, Named {
     public static final String FILE_PATH_LAST_INDEX_OF = "./src/main/resources/list.lastIndexOf.lua";
 
     private static final String TO_DELETE = "TO_DELETE";
-
-    private static synchronized String generateToDelete() {
-        return TO_DELETE + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt();
-    }
 
     private final JedisPool jedisPool;
     private final String name;
@@ -142,7 +142,6 @@ public final class JedisList implements List<String>, Named {
         return new JedisList(jedisPool, newListName, subList);
     }
 
-
     /**
      * Checks an index
      * @param index num to check
@@ -155,7 +154,6 @@ public final class JedisList implements List<String>, Named {
         }
     }
 
-
     @Override
     public int size() {
         try (Jedis jedis = jedisPool.getResource()) {
@@ -163,7 +161,6 @@ public final class JedisList implements List<String>, Named {
             return Long.valueOf(len).intValue();
         }
     }
-
 
     @Override
     public boolean isEmpty() {
@@ -257,7 +254,6 @@ public final class JedisList implements List<String>, Named {
             }
         }
         return changed;
-
     }
 
     @Override
@@ -307,6 +303,10 @@ public final class JedisList implements List<String>, Named {
             tjedis.exec();
             return futureDeleted.get();
         }
+    }
+
+    private static synchronized String generateToDelete() {
+        return TO_DELETE + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt();
     }
 
     @Override

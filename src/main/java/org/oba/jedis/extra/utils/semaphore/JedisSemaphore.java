@@ -5,8 +5,6 @@ import org.oba.jedis.extra.utils.utils.Named;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.ScriptHolder;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.SetParams;
@@ -37,9 +35,6 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class JedisSemaphore implements Named {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JedisSemaphore.class);
-
 
     public static final String SCRIPT_NAME = "semaphore.lua";
     public static final String FILE_PATH = "./src/main/resources/semaphore.lua";

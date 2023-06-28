@@ -63,9 +63,6 @@ public class JedisLock implements IJedisLock {
         this(jedisPool, name, null, null);
     }
 
-
-
-
     /**
      * Creates a Redis lock with a name
      * @param jedisPool Jedis is Java Redis connection and operations pool
@@ -133,25 +130,10 @@ public class JedisLock implements IJedisLock {
         return leaseMoment;
     }
 
-    /**
-     * System time until lock will be not valid, -1 if no locked
-     * @return timeLimit
-     */
-    public long getTimeLimit() {
-        return timeLimit;
-    }
-
-    // VisibleForTesting
-    private String getValue() {
-        return value;
-    }
-
     @Override
     public synchronized boolean tryLock() {
         return redisLock();
     }
-
-
 
     @Override
     public synchronized boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
@@ -163,7 +145,6 @@ public class JedisLock implements IJedisLock {
         }
         return locked;
     }
-
 
     @Override
     public synchronized void lock() {
