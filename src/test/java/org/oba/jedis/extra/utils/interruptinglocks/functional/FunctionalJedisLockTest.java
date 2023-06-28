@@ -5,12 +5,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
-import org.oba.jedis.extra.utils.interruptinglocks.MockOfJedis;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -52,7 +52,7 @@ public class FunctionalJedisLockTest {
             JedisLock jedisLock = new JedisLock(jedisPool, keyName);
             jedisLock.lock();
             assertTrue(jedisLock.isLocked());
-            Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock), jedis.get(jedisLock.getName()));
+            Assert.assertEquals(getJedisLockUniqueToken(jedisLock), jedis.get(jedisLock.getName()));
             jedisLock.unlock();
             assertFalse(jedisLock.isLocked());
             assertNull(jedis.get(jedisLock.getName()));
@@ -67,12 +67,12 @@ public class FunctionalJedisLockTest {
             boolean result1 = jedisLock1.tryLock();
             assertTrue(jedisLock1.isLocked());
             assertTrue(result1);
-            Assert.assertEquals(MockOfJedis.getJedisLockValue(jedisLock1), jedis.get(jedisLock1.getName()));
+            Assert.assertEquals(getJedisLockUniqueToken(jedisLock1), jedis.get(jedisLock1.getName()));
             JedisLock jedisLock2 = new JedisLock(jedisPool, keyName);
             boolean result2 = jedisLock2.tryLock();
             assertFalse(jedisLock2.isLocked());
             assertFalse(result2);
-            Assert.assertNotEquals(MockOfJedis.getJedisLockValue(jedisLock2), jedis.get(jedisLock2.getName()));
+            Assert.assertNotEquals(getJedisLockUniqueToken(jedisLock2), jedis.get(jedisLock2.getName()));
             jedisLock1.unlock();
         }
     }
@@ -187,5 +187,12 @@ public class FunctionalJedisLockTest {
         jedisLock3.unlock();
     }
 
+    // To allow deeper testing
+    @SuppressWarnings("All")
+    public static String getJedisLockUniqueToken(JedisLock jedisLock) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method privateMethod = JedisLock.class.getDeclaredMethod("getUniqueToken", null);
+        privateMethod.setAccessible(true);
+        return (String) privateMethod.invoke(jedisLock, null);
+    }
 
 }

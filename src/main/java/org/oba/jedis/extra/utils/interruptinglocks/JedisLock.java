@@ -42,7 +42,7 @@ public class JedisLock implements IJedisLock {
     private final Long leaseTime;
     private final TimeUnit timeUnit;
     private final String name;
-    private final String value;
+    private final String uniqueToken;
     private final JedisPool jedisPool;
     private final ScriptEvalSha1 script;
 
@@ -77,13 +77,13 @@ public class JedisLock implements IJedisLock {
         this.name = name;
         this.leaseTime = leaseTime;
         this.timeUnit = timeUnit;
-        this.value = getUniqueValue(name);
+        this.uniqueToken = generateUniqueTokenValue(name);
         this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
     }
 
-    private synchronized static String getUniqueValue(String name){
+    private synchronized static String generateUniqueTokenValue(String name){
         long currentTimeMillis = System.currentTimeMillis();
         while(currentTimeMillis == lastCurrentTimeMilis){
             try {
@@ -128,6 +128,10 @@ public class JedisLock implements IJedisLock {
     @Override
     public long getLeaseMoment() {
         return leaseMoment;
+    }
+
+    String getUniqueToken(){
+        return uniqueToken;
     }
 
     @Override
@@ -217,12 +221,12 @@ public class JedisLock implements IJedisLock {
             setParams.px(timeUnit.toMillis(leaseTime));
         }
         Transaction t = jedis.multi();
-        Response<String> responseClientStatusCodeReply = t.set(name,value,setParams);
+        Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken,setParams);
         Response<String> responseCurrentValueRedis = t.get(name);
         t.exec();
         String clientStatusCodeReply = responseClientStatusCodeReply.get();
         String currentValueRedis = responseCurrentValueRedis.get();
-        boolean locked = CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && value.equals(currentValueRedis);
+        boolean locked = CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
         if (locked) {
             setLockMoment();
         }
@@ -242,7 +246,7 @@ public class JedisLock implements IJedisLock {
     private synchronized void redisUnlock() {
         if (!redisCheckLock()) return;
         List<String> keys = Collections.singletonList(name);
-        List<String> values = Collections.singletonList(value);
+        List<String> values = Collections.singletonList(uniqueToken);
         Object response = script.evalSha(keys, values);
         int num = 0;
         if (response != null) {
@@ -275,8 +279,8 @@ public class JedisLock implements IJedisLock {
         LOGGER.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
         if ((leaseTime == null) || (timeLimit > System.currentTimeMillis())) {
             String currentValueRedis = jedis.get(name);
-            LOGGER.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", value, currentValueRedis);
-            check = value.equals(currentValueRedis);
+            LOGGER.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", uniqueToken, currentValueRedis);
+            check = uniqueToken.equals(currentValueRedis);
         }
         if (!check) {
             resetLockMoment();
@@ -313,12 +317,12 @@ public class JedisLock implements IJedisLock {
         if (o == null || getClass() != o.getClass()) return false;
         JedisLock jedisLock = (JedisLock) o;
         return name.equals(jedisLock.name) &&
-                value.equals(jedisLock.value);
+                uniqueToken.equals(jedisLock.uniqueToken);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, value);
+        return Objects.hash(name, uniqueToken);
     }
 
 }

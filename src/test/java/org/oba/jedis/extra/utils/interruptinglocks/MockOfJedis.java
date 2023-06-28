@@ -8,12 +8,19 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.*;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 import redis.clients.jedis.params.SetParams;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -209,12 +216,6 @@ public class MockOfJedis {
     }
 
 
-    // To allow deeper testing
-    @SuppressWarnings("All")
-    public static String getJedisLockValue(JedisLock jedisLock) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method privateMethod = JedisLock.class.getDeclaredMethod("getValue", null);
-        privateMethod.setAccessible(true);
-        return (String) privateMethod.invoke(jedisLock, null);
-    }
+
 
 }
