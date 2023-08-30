@@ -1,11 +1,7 @@
 package org.oba.jedis.extra.utils.semaphore;
 
 
-import org.oba.jedis.extra.utils.utils.Named;
-import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
-import org.oba.jedis.extra.utils.utils.ScriptHolder;
-import org.oba.jedis.extra.utils.utils.UniversalReader;
-import redis.clients.jedis.Jedis;
+import org.oba.jedis.extra.utils.utils.*;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.SetParams;
 
@@ -34,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  *
  *
  */
-public class JedisSemaphore implements Named {
+public class JedisSemaphore implements Named, JedisPoolUser {
 
     public static final String SCRIPT_NAME = "semaphore.lua";
     public static final String FILE_PATH = "./src/main/resources/semaphore.lua";
@@ -110,10 +106,14 @@ public class JedisSemaphore implements Named {
         if (initialPermits < 0) {
             throw new IllegalArgumentException("initial permit on semaphore must be always equal or more than zero");
         }
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(name, String.valueOf(initialPermits), new SetParams().nx());
-        }
+        withJedisPoolDo(jedis -> jedis.set(name, String.valueOf(initialPermits), new SetParams().nx()));
     }
+
+    @Override
+    public JedisPool getJedisPool() {
+        return jedisPool;
+    }
+
 
     /**
      * Returns the sempahore name
@@ -215,9 +215,7 @@ public class JedisSemaphore implements Named {
         if (permits <= 0) {
             throw new IllegalArgumentException("permit to release on semaphore must be always more than zero");
         }
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.incrBy(name, permits);
-        }
+        withJedisPoolDo(jedis -> jedis.incrBy(name, permits));
     }
 
     /**
@@ -226,10 +224,7 @@ public class JedisSemaphore implements Named {
      * @return number of permits
      */
     public int availablePermits() {
-        String permits;
-        try (Jedis jedis = jedisPool.getResource()) {
-            permits = jedis.get(name);
-        }
+        String permits = withJedisPoolGet(jedis -> jedis.get(name));
         if (permits == null || permits.isEmpty()) {
             return -1;
         } else {
@@ -237,16 +232,13 @@ public class JedisSemaphore implements Named {
         }
     }
 
-
     /**
      * CAUTION !!
      * THIS METHOD DELETES THE REMOTE VALUE DESTROYING THIS SEMAPHORE AND OHTERS
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
-    public void destroy(){
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.del(name);
-        }
+    public void destroy() {
+        withJedisPoolDo(jedis -> jedis.del(name));
     }
 
 }

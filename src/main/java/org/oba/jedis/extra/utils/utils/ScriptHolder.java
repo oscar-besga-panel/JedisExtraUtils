@@ -50,8 +50,7 @@ public class ScriptHolder implements JedisPoolUser {
         UniversalReader reader = new UniversalReader().
                 withResoruce(resource).
                 withFile(file);
-        ScriptEvalSha1 script = new ScriptEvalSha1(jedisPool, reader);
-        script.load();
+        ScriptEvalSha1 script = new ScriptEvalSha1(jedisPool, reader, true);
         scriptMap.put(key, script);
     }
 

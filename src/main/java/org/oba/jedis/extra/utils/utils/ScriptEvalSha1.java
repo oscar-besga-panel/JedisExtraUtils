@@ -33,8 +33,15 @@ public class ScriptEvalSha1 implements JedisPoolUser {
     private String sha1Digest;
 
     public ScriptEvalSha1(JedisPool jedisPool, UniversalReader scriptSource) {
+        this(jedisPool, scriptSource, false);
+    }
+
+    public ScriptEvalSha1(JedisPool jedisPool, UniversalReader scriptSource, boolean autoload) {
         this.jedisPool = jedisPool;
         this.scriptSource = scriptSource;
+        if (autoload) {
+            load();
+        }
     }
 
     public String getSha1Digest() {
