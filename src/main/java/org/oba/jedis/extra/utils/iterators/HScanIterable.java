@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.iterators;
 
+import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Listable;
 import org.oba.jedis.extra.utils.utils.Mapeable;
 import org.oba.jedis.extra.utils.utils.Named;
@@ -20,7 +21,7 @@ import java.util.Map;
  * Can return duplicated results, but is rare
  */
 public class HScanIterable implements Iterable<Map.Entry<String,String>>,
-        Listable<Map.Entry<String,String>>, Mapeable<String, String>, Named {
+        Listable<Map.Entry<String,String>>, Mapeable<String, String>, Named, JedisPoolUser {
 
     private final JedisPool jedisPool;
     private final String name;
@@ -68,6 +69,11 @@ public class HScanIterable implements Iterable<Map.Entry<String,String>>,
         this.name = name;
         this.pattern = pattern;
         this.resultsPerScan = resultsPerScan;
+    }
+
+    @Override
+    public JedisPool getJedisPool() {
+        return jedisPool;
     }
 
     @Override

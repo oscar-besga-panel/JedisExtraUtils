@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.cache;
 
+import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Listable;
 import org.oba.jedis.extra.utils.utils.Mapeable;
 import org.oba.jedis.extra.utils.utils.Named;
@@ -46,7 +47,7 @@ import java.util.stream.Collectors;
  * And a timeout that will be applied to all data by default
  */
 public class SimpleCache implements Iterable<Map.Entry<String,String>>,
-        Listable<Map.Entry<String,String>>, Mapeable<String, String>, Named {
+        Listable<Map.Entry<String,String>>, Mapeable<String, String>, Named, JedisPoolUser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleCache.class);
 
@@ -109,11 +110,8 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
         return this;
     }
 
-    /**
-     * Return the current jedis pol
-     * @return jedis pool
-     */
-    JedisPool getJedisPool() {
+    @Override
+    public JedisPool getJedisPool() {
         return jedisPool;
     }
 
@@ -167,13 +165,11 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
     public String get(String key, CacheLoader cacheLoader) {
         checkClosed();
         if (key == null) throw new IllegalArgumentException("RedisCache.get key is null");
-        try (Jedis jedis = jedisPool.getResource()) {
-            String value = jedis.get(resolveKey(key));
-            if (value == null) {
-                value = readThrougth(jedis, key, cacheLoader);
-            }
-            return value;
+        String value = withJedisPoolGet(jedis -> jedis.get(resolveKey(key)));
+        if (value == null) {
+            value = withJedisPoolGet(jedis -> readThrougth(jedis, key, cacheLoader));
         }
+        return value;
     }
 
     /**
@@ -260,9 +256,7 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
      */
     public boolean containsKey(String key) {
         checkClosed();
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.exists(resolveKey(key));
-        }
+        return withJedisPoolGet(jedis -> jedis.exists(resolveKey(key)));
     }
 
     /**
@@ -314,13 +308,11 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
         checkClosed();
         if (key == null) throw new IllegalArgumentException("RedisCache.put key is null");
         if (value == null) throw new IllegalArgumentException("RedisCache.put value is null");
-        try (Jedis jedis = jedisPool.getResource()) {
-            SetParams setParams = new SetParams().px(timeOutMs);
-            jedis.set(resolveKey(key), value, setParams);
-            if (cacheWriter != null) {
-                LOGGER.debug("write-through store key {} value {}", key, value);
-                cacheWriter.write(key, value);
-            }
+        SetParams setParams = new SetParams().px(timeOutMs);
+        withJedisPoolDo(jedis -> jedis.set(resolveKey(key), value, setParams));
+        if (cacheWriter != null) {
+            LOGGER.debug("write-through store key {} value {}", key, value);
+            cacheWriter.write(key, value);
         }
     }
 
@@ -399,15 +391,13 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
         checkClosed();
         if (key == null) throw new IllegalArgumentException("RedisCache.putIfAbsent key is null");
         if (value == null) throw new IllegalArgumentException("RedisCache.putIfAbsent value is null");
-        try (Jedis jedis = jedisPool.getResource()) {
-            SetParams setParams = new SetParams().nx().px(timeOutMs);
-            String result = jedis.set(resolveKey(key), value, setParams );
-            if (result!= null && cacheWriter != null) {
-                LOGGER.debug("write-through store key {} value {}", key, value);
-                cacheWriter.write(key, value);
-            }
-            return result != null;
+        SetParams setParams = new SetParams().nx().px(timeOutMs);
+        String result = withJedisPoolGet(jedis -> jedis.set(resolveKey(key), value, setParams));
+        if (result!= null && cacheWriter != null) {
+            LOGGER.debug("write-through store key {} value {}", key, value);
+            cacheWriter.write(key, value);
         }
+        return result != null;
     }
 
     /**
@@ -447,18 +437,16 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
         //Better with script
         if (key == null) throw new IllegalArgumentException("RedisCache.remove key is null");
         if (oldValue == null) throw new IllegalArgumentException("RedisCache.remove oldValue is null");
-        try (Jedis jedis = jedisPool.getResource()) {
-            String current = jedis.get(resolveKey(key));
-            if (current != null && current.equals(oldValue)) {
-                jedis.del(resolveKey(key));
-                if (cacheWriter != null) {
-                    LOGGER.debug("write-through remove key {} ", key);
-                    cacheWriter.delete(key);
-                }
-                return true;
-            }  else {
-                return false;
+        String current = withJedisPoolGet(jedis -> jedis.get(resolveKey(key)));
+        if (current != null && current.equals(oldValue)) {
+            withJedisPoolDo(jedis -> jedis.del(resolveKey(key)));
+            if (cacheWriter != null) {
+                LOGGER.debug("write-through remove key {} ", key);
+                cacheWriter.delete(key);
             }
+            return true;
+        }  else {
+            return false;
         }
     }
 
@@ -628,9 +616,7 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
         List<String> scanned = new CacheKeyIterator(this, false).asList();
         // No need to convert here
         if (!scanned.isEmpty()) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedis.del(scanned.toArray(new String[]{}));
-            }
+            withJedisPoolDo(jedis -> jedis.del(scanned.toArray(new String[]{})));
             if (allowCacheWriter && cacheWriter != null) {
                 List<String> unresolved = scanned.stream().
                         map(this::unresolveKey).

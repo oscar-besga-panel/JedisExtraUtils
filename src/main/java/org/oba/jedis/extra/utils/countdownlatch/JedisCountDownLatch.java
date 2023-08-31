@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.countdownlatch;
 
+import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  *
  *
  */
-public class JedisCountDownLatch implements Named {
+public class JedisCountDownLatch implements Named, JedisPoolUser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisCountDownLatch.class);
     private static final Long LONG_NULL_VALUE = -1L;
@@ -74,6 +75,11 @@ public class JedisCountDownLatch implements Named {
         return name;
     }
 
+    @Override
+    public JedisPool getJedisPool() {
+        return jedisPool;
+    }
+
     /**
      * Wait until interrupted or shared value reaches zero
      * @throws InterruptedException if interrupted
@@ -107,11 +113,9 @@ public class JedisCountDownLatch implements Named {
      * @return the current value, after operation
      */
     public long countDown() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            long value = jedis.decr(name);
-            LOGGER.debug("countDown name {} value {}", name, value);
-            return value;
-        }
+        long value = withJedisPoolGet(jedis -> jedis.decr(name));
+        LOGGER.debug("countDown name {} value {}", name, value);
+        return value;
     }
 
     private boolean isCountZero() {
@@ -123,14 +127,12 @@ public class JedisCountDownLatch implements Named {
      * @return current value
      */
     public long getCount() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            String value = jedis.get(name);
-            LOGGER.debug("getCount name {} value {}", name, value);
-            if (value != null && !value.isEmpty()) {
-                return Long.parseLong(value);
-            } else {
-                return LONG_NULL_VALUE;
-            }
+        String value = withJedisPoolGet(jedis -> jedis.get(name));
+        LOGGER.debug("getCount name {} value {}", name, value);
+        if (value != null && !value.isEmpty()) {
+            return Long.parseLong(value);
+        } else {
+            return LONG_NULL_VALUE;
         }
     }
 
@@ -140,9 +142,7 @@ public class JedisCountDownLatch implements Named {
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
     public void destroy() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.del(name);
-        }
+        withJedisPoolDo(jedis -> jedis.del(name));
     }
 
 

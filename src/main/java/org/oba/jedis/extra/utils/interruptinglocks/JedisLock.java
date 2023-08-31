@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
+import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
@@ -15,7 +16,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -29,7 +29,7 @@ import java.util.function.Supplier;
  * https://redis.io/topics/distlock
  *
  */
-public class JedisLock implements IJedisLock {
+public class JedisLock implements IJedisLock, JedisPoolUser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisLock.class);
 
@@ -97,6 +97,11 @@ public class JedisLock implements IJedisLock {
         return name + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt(1_000_000);
     }
 
+    @Override
+    public JedisPool getJedisPool() {
+        return jedisPool;
+    }
+
     public void setWaitCylce(int time, TimeUnit timeUnit){
         this.waitCylce = timeUnit.toMillis(time);
     }
@@ -115,14 +120,6 @@ public class JedisLock implements IJedisLock {
     @Override
     public String getName() {
         return name;
-    }
-
-    /**
-     * JedisPool object used to lock
-     * @return jedisPool
-     */
-    public JedisPool getJedisPool() {
-        return jedisPool;
     }
 
     @Override
@@ -199,11 +196,6 @@ public class JedisLock implements IJedisLock {
         }
     }
 
-    private <T> T underPool(Function<Jedis, T> action) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return action.apply(jedis);
-        }
-    }
 
     /**
      * Attempts to get the lock.
@@ -212,7 +204,7 @@ public class JedisLock implements IJedisLock {
      * @return true if lock obtained, false otherwise
      */
     private synchronized boolean redisLock() {
-        return underPool(this::redisLockUnderPool);
+        return withJedisPoolGet(this::redisLockUnderPool);
     }
 
     private synchronized boolean redisLockUnderPool(Jedis jedis) {
@@ -265,7 +257,7 @@ public class JedisLock implements IJedisLock {
      * @return true if the lock is remotely held
      */
     private synchronized boolean redisCheckLock() {
-        return underPool(this::redisCheckLockUnderPool);
+        return withJedisPoolGet(this::redisCheckLockUnderPool);
     }
 
     /**

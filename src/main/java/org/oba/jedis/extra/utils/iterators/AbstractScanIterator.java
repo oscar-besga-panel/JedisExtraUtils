@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.iterators;
 
+import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Listable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,20 +9,13 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Iterator scan for the keys of the redis database
  * It is abstract so it can be applied to SCAN, HSCAN, SSCAN
  */
-abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
+abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K>, JedisPoolUser {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractScanIterator.class);
 
 
@@ -45,6 +39,12 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
         this.jedisPool = jedisPool;
         this.scanParams = generateNewScanParams(pattern, resultsPerScan);
     }
+
+    @Override
+    public JedisPool getJedisPool() {
+        return jedisPool;
+    }
+
 
 
     /**
@@ -102,9 +102,7 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
                 currentCursor = currentResult.getCursor();
             }
             LOGGER.debug("Petition with currentCursor " + currentCursor);
-            try (Jedis jedis = jedisPool.getResource()) {
-                currentResult = doScan(jedis, currentCursor, getScanParams());
-            }
+            currentResult = withJedisPoolGet(jedis -> doScan(jedis, currentCursor, getScanParams()));
             LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
 
             if (currentResult.getResult().isEmpty() && !currentResult.isCompleteIteration()) {
@@ -130,10 +128,8 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
 
     public void remove() {
         if (next != null) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                doRemove(jedis, next);
-                next = null;
-            }
+            withJedisPoolDo(jedis -> doRemove(jedis, next));
+            next = null;
         } else {
             throw new IllegalStateException("Next not called or other error");
         }

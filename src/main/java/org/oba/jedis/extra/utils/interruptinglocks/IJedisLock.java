@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
 
+import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Named;
 
 import java.util.concurrent.TimeUnit;
@@ -9,7 +10,7 @@ import java.util.function.Supplier;
 /**
  * Interface for locks on redis
  */
-public interface IJedisLock extends AutoCloseable, Named {
+public interface IJedisLock extends AutoCloseable, Named, JedisPoolUser {
 
     /**
      * Lease time of the lock, null if none

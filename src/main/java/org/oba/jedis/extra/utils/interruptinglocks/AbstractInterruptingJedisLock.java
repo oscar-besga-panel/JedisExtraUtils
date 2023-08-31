@@ -62,6 +62,16 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         this.timeUnit = timeUnit;
     }
 
+    @Override
+    public String getName() {
+        return jedisLock.getName();
+    }
+
+    @Override
+    public JedisPool getJedisPool() {
+        return jedisLock.getJedisPool();
+    }
+
     public boolean isLocked() {
         return jedisLock.isLocked();
     }
@@ -102,11 +112,6 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     @Override
     public TimeUnit getTimeUnit() {
         return this.timeUnit;
-    }
-
-    @Override
-    public String getName() {
-        return jedisLock.getName();
     }
 
     @Override
