@@ -14,6 +14,8 @@ _Current Build_
 
 # Introduction to Jedis Extra Utils
 
+**(formerly known as InterruptedJedisLocks)**
+
 This is a Java project based on a collection of utilities and helpers to be used with Redis and with Jedis libraries.
 
 Originally conceived as a group of locks, then some synchronization primitives, it has grown until having a respectable collection of utilities.
@@ -78,6 +80,12 @@ See also
 This project uses JDK11 and Gradle (provided gradlew 7.5.1), and its build top of jedis 4.X libraries
 
 Also, you will find a little Groovy and a docker composer to setup a testing redis server.
+
+### Compatibility Matrix
+
+| Library version | Jedis version | JDK Version |
+|-----------------|---------------|-------------|
+| 5.3.0           | 4.4.X         | JDK11       |
 
 
 ## Miscelanea

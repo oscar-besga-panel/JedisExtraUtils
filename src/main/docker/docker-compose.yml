@@ -1,8 +1,8 @@
 version: '3.2'
 services:
   redis:
-    image: 'redis:5.0.13'
+    image: 'redis:6.2.14'
     hostname: redis
-    container_name: redis5013
+    container_name: redis6214
     ports:
       - '6379:6379'
