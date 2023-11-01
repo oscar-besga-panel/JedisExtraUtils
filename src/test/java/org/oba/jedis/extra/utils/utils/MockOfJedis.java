@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 /**
  * Mock of jedis methods used by the lock
@@ -148,7 +150,7 @@ public final class MockOfJedis {
         }
         if (insert) {
             data.put(key, value);
-            Long expireTime = getExpireTimePX(setParams);
+            Long expireTime = extractSetParamsExpireTimePX(setParams);
             if (expireTime != null){
                 timer.schedule(TTL.wrapTTL(() -> data.remove(key)),expireTime);
             }
@@ -210,7 +212,6 @@ public final class MockOfJedis {
         return ScriptEvalSha1.sha1(script);
     }
 
-
     public Jedis getJedis(){
         return jedis;
     }
@@ -227,27 +228,8 @@ public final class MockOfJedis {
         data.clear();
     }
 
-
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);
-    }
-
-    boolean isSetParamsNX(SetParams setParams) {
-        boolean result = false;
-        if (setParams != null) {
-            for (byte[] b : setParams.getByteParams()) {
-                String s = new String(b);
-                if ("nx".equalsIgnoreCase(s)) {
-                    result = true;
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-
-    Long getExpireTimePX(SetParams setParams) {
-        return setParams != null ? setParams.getParam("px") : null;
     }
 
     public static String extractPatternFromScanParams(ScanParams scanParams) {

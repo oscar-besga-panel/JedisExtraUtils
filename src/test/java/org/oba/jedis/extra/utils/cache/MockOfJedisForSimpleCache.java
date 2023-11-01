@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 /**
  * Mock of jedis methods used by the lock
@@ -171,7 +173,7 @@ public class MockOfJedisForSimpleCache {
         }
         if (insert) {
             data.put(key, value);
-            Long expireTime = getExpireTimePX(setParams);
+            Long expireTime = extractSetParamsExpireTimePX(setParams);
             if (expireTime != null){
                 timer.schedule(TTL.wrapTTL(() -> data.remove(key)),expireTime);
             }
@@ -257,21 +259,6 @@ public class MockOfJedisForSimpleCache {
         data.put(key, element);
     }
 
-    boolean isSetParamsNX(SetParams setParams) {
-        boolean result = false;
-        for(byte[] b: setParams.getByteParams()){
-            String s = new String(b);
-            if ("nx".equalsIgnoreCase(s)){
-                result = true;
-            }
-        }
-        return result;
-    }
-
-    Long getExpireTimePX(SetParams setParams) {
-        return setParams.getParam("px");
-    }
-
     public static String extractPatternFromScanParams(ScanParams scanParams) {
         String pattern = scanParams.match();
         if (pattern.equals("*")) {
@@ -292,7 +279,5 @@ public class MockOfJedisForSimpleCache {
         }
         return result;
     }
-
-
 
 }

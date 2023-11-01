@@ -8,23 +8,16 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 /**
  * Mock of jedis methods used by the lock
@@ -150,7 +143,7 @@ public class MockOfJedis {
         }
         if (insert) {
             data.put(key, value);
-            Long expireTime = getExpireTimePX(setParams);
+            Long expireTime = extractSetParamsExpireTimePX(setParams);
             if (expireTime != null){
                 timer.schedule(TTL.wrapTTL(() -> data.remove(key)),expireTime);
             }
@@ -198,24 +191,5 @@ public class MockOfJedis {
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);
     }
-
-    boolean isSetParamsNX(SetParams setParams) {
-        boolean result = false;
-        for(byte[] b: setParams.getByteParams()){
-            String s = new String(b);
-            if ("nx".equalsIgnoreCase(s)){
-                result = true;
-                break;
-            }
-        }
-        return result;
-    }
-
-    Long getExpireTimePX(SetParams setParams) {
-        return setParams.getParam("px");
-    }
-
-
-
 
 }

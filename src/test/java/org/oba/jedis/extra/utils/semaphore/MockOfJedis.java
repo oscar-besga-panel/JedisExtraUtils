@@ -12,6 +12,8 @@ import redis.clients.jedis.params.SetParams;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
@@ -122,7 +124,7 @@ public class MockOfJedis {
         }
         if (insert) {
             data.put(key, value);
-            Long expireTime = getExpireTimePX(setParams);
+            Long expireTime = extractSetParamsExpireTimePX(setParams);
             if (expireTime != null){
                 timer.schedule(TTL.wrapTTL(() -> data.remove(key)),expireTime);
             }
@@ -157,22 +159,5 @@ public class MockOfJedis {
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);
     }
-
-    boolean isSetParamsNX(SetParams setParams) {
-        boolean result = false;
-        for(byte[] b: setParams.getByteParams()){
-            String s = new String(b);
-            if ("nx".equalsIgnoreCase(s)){
-                result = true;
-                break;
-            }
-        }
-        return result;
-    }
-
-    Long getExpireTimePX(SetParams setParams) {
-        return setParams.getParam("px");
-    }
-
 
  }

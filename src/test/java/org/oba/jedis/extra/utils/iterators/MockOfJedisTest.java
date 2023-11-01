@@ -13,10 +13,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 public class MockOfJedisTest {
 
@@ -40,20 +39,20 @@ public class MockOfJedisTest {
     @Test
     public void testParams() {
         SetParams sp1 = new SetParams();
-        boolean t11 = mockOfJedis.isSetParamsNX(sp1);
-        boolean t12 = Long.valueOf(1).equals(mockOfJedis.getExpireTimePX(sp1));
+        boolean t11 = isSetParamsNX(sp1);
+        boolean t12 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp1));
         SetParams sp2 = new SetParams();
         sp2.nx();
-        boolean t21 = mockOfJedis.isSetParamsNX(sp2);
-        boolean t22 = Long.valueOf(1).equals(mockOfJedis.getExpireTimePX(sp2));
+        boolean t21 = isSetParamsNX(sp2);
+        boolean t22 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp2));
         SetParams sp3 = new SetParams();
         sp3.px(1L);
-        boolean t31 = mockOfJedis.isSetParamsNX(sp3);
-        boolean t32 = Long.valueOf(1).equals(mockOfJedis.getExpireTimePX(sp3));
+        boolean t31 = isSetParamsNX(sp3);
+        boolean t32 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp3));
         SetParams sp4 = new SetParams();
         sp4.nx().px(1L);
-        boolean t41 = mockOfJedis.isSetParamsNX(sp4);
-        boolean t42 = Long.valueOf(1).equals(mockOfJedis.getExpireTimePX(sp4));
+        boolean t41 = isSetParamsNX(sp4);
+        boolean t42 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp4));
 
         boolean finalResult = !t11 && !t12 && t21 && !t22 && !t31 && t32 && t41 && t42;
         assertTrue(finalResult);

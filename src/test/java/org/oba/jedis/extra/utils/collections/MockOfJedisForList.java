@@ -15,17 +15,12 @@ import redis.clients.jedis.TransactionBase;
 import redis.clients.jedis.args.ListPosition;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 /**
  * Mock of jedis methods used by the lock
@@ -188,7 +183,7 @@ public class MockOfJedisForList {
         }
         if (insert) {
             data.put(key, value);
-            Long expireTime = getExpireTimePX(setParams);
+            Long expireTime = extractSetParamsExpireTimePX(setParams);
             if (expireTime != null){
                 timer.schedule(TTL.wrapTTL(() -> data.remove(key)),expireTime);
             }
@@ -220,21 +215,6 @@ public class MockOfJedisForList {
 
     synchronized void put(String key, Object element) {
         data.put(key, element);
-    }
-
-    boolean isSetParamsNX(SetParams setParams) {
-        boolean result = false;
-        for(byte[] b: setParams.getByteParams()){
-            String s = new String(b);
-            if ("nx".equalsIgnoreCase(s)){
-                result = true;
-            }
-        }
-        return result;
-    }
-
-    Long getExpireTimePX(SetParams setParams) {
-        return (Long) setParams.getParam("px");
     }
 
     synchronized ArrayList<String> dataToList(String key) {

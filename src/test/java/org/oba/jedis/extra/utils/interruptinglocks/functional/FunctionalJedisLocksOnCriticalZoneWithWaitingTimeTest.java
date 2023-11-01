@@ -92,7 +92,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
             } catch (InterruptedException e) {
                 // NOOP
             }
-            jedis.quit();
+            jedis.close();
         } catch (Exception e) {
             LOGGER.error("Other error", e);
             otherError.set(true);

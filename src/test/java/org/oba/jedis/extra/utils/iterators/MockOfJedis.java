@@ -11,23 +11,14 @@ import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
 import redis.clients.jedis.resps.Tuple;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.Timer;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 /**
  * Mock of jedis methods used by the lock
@@ -309,7 +300,7 @@ public class MockOfJedis {
         }
         if (insert) {
             data.put(key, value);
-            Long expireTime = getExpireTimePX(setParams);
+            Long expireTime = extractSetParamsExpireTimePX(setParams);
             if (expireTime != null){
                 timer.schedule(TTL.wrapTTL(() -> data.remove(key)),expireTime);
             }
@@ -361,22 +352,6 @@ public class MockOfJedis {
 
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);
-    }
-
-    boolean isSetParamsNX(SetParams setParams) {
-        boolean result = false;
-        for(byte[] b: setParams.getByteParams()){
-            String s = new String(b);
-            if ("nx".equalsIgnoreCase(s)){
-                result = true;
-                break;
-            }
-        }
-        return result;
-    }
-
-    Long getExpireTimePX(SetParams setParams) {
-        return setParams.getParam("px");
     }
 
     public List<String> randomSizedListOfChars() {

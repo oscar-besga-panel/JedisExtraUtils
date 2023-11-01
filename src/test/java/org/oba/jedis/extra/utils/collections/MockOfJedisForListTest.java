@@ -16,11 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.CLIENT_RESPONSE_KO;
 import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.CLIENT_RESPONSE_OK;
 
@@ -42,28 +38,6 @@ public class MockOfJedisForListTest {
         if (mockOfJedis != null) {
             mockOfJedis.clearData();
         }
-    }
-
-    @Test
-    public void testParams() {
-        SetParams sp1 = new SetParams();
-        boolean t11 = mockOfJedis.isSetParamsNX(sp1);
-        boolean t12 = Long.valueOf(1).equals(mockOfJedis.getExpireTimePX(sp1));
-        SetParams sp2 = new SetParams();
-        sp2.nx();
-        boolean t21 = mockOfJedis.isSetParamsNX(sp2);
-        boolean t22 = Long.valueOf(1).equals(mockOfJedis.getExpireTimePX(sp2));
-        SetParams sp3 = new SetParams();
-        sp3.px(1L);
-        boolean t31 = mockOfJedis.isSetParamsNX(sp3);
-        boolean t32 = Long.valueOf(1).equals(mockOfJedis.getExpireTimePX(sp3));
-        SetParams sp4 = new SetParams();
-        sp4.nx().px(1L);
-        boolean t41 = mockOfJedis.isSetParamsNX(sp4);
-        boolean t42 = Long.valueOf(1).equals(mockOfJedis.getExpireTimePX(sp4));
-
-        boolean finalResult = !t11 && !t12 && t21 && !t22 && !t31 && t32 && t41 && t42;
-        assertTrue(finalResult);
     }
 
     @Test

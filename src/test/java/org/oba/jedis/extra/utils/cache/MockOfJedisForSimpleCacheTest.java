@@ -17,6 +17,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Transaction.class, TransactionBase.class })
@@ -41,20 +43,20 @@ public class MockOfJedisForSimpleCacheTest {
     @Test
     public void testParams() {
         SetParams sp1 = new SetParams();
-        boolean t11 = mockOfJedisForSimpleCache.isSetParamsNX(sp1);
-        boolean t12 = Long.valueOf(1).equals(mockOfJedisForSimpleCache.getExpireTimePX(sp1));
+        boolean t11 = isSetParamsNX(sp1);
+        boolean t12 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp1));
         SetParams sp2 = new SetParams();
         sp2.nx();
-        boolean t21 = mockOfJedisForSimpleCache.isSetParamsNX(sp2);
-        boolean t22 = Long.valueOf(1).equals(mockOfJedisForSimpleCache.getExpireTimePX(sp2));
+        boolean t21 = isSetParamsNX(sp2);
+        boolean t22 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp2));
         SetParams sp3 = new SetParams();
         sp3.px(1L);
-        boolean t31 = mockOfJedisForSimpleCache.isSetParamsNX(sp3);
-        boolean t32 = Long.valueOf(1).equals(mockOfJedisForSimpleCache.getExpireTimePX(sp3));
+        boolean t31 = isSetParamsNX(sp3);
+        boolean t32 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp3));
         SetParams sp4 = new SetParams();
         sp4.nx().px(1L);
-        boolean t41 = mockOfJedisForSimpleCache.isSetParamsNX(sp4);
-        boolean t42 = Long.valueOf(1).equals(mockOfJedisForSimpleCache.getExpireTimePX(sp4));
+        boolean t41 = isSetParamsNX(sp4);
+        boolean t42 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp4));
 
         boolean finalResult = !t11 && !t12 && t21 && !t22 && !t31 && t32 && t41 && t42;
         assertTrue(finalResult);
