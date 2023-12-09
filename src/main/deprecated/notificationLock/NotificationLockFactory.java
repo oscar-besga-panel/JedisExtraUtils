@@ -29,6 +29,11 @@ public class NotificationLockFactory implements Named, JedisPoolUser, AutoClosea
 
     private long lastTokenCurrentTimeMilis;
 
+    /**
+     * Creates a new factory for locks.
+     * @param factoryName Name of the factory and of the stream for messages
+     * @param jedisPool jedis pool for connection
+     */
     public NotificationLockFactory(String factoryName, JedisPool jedisPool) {
         this(factoryName, jedisPool, true);
     }
@@ -46,6 +51,11 @@ public class NotificationLockFactory implements Named, JedisPoolUser, AutoClosea
         }
     }
 
+    /**
+     * Recieves messages from the stream
+     * @param channel Steam name
+     * @param message Message data
+     */
     public void onMessage(String channel, String message) {
         if (active.get()) {
             LOGGER.debug("onMessage channel {} message {}", channel, message);
@@ -54,6 +64,10 @@ public class NotificationLockFactory implements Named, JedisPoolUser, AutoClosea
         }
     }
 
+    /**
+     * Sends a message to other locks when the locked one is unlocked
+     * @param notificationLock lock that has been unlicked
+     */
     void messageOnUnlock(NotificationLock notificationLock) {
         if (active.get()) {
             LOGGER.debug("messageOnUnlock notificationLock {}", notificationLock);
@@ -71,6 +85,11 @@ public class NotificationLockFactory implements Named, JedisPoolUser, AutoClosea
         return jedisPool;
     }
 
+    /**
+     * Closes factory
+     * All dependant locks are closed
+     * @throws Exception in case of error
+     */
     public void close() throws Exception {
         active.set(false);
         messagesEvenLaucher.shutdown();
@@ -81,6 +100,11 @@ public class NotificationLockFactory implements Named, JedisPoolUser, AutoClosea
         );
     }
 
+    /**
+     * Creates a new lock for this factory
+     * @param lockName Name of the lock
+     * @return
+     */
     public NotificationLock createNewLock(String lockName) {
         if (active.get()) {
             LOGGER.debug("createNewLock lockName {}", lockName);
@@ -95,6 +119,11 @@ public class NotificationLockFactory implements Named, JedisPoolUser, AutoClosea
         }
     }
 
+    /**
+     * Creates an unique token for a lock
+     * @param name
+     * @return
+     */
     private synchronized String generateUniqueToken(String name){
         long currentTimeMillis = System.currentTimeMillis();
         while(currentTimeMillis == lastTokenCurrentTimeMilis){

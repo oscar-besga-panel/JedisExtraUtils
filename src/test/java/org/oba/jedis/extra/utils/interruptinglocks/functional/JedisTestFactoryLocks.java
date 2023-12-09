@@ -1,8 +1,8 @@
 package org.oba.jedis.extra.utils.interruptinglocks.functional;
 
-import org.oba.jedis.extra.utils.interruptinglocks.IJedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.LockFromRedis;
+import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.JedisPoolAdapter;
 import org.slf4j.Logger;

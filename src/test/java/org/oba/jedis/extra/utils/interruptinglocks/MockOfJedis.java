@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
 import org.mockito.Mockito;
+import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.TTL;
 import org.oba.jedis.extra.utils.test.TransactionOrder;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;

@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
+import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;

@@ -3,7 +3,7 @@ package org.oba.jedis.extra.utils.notificationLock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import org.oba.jedis.extra.utils.utils.NamedMessageListener;
 import org.oba.jedis.extra.utils.utils.SimpleEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +18,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 public class StreamMessageSystemTest {
 
@@ -28,7 +26,6 @@ public class StreamMessageSystemTest {
     private MockOfJedis mockOfJedis;
     private JedisPool jedisPool;
     private String factoryName;
-    private NotificationLockFactory mockNotificationLockFactory;
     private Semaphore semaphore;
     private List<SimpleEntry> messageList;
     private ExecutorService execurtor;
@@ -43,21 +40,12 @@ public class StreamMessageSystemTest {
         factoryName = "factoryName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         semaphore = new Semaphore(0);
         messageList = new ArrayList<>();
-        mockNotificationLockFactory = Mockito.mock(NotificationLockFactory.class);
-        when(mockNotificationLockFactory.getName()).thenReturn(factoryName);
-        when(mockNotificationLockFactory.getJedisPool()).thenReturn(jedisPool);
-        Mockito.doAnswer( ioc -> {
-            String channel = ioc.getArgument(0, String.class);
-            String message = ioc.getArgument(1, String.class);
-            onMessage(channel, message);
-            return null;
-        }).when(mockNotificationLockFactory).onMessage(anyString(), anyString());
         execurtor = Executors.newSingleThreadExecutor();
     }
 
-    private void onMessage(String channel, String message) {
-        LOGGER.debug("TEST onMessage channel {} message {}", channel, message);
-        messageList.add(new SimpleEntry(channel, message));
+    private void executeOnMessage(String message) {
+        LOGGER.debug("TEST onMessage message {}", message);
+        messageList.add(new SimpleEntry(factoryName, message));
         semaphore.release();
         execurtor.shutdown();
         execurtor.shutdownNow();
@@ -146,9 +134,21 @@ public class StreamMessageSystemTest {
     private class TestStreamMessageSystem extends StreamMessageSystem {
 
         TestStreamMessageSystem() {
-            super(mockNotificationLockFactory);
+            super(new TestNamedMessageListener(), jedisPool);
+        }
+    }
+
+    private class TestNamedMessageListener implements NamedMessageListener {
+
+        @Override
+        public void onMessage(String message) {
+            executeOnMessage(message);
         }
 
+        @Override
+        public String getName() {
+            return factoryName;
+        }
     }
 
 }
