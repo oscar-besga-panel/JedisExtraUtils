@@ -132,7 +132,7 @@ public class FunctionalStreamMessageSystemTest {
     private class TestStreamMessageSystem extends StreamMessageSystem {
 
         TestStreamMessageSystem() {
-            super(new TestNamedMessageListener(), jedisPool);
+            super("TestStreamMessageSystem", new TestNamedMessageListener(), jedisPool);
         }
     }
 

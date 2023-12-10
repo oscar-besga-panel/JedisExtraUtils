@@ -134,7 +134,7 @@ public class StreamMessageSystemTest {
     private class TestStreamMessageSystem extends StreamMessageSystem {
 
         TestStreamMessageSystem() {
-            super(new TestNamedMessageListener(), jedisPool);
+            super("TestStreamMessageSystem", new TestNamedMessageListener(), jedisPool);
         }
     }
 

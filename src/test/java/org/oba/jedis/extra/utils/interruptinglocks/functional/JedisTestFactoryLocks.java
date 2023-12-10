@@ -14,7 +14,7 @@ public class JedisTestFactoryLocks {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisTestFactoryLocks.class);
 
-    static boolean checkLock(IJedisLock jedisLock){
+    public static boolean checkLock(IJedisLock jedisLock){
         LOGGER.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
         if (jedisLock.isLocked()) {
             LOGGER.info("LOCKED " +  Thread.currentThread().getName());
@@ -26,7 +26,7 @@ public class JedisTestFactoryLocks {
         }
     }
 
-    static boolean checkLock(java.util.concurrent.locks.Lock lock){
+    public static boolean checkLock(java.util.concurrent.locks.Lock lock){
         if (lock instanceof LockFromRedis) {
             LockFromRedis jedisLockFromRedis = (LockFromRedis) lock;
             LOGGER.info("interruptingLock.isLocked() " + jedisLockFromRedis.isLocked() + " for thread " + Thread.currentThread().getName());

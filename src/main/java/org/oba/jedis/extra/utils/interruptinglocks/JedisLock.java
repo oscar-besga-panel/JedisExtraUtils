@@ -3,6 +3,7 @@ package org.oba.jedis.extra.utils.interruptinglocks;
 import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.oba.jedis.extra.utils.utils.TimeLimit;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,9 +16,10 @@ import redis.clients.jedis.params.SetParams;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
+import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateUniqueTokenValue;
 
 /**
  * Class that will perform a lock based on Redis locks
@@ -52,7 +54,6 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
 
     private long waitCylce = 300L;
 
-    private static long lastCurrentTimeMilis = 0L;
 
     /**
      * Creates a Redis lock with a name
@@ -84,19 +85,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
                 withFile(FILE_PATH));
     }
 
-    private synchronized static String generateUniqueTokenValue(String name){
-        long currentTimeMillis = System.currentTimeMillis();
-        while(currentTimeMillis == lastCurrentTimeMilis){
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                //NOOP
-            }
-            currentTimeMillis = System.currentTimeMillis();
-        }
-        lastCurrentTimeMilis = currentTimeMillis;
-        return name + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt(1_000_000);
-    }
+
 
     @Override
     public JedisPool getJedisPool() {
@@ -139,9 +128,9 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
 
     @Override
     public synchronized boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
-        long tryLockTimeLimit = System.currentTimeMillis() + unit.toMillis(time);
+        final TimeLimit timeLimit = new TimeLimit(time,unit);
         boolean locked = redisLock();
-        while (!locked && tryLockTimeLimit > System.currentTimeMillis()) {
+        while (!locked && timeLimit.checkInLimit()) {
             Thread.sleep(waitCylce);
             locked = redisLock();
         }

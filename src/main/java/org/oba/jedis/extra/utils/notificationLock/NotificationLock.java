@@ -1,8 +1,9 @@
 package org.oba.jedis.extra.utils.notificationLock;
 
 import org.oba.jedis.extra.utils.lock.IJedisLock;
-import org.oba.jedis.extra.utils.utils.NamedMessageListener;
+import org.oba.jedis.extra.utils.utils.MessageListener;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.oba.jedis.extra.utils.utils.TimeLimit;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,19 +17,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-public class NotificationLock implements IJedisLock, NamedMessageListener {
+import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateUniqueTokenValue;
+
+public class NotificationLock implements IJedisLock, MessageListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationLock.class);
 
-    public static final String SCRIPT_NAME = "semaphore.lua";
-    public static final String FILE_PATH = "./src/main/resources/semaphore.lua";
+    public static final String SCRIPT_NAME = "lockUnlock.lua";
+    public static final String FILE_PATH = "./src/main/resources/lockUnlock.lua";
 
+
+    public static final String NOTIFICATION_LOCK_STREAM = "NOTIFICATIONLOCKSTREAM";
     public static final String CLIENT_RESPONSE_OK = "OK";
-    private static volatile long lastTokenCurrentTimeMilis;
 
     private final JedisPool jedisPool;
     private final String name;
@@ -37,15 +40,19 @@ public class NotificationLock implements IJedisLock, NamedMessageListener {
     private final StreamMessageSystem streamMessageSystem;
     private final Semaphore semaphore;
 
-    NotificationLock(JedisPool jedisPool, String name) {
+    public NotificationLock(JedisPool jedisPool, String name) {
         this.jedisPool = jedisPool;
         this.name = name;
-        this.uniqueToken = generateUniqueToken(name);
+        this.uniqueToken = generateUniqueTokenValue(name);
         this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
-        this.streamMessageSystem = new StreamMessageSystem(this, jedisPool);
+        this.streamMessageSystem = new StreamMessageSystem(NOTIFICATION_LOCK_STREAM, this, jedisPool);
         this.semaphore = new Semaphore(0);
+    }
+
+    String getUniqueToken(){
+        return uniqueToken;
     }
 
     @Override
@@ -65,7 +72,7 @@ public class NotificationLock implements IJedisLock, NamedMessageListener {
 
     @Override
     public boolean isLocked() {
-        return false;
+        return redisCheckLock();
     }
 
     @Override
@@ -96,21 +103,19 @@ public class NotificationLock implements IJedisLock, NamedMessageListener {
 
     @Override
     public boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
-        long effectiveTime = unit.toMillis(time);
-        long ts = System.currentTimeMillis();
+        final TimeLimit timeLimit = new TimeLimit(time,unit);
         boolean acquired = true;
         boolean locked = redisLock();
-        while (!locked && acquired && effectiveTime > 0) {
+        while (!locked && acquired && timeLimit.isInLimit()) {
             acquired = semaphore.tryAcquire(time, unit);
-            if (acquired) {
+            timeLimit.checkInLimit();
+            if (acquired && timeLimit.isInLimit()) {
                 locked = redisLock();
             }
-            long timePassed = System.currentTimeMillis() - ts;
-            effectiveTime = effectiveTime - timePassed;
-            ts = System.currentTimeMillis();
         }
-        return locked && acquired && effectiveTime > 0;
+        return locked && acquired && timeLimit.isInLimit();
     }
+
 
     public synchronized void lock() {
         boolean locked = redisLock();
@@ -232,25 +237,5 @@ public class NotificationLock implements IJedisLock, NamedMessageListener {
     public int hashCode() {
         return Objects.hash(name, uniqueToken);
     }
-
-    /**
-     * Creates an unique token for a lock
-     * @param name
-     * @return
-     */
-    public synchronized static String generateUniqueToken(String name){
-        long currentTimeMillis = System.currentTimeMillis();
-        while(currentTimeMillis == lastTokenCurrentTimeMilis){
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                //NOOP
-            }
-            currentTimeMillis = System.currentTimeMillis();
-        }
-        lastTokenCurrentTimeMilis = currentTimeMillis;
-        return name + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt(1_000_000);
-    }
-
 
 }

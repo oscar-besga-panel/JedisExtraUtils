@@ -1,9 +1,10 @@
 package org.oba.jedis.extra.utils.notificationLock;
 
 import org.oba.jedis.extra.utils.utils.JedisPoolUser;
-import org.oba.jedis.extra.utils.utils.NamedMessageListener;
+import org.oba.jedis.extra.utils.utils.MessageListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.StreamEntryID;
 import redis.clients.jedis.params.XAddParams;
@@ -12,7 +13,6 @@ import redis.clients.jedis.resps.StreamEntry;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -26,15 +26,11 @@ public class StreamMessageSystem implements JedisPoolUser, AutoCloseable {
     private static final int XREADPARAMS_COUNT = 1;
     private static final XReadParams XREADPARAMS = new XReadParams().
             block(XREADPARAMS_BLOCK).count(XREADPARAMS_COUNT);
-
-    private static final StreamEntryID MAX_RANGE = null;
     public static final String MESSAGE = "message";
-    public static final String TS = "ts";
-    public static final String RND = "rnd";
 
 
-
-    private final NamedMessageListener messageListener;
+    private final String name;
+    private final MessageListener messageListener;
     private final JedisPool jedisPool;
 
     private final Thread messagesThread;
@@ -43,7 +39,8 @@ public class StreamMessageSystem implements JedisPoolUser, AutoCloseable {
     private StreamEntryID lastStreamEntryIDSent;
     private StreamEntryID lastStreamEntryIDRange;
 
-    protected StreamMessageSystem(NamedMessageListener messageListener, JedisPool jedisPool) {
+    protected StreamMessageSystem(String name, MessageListener messageListener, JedisPool jedisPool) {
+        this.name = name;
         this.messageListener = messageListener;
         this.jedisPool = jedisPool;
         this.messagesThread = new Thread(this::listenMessages);
@@ -54,52 +51,30 @@ public class StreamMessageSystem implements JedisPoolUser, AutoCloseable {
 
     public void listenMessages() {
         try {
-            listenMessagesWithXREAD();
+            withJedisPoolDo(this::listenMessagesWithXREAD);
         } catch (Exception e) {
             LOGGER.error("Error in messagesThread", e);
         }
     }
 
-    public void listenMessagesWithXREAD() {
-        withJedisPoolDo(jedis -> {
-            while (active.get()){
-                Map<String, StreamEntryID> streamData;
-                if (lastStreamEntryIDRange == null) {
-                    streamData = Map.of(messageListener.getName(), StreamEntryID.LAST_ENTRY);
-                } else {
-                    streamData = Map.of(messageListener.getName(), nextStreamEntryID(lastStreamEntryIDRange));
-                }
-                LOGGER.debug("listenMessages begin {} with streamdata {}", messageListener.getName(), streamData);
-                List<Map.Entry<String, List<StreamEntry>>> streamedEntries = jedis.xread(XREADPARAMS, streamData);
-                if (streamedEntries != null && !streamedEntries.isEmpty()) {
-                    streamedEntries.stream().
-                            filter( streamedEntry -> streamedEntry.getKey().equals(messageListener.getName())).
-                            map(Map.Entry::getValue).
-                            forEach(this::processEntries);
-                }
-                LOGGER.debug("listenMessages end {} with streamdata {} as result {}", messageListener.getName(), streamData, streamedEntries);
+    void listenMessagesWithXREAD(Jedis jedis) {
+        while (active.get()){
+            Map<String, StreamEntryID> streamData;
+            if (lastStreamEntryIDRange == null) {
+                streamData = Map.of(name, StreamEntryID.LAST_ENTRY);
+            } else {
+                streamData = Map.of(name, nextStreamEntryID(lastStreamEntryIDRange));
             }
-        });
-    }
-
-    /**
-     * Not used because polling
-     */
-    public void listenMessagesWithXRANGE() {
-        withJedisPoolDo(jedis -> {
-            while(active.get()) {
-                StreamEntryID currentRange = nextStreamEntryID(lastStreamEntryIDRange);
-                LOGGER.debug("listenMessages begin {} with currentRange {}", messageListener.getName(), currentRange);
-                List<StreamEntry> entries = jedis.xrange(messageListener.getName(), currentRange, MAX_RANGE);
-                processEntries(entries);
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    LOGGER.error("Interruted but not relauched", e);
-                }
-                LOGGER.debug("listenMessages end   {}", messageListener.getName());
+            LOGGER.debug("listenMessages begin {} with streamdata {}", name, streamData);
+            List<Map.Entry<String, List<StreamEntry>>> streamedEntries = jedis.xread(XREADPARAMS, streamData);
+            if (streamedEntries != null && !streamedEntries.isEmpty()) {
+                streamedEntries.stream().
+                        filter( streamedEntry -> streamedEntry.getKey().equals(name)).
+                        map(Map.Entry::getValue).
+                        forEach(this::processEntries);
             }
-        });
+            LOGGER.debug("listenMessages end {} with streamdata {} as result {}", name, streamData, streamedEntries);
+        }
     }
 
     private void processEntries(List<StreamEntry> entries) {
@@ -119,10 +94,8 @@ public class StreamMessageSystem implements JedisPoolUser, AutoCloseable {
     synchronized boolean checkIfNotSent(StreamEntry entry) {
         boolean sentMessage = false;
         if (lastMessageSent != null && lastStreamEntryIDSent != null){
-            sentMessage = lastMessageSent.get(MESSAGE).equals(entry.getFields().get(MESSAGE)) &&
-                    lastMessageSent.get(TS).equals(entry.getFields().get(TS)) &&
-                    lastMessageSent.get(RND).equals(entry.getFields().get(RND)) &&
-                    lastStreamEntryIDSent.equals(entry.getID());
+            sentMessage = lastStreamEntryIDSent.equals(entry.getID()) &&
+                    lastMessageSent.get(MESSAGE).equals(entry.getFields().get(MESSAGE));
             if (sentMessage) {
                 lastMessageSent = null;
                 lastStreamEntryIDSent = null;
@@ -135,11 +108,9 @@ public class StreamMessageSystem implements JedisPoolUser, AutoCloseable {
     public synchronized void sendMessage(String message) {
         withJedisPoolDo(jedis -> {
             XAddParams addParams = new XAddParams();
-            Map<String, String> data = Map.of(MESSAGE, message,
-                    TS, Long.toString(System.currentTimeMillis()),
-                    RND, Integer.toString(ThreadLocalRandom.current().nextInt(1_000_000)));
+            Map<String, String> data = Map.of(MESSAGE, message);
             lastMessageSent = data;
-            lastStreamEntryIDSent = jedis.xadd(messageListener.getName(), addParams, data);
+            lastStreamEntryIDSent = jedis.xadd(name, addParams, data);
             LOGGER.debug("sendMessage message {} with lastStreamEntryIDSent {}", message, lastStreamEntryIDSent);
         });
     }
