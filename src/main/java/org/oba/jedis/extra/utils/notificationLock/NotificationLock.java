@@ -70,6 +70,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
     @Override
     public void close() {
         unlock();
+        streamMessageSystem.close();
     }
 
     @Override

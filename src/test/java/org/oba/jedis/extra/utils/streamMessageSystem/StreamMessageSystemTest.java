@@ -135,6 +135,14 @@ public class StreamMessageSystemTest {
         assertEquals(0, messageList.size());
     }
 
+    @Test
+    public void closeTest() throws InterruptedException {
+        StreamMessageSystem streamMessageSystem = new StreamMessageSystem("TestStreamMessageSystem", jedisPool,300_003, this::executeOnMessage);
+        Thread.sleep(500);
+        streamMessageSystem.close();
+        assertEquals(0, messageList.size());
+    }
+
 
 
     private class TestStreamMessageSystem extends StreamMessageSystem {
