@@ -1,16 +1,17 @@
-package org.oba.jedis.extra.utils.notificationLock.functional;
+package org.oba.jedis.extra.utils.streamMessageSystem;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.oba.jedis.extra.utils.notificationLock.StreamMessageSystem;
-import org.oba.jedis.extra.utils.rateLimiter.functional.FunctionalBucketRateLimiterTest;
-import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.utils.NamedMessageListener;
+import org.junit.runner.RunWith;
 import org.oba.jedis.extra.utils.utils.SimpleEntry;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,23 +23,26 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-public class FunctionalStreamMessageSystemTest {
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
+public class StreamMessageSystemTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalBucketRateLimiterTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StreamMessageSystemTest.class);
 
-    private final JedisTestFactory jtfTest = JedisTestFactory.get();
-
+    private MockOfJedis mockOfJedis;
     private JedisPool jedisPool;
     private String factoryName;
     private Semaphore semaphore;
     private List<SimpleEntry> messageList;
     private ExecutorService execurtor;
 
+
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
-        if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        org.junit.Assume.assumeTrue(MockOfJedis.unitTestEnabled());
+        if (!MockOfJedis.unitTestEnabled()) return;
+        mockOfJedis = new MockOfJedis();
+        jedisPool = mockOfJedis.getJedisPool();
         factoryName = "factoryName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         semaphore = new Semaphore(0);
         messageList = new ArrayList<>();
@@ -56,20 +60,22 @@ public class FunctionalStreamMessageSystemTest {
 
     @After
     public void after() throws IOException {
-        if (!jtfTest.functionalTestEnabled()) return;
+        if (!MockOfJedis.unitTestEnabled()) return;
         semaphore.release(1_000);
         messageList.clear();
         if (jedisPool != null) {
             jedisPool.close();
         }
+        mockOfJedis.clearData();
     }
+
 
     @Test
     public void createBasic1Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        StreamMessageSystem streamMessageSystem = new TestStreamMessageSystem(); // This will not as it receibes what it sends
+        TestStreamMessageSystem streamMessageSystem = new TestStreamMessageSystem(); // This will not as it receibes what it sends
         streamMessageSystem.sendMessage(messageHello);
-        Thread.sleep(50);
+        Thread.sleep(150);
         boolean acquired = semaphore.tryAcquire(500, TimeUnit.MILLISECONDS);
         assertFalse(acquired);
         assertEquals(0, messageList.size());
@@ -78,8 +84,8 @@ public class FunctionalStreamMessageSystemTest {
     @Test
     public void createBasic2Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        StreamMessageSystem streamMessageSystemReciever = new TestStreamMessageSystem(); // This will receive messages via mock
-        StreamMessageSystem streamMessageSystemSender = new TestStreamMessageSystem(); // This will not as it receibes what it sends
+        TestStreamMessageSystem streamMessageSystemReciever = new TestStreamMessageSystem(); // This will receive messages via mock
+        TestStreamMessageSystem streamMessageSystemSender = new TestStreamMessageSystem(); // This will not as it receibes what it sends
         Thread.sleep(150);
         streamMessageSystemSender.sendMessage(messageHello);
         Thread.sleep(50);
@@ -93,8 +99,8 @@ public class FunctionalStreamMessageSystemTest {
     @Test
     public void createBasic3Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        StreamMessageSystem streamMessageSystemReciever = new TestStreamMessageSystem(); // This will receive messages via mock
-        StreamMessageSystem streamMessageSystemSender = new TestStreamMessageSystem(); // This will not as it receibes what it sends
+        TestStreamMessageSystem streamMessageSystemReciever = new TestStreamMessageSystem(); // This will receive messages via mock
+        TestStreamMessageSystem streamMessageSystemSender = new TestStreamMessageSystem(); // This will not as it receibes what it sends
         execurtor.submit(() -> {
             try {
                 Thread.sleep(150);
@@ -114,11 +120,11 @@ public class FunctionalStreamMessageSystemTest {
     @Test
     public void createBasic4Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        StreamMessageSystem streamMessageSystemSender = new TestStreamMessageSystem(); // This will not as it receibes what it sends
+        TestStreamMessageSystem streamMessageSystemSender = new TestStreamMessageSystem(); // This will not as it receibes what it sends
         streamMessageSystemSender.sendMessage(messageHello);
         execurtor.submit(() -> {
             try {
-                StreamMessageSystem streamMessageSystemReciever = new TestStreamMessageSystem(); // This will receive messages via mock
+                TestStreamMessageSystem streamMessageSystemReciever = new TestStreamMessageSystem(); // This will receive messages via mock
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -129,25 +135,13 @@ public class FunctionalStreamMessageSystemTest {
         assertEquals(0, messageList.size());
     }
 
+
+
     private class TestStreamMessageSystem extends StreamMessageSystem {
 
         TestStreamMessageSystem() {
-            super("TestStreamMessageSystem", new TestNamedMessageListener(), jedisPool);
+            super("TestStreamMessageSystem", jedisPool, StreamMessageSystemTest.this::executeOnMessage);
         }
     }
-
-    private class TestNamedMessageListener implements NamedMessageListener {
-
-        @Override
-        public void onMessage(String message) {
-            executeOnMessage(message);
-        }
-
-        @Override
-        public String getName() {
-            return factoryName;
-        }
-    }
-
 
 }

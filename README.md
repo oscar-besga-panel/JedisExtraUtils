@@ -23,7 +23,9 @@ Originally conceived as a group of locks, then some synchronization primitives, 
 These include
 
 * Synchronization: primitives to synchronize process and threads one with other
-  * Lock: exclusive locks. Normal locks, also interrupting locks and a java Lock implementation.
+  * Lock: exclusive locks. Normal locks, also interrupting locks and a java Lock implementation.   
+    Also, notification locks, that uses a asynchronous notification system to know it another lock has released
+    the grip and they can proceed to get the lock, without poolling
   * Semaphores
   * CountDownLatch: count down to open the flood gates and allow all waiters to progress
 * Collections: redis-backed implementation of Java collection interfaces, with all data stored on Redis, like
@@ -39,6 +41,8 @@ These include
 * Cache: A simple cache with readthrougth and writethrougth operations
 * Cycle: A list of elements that cycles for one to the next, and to the initial one; one result per call, in a cycle
 * RateLimiter: temporal or bucket limited distributed rate
+* StreamMessageSystem: a class that lets you send messages to a stream and receive from the same stream 
+  (in a background thread of the class). One by one, and no messsage is lost (AT LEAST ONCE).
 * More utils like
   * SimplePubSub: a simple pub/sub that only consumes messages via a BiConsumer function
 
@@ -49,7 +53,7 @@ It's intended to make possible distributes locking and synchronization, share da
 
 All classes have tests, unit and functional ones.   
 You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
-There are **more than 500 working tests**, so the code is pretty secure.
+There are **more than 600 working tests**, so the code is pretty secure.
 
 
 **See the [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki) for more documentation**

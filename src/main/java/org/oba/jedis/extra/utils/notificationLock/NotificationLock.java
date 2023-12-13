@@ -2,7 +2,8 @@ package org.oba.jedis.extra.utils.notificationLock;
 
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.lock.IJedisLock;
-import org.oba.jedis.extra.utils.utils.MessageListener;
+import org.oba.jedis.extra.utils.streamMessageSystem.MessageListener;
+import org.oba.jedis.extra.utils.streamMessageSystem.StreamMessageSystem;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.TimeLimit;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
@@ -48,7 +49,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
         this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
-        this.streamMessageSystem = new StreamMessageSystem(NOTIFICATION_LOCK_STREAM, this, jedisPool);
+        this.streamMessageSystem = new StreamMessageSystem(NOTIFICATION_LOCK_STREAM, jedisPool, this);
         this.semaphore = new Semaphore(0);
     }
 

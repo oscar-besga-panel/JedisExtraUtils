@@ -1,7 +1,6 @@
-package org.oba.jedis.extra.utils.notificationLock;
+package org.oba.jedis.extra.utils.streamMessageSystem;
 
 import org.oba.jedis.extra.utils.utils.JedisPoolUser;
-import org.oba.jedis.extra.utils.utils.MessageListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -39,7 +38,7 @@ public class StreamMessageSystem implements JedisPoolUser, AutoCloseable {
     private StreamEntryID lastStreamEntryIDSent;
     private StreamEntryID lastStreamEntryIDRange;
 
-    protected StreamMessageSystem(String name, MessageListener messageListener, JedisPool jedisPool) {
+    public StreamMessageSystem(String name, JedisPool jedisPool, MessageListener messageListener) {
         this.name = name;
         this.messageListener = messageListener;
         this.jedisPool = jedisPool;
@@ -65,7 +64,7 @@ public class StreamMessageSystem implements JedisPoolUser, AutoCloseable {
             } else {
                 streamData = Map.of(name, nextStreamEntryID(lastStreamEntryIDRange));
             }
-            LOGGER.debug("listenMessages begin {} with streamdata {}", name, streamData);
+            // LOGGER.debug("listenMessages begin {} with streamdata {}", name, streamData);
             List<Map.Entry<String, List<StreamEntry>>> streamedEntries = jedis.xread(XREADPARAMS, streamData);
             if (streamedEntries != null && !streamedEntries.isEmpty()) {
                 streamedEntries.stream().
@@ -73,7 +72,7 @@ public class StreamMessageSystem implements JedisPoolUser, AutoCloseable {
                         map(Map.Entry::getValue).
                         forEach(this::processEntries);
             }
-            LOGGER.debug("listenMessages end {} with streamdata {} as result {}", name, streamData, streamedEntries);
+            // LOGGER.debug("listenMessages end {} with streamdata {} as result {}", name, streamData, streamedEntries);
         }
     }
 
