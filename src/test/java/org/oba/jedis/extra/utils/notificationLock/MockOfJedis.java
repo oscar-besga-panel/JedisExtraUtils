@@ -1,11 +1,16 @@
 package org.oba.jedis.extra.utils.notificationLock;
 
 import org.mockito.Mockito;
+import org.oba.jedis.extra.utils.lock.IJedisLock;
+import org.oba.jedis.extra.utils.test.TTL;
+import org.oba.jedis.extra.utils.test.TransactionOrder;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.StreamEntryID;
+import redis.clients.jedis.*;
+import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.params.XAddParams;
 import redis.clients.jedis.params.XReadParams;
 import redis.clients.jedis.resps.StreamEntry;
@@ -14,6 +19,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 public class MockOfJedis {
@@ -37,10 +44,16 @@ public class MockOfJedis {
     private final JedisPool jedisPool;
     private final Jedis jedis;
     private final Map<String, Map<StreamEntryID, Map<String,String>>> streamData = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
+    private final List<TransactionOrder<String>> transactionActions = new ArrayList<>();
+    private final Timer timer;
 
     public MockOfJedis() {
+        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+        timer = new Timer();
         jedis = Mockito.mock(Jedis.class);
         jedisPool = Mockito.mock(JedisPool.class);
+        Transaction transaction = PowerMockito.mock(Transaction.class);
         Mockito.when(jedisPool.getResource()).thenReturn(jedis);
         when(jedis.xrange(anyString(), (StreamEntryID)isNull(), (StreamEntryID) isNull())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0, String.class);
@@ -73,6 +86,39 @@ public class MockOfJedis {
             Map<String, String> data = (Map<String, String>) ioc.getArgument(2, Map.class);
             return xadd(name, addParams, data);
         });
+        Mockito.when(jedis.scriptLoad(anyString())).thenAnswer( ioc -> {
+            String script = ioc.getArgument(0, String.class);
+            return ScriptEvalSha1.sha1(script);
+        });
+        Mockito.when(jedis.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
+            String name = ioc.getArgument(0, String.class);
+            List<String> keys = ioc.getArgument(1, List.class);
+            List<String> args = ioc.getArgument(2, List.class);
+            return mockEvalsha(keys, args);
+        });
+        Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            String value = ioc.getArgument(1);
+            SetParams setParams = ioc.getArgument(2);
+            return mockSet(key, value, setParams);
+
+        });
+        Mockito.when(jedis.get(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            return mockGet(key);
+        });
+        Mockito.when(jedis.multi()).thenReturn(transaction);
+        Mockito.when(transaction.get(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            return mockTransactionGet(key);
+        });
+        Mockito.when(transaction.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0);
+            String value = ioc.getArgument(1);
+            SetParams setParams = ioc.getArgument(2);
+            return mockTransactionSet(key, value, setParams);
+        });
+        Mockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
     }
 
     List<Map.Entry<String, List<StreamEntry>>> xread(XReadParams xReadParams, Map<String, StreamEntryID> streams) {
@@ -185,6 +231,57 @@ public class MockOfJedis {
         return new StreamEntry(entry.getKey(), entry.getValue());
     }
 
+    private synchronized Object mockEvalsha(List<String> keys, List<String> values) {
+        Object response = null;
+        if (values.get(0).equalsIgnoreCase(data.get(keys.get(0))) ){
+            String removed = data.remove(keys.get(0));
+            response = removed != null ? 1 : 0;
+        }
+        return response;
+    }
+
+    private synchronized String mockGet(String key) {
+        return data.get(key);
+    }
+
+    private synchronized String mockSet(final String key, String value, SetParams setParams) {
+        boolean insert = true;
+        if (isSetParamsNX(setParams)) {
+            insert = !data.containsKey(key);
+        }
+        if (insert) {
+            data.put(key, value);
+            Long expireTime = extractSetParamsExpireTimePX(setParams);
+            if (expireTime != null){
+                timer.schedule(TTL.wrapTTL(() -> data.remove(key)),expireTime);
+            }
+            return  CLIENT_RESPONSE_OK;
+        } else {
+            return  CLIENT_RESPONSE_KO;
+        }
+    }
+
+    private synchronized Response<String> mockTransactionGet(String key){
+        TransactionOrder<String> transactionOrder = new TransactionOrder<>(() -> mockGet(key));
+        transactionActions.add(transactionOrder);
+        return transactionOrder.getResponse();
+    }
+
+    private synchronized Response<String> mockTransactionSet(String key, String value, SetParams setParams){
+        TransactionOrder<String> transactionOrder = new TransactionOrder<>(() -> mockSet(key, value, setParams));
+        transactionActions.add(transactionOrder);
+        return transactionOrder.getResponse();
+    }
+
+    private synchronized List<Object> mockTransactionExec(){
+        transactionActions.forEach(TransactionOrder::execute);
+        List<Object> responses = transactionActions.stream().
+                map(TransactionOrder::getResponse).
+                collect(Collectors.toList());
+        transactionActions.clear();
+        return responses;
+    }
+
     public Jedis getJedis(){
         return jedis;
     }
@@ -195,12 +292,27 @@ public class MockOfJedis {
 
     public synchronized void clearData(){
         streamData.clear();
+        data.clear();
     }
 
-    public Map<String, Map<StreamEntryID, Map<String,String>>> getData() {
+    public Map<String, Map<StreamEntryID, Map<String,String>>> getCurrentStreamData() {
         return streamData;
     }
 
+    public Map<String, String> getCurrentData() {
+        return data;
+    }
 
+    static boolean checkLock(IJedisLock jedisLock){
+        LOGGER.info("interruptingLock.isLocked() " + jedisLock.isLocked() + " for thread " + Thread.currentThread().getName());
+        if (jedisLock.isLocked()) {
+            LOGGER.debug("LOCKED");
+            return true;
+        } else {
+            IllegalStateException ise =  new IllegalStateException("LOCK NOT ADQUIRED isLocked " + jedisLock.isLocked());
+            LOGGER.error("ERROR LOCK NOT ADQUIRED e {} ", ise.getMessage(), ise);
+            throw ise;
+        }
+    }
 
 }

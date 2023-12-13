@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.notificationLock;
 
+import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.utils.MessageListener;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
@@ -181,7 +182,6 @@ public class NotificationLock implements IJedisLock, MessageListener {
         return check;
     }
 
-
     /**
      * Attempts to get the lock.
      * It will try one time and return
@@ -236,6 +236,34 @@ public class NotificationLock implements IJedisLock, MessageListener {
     @Override
     public int hashCode() {
         return Objects.hash(name, uniqueToken);
+    }
+
+    /**
+     * Will execute the task between locking
+     * Helper method that creates the lock for simpler use
+     * The steps are: create lock - obtain lock - execute task - free lock
+     * A simple lock without time limit and interrumpiblity is used
+     * @param jedisPool Jedis pool client
+     * @param name Name of the lock
+     * @param task Task to execute
+     */
+    public static <T> T underLockTask(JedisPool jedisPool, String name, Supplier<T> task) {
+        JedisLock jedisLock = new JedisLock(jedisPool, name);
+        return jedisLock.underLock(task);
+    }
+
+    /**
+     * Will execute the task between locking and return the result
+     * Helper method that creates the lock for simpler use
+     * The steps are: obtain lock - execute task - free lock - return result
+     * A simple lock without time limit and interruptibility is used
+     * @param jedisPool Jedis pool client
+     * @param name Name of the lock
+     * @param task Task to execute with return type
+     */
+    public static void underLockTask(JedisPool jedisPool, String name, Runnable task) {
+        JedisLock jedisLock = new JedisLock(jedisPool, name);
+        jedisLock.underLock(task);
     }
 
 }

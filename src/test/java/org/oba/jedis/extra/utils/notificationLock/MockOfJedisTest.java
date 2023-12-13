@@ -3,11 +3,18 @@ package org.oba.jedis.extra.utils.notificationLock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.StreamEntryID;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.TransactionBase;
+import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.params.XAddParams;
 import redis.clients.jedis.params.XReadParams;
 import redis.clients.jedis.resps.StreamEntry;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +23,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
+import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
+import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Transaction.class, TransactionBase.class })
 public class MockOfJedisTest {
 
     private MockOfJedis mockOfJedis;
@@ -48,11 +59,11 @@ public class MockOfJedisTest {
     public void xadd1Test() {
         String t = Long.toString(System.currentTimeMillis());
         StreamEntryID streamEntryID1 = mockOfJedis.xadd("stream1", new XAddParams(), Map.of("hola", "caracola", "t", t));
-        assertFalse(mockOfJedis.getData().isEmpty());
-        assertFalse(mockOfJedis.getData().get("stream1").isEmpty());
-        assertFalse(mockOfJedis.getData().get("stream1").get(streamEntryID1).isEmpty());
-        assertEquals(t, mockOfJedis.getData().get("stream1").get(streamEntryID1).get("t"));
-        assertNull(mockOfJedis.getData().get("stream2"));
+        assertFalse(mockOfJedis.getCurrentStreamData().isEmpty());
+        assertFalse(mockOfJedis.getCurrentStreamData().get("stream1").isEmpty());
+        assertFalse(mockOfJedis.getCurrentStreamData().get("stream1").get(streamEntryID1).isEmpty());
+        assertEquals(t, mockOfJedis.getCurrentStreamData().get("stream1").get(streamEntryID1).get("t"));
+        assertNull(mockOfJedis.getCurrentStreamData().get("stream2"));
     }
 
     @Test
@@ -61,14 +72,14 @@ public class MockOfJedisTest {
         StreamEntryID streamEntryID1 = mockOfJedis.xadd("stream1", new XAddParams(), Map.of("hola", "caracola", "t", t, "n", "0"));
         StreamEntryID streamEntryID2 = mockOfJedis.xadd("stream1", new XAddParams(), Map.of("hola", "caracola", "t", t, "n", "1"));
         StreamEntryID streamEntryID3 = mockOfJedis.xadd("stream1", new XAddParams(), Map.of("hola", "caracola", "t", t, "n", "2"));
-        assertFalse(mockOfJedis.getData().isEmpty());
-        assertFalse(mockOfJedis.getData().get("stream1").isEmpty());
-        assertFalse(mockOfJedis.getData().get("stream1").get(streamEntryID1).isEmpty());
-        assertFalse(mockOfJedis.getData().get("stream1").get(streamEntryID2).isEmpty());
-        assertFalse(mockOfJedis.getData().get("stream1").get(streamEntryID3).isEmpty());
-        assertEquals("0", mockOfJedis.getData().get("stream1").get(streamEntryID1).get("n"));
-        assertEquals("1", mockOfJedis.getData().get("stream1").get(streamEntryID2).get("n"));
-        assertEquals("2", mockOfJedis.getData().get("stream1").get(streamEntryID3).get("n"));
+        assertFalse(mockOfJedis.getCurrentStreamData().isEmpty());
+        assertFalse(mockOfJedis.getCurrentStreamData().get("stream1").isEmpty());
+        assertFalse(mockOfJedis.getCurrentStreamData().get("stream1").get(streamEntryID1).isEmpty());
+        assertFalse(mockOfJedis.getCurrentStreamData().get("stream1").get(streamEntryID2).isEmpty());
+        assertFalse(mockOfJedis.getCurrentStreamData().get("stream1").get(streamEntryID3).isEmpty());
+        assertEquals("0", mockOfJedis.getCurrentStreamData().get("stream1").get(streamEntryID1).get("n"));
+        assertEquals("1", mockOfJedis.getCurrentStreamData().get("stream1").get(streamEntryID2).get("n"));
+        assertEquals("2", mockOfJedis.getCurrentStreamData().get("stream1").get(streamEntryID3).get("n"));
         assertTrue((streamEntryID3.getTime() > streamEntryID2.getTime()) ||
                 ((streamEntryID3.getTime() == streamEntryID2.getTime()) && (streamEntryID3.getSequence() > streamEntryID2.getSequence())));
         assertTrue((streamEntryID2.getTime() > streamEntryID1.getTime()) ||
@@ -188,11 +199,61 @@ public class MockOfJedisTest {
         assertEquals(message, entries.get(0).getValue().get(0).getFields().get("message"));
     }
 
-
     private String crunchMessagesFromEntries(List<StreamEntry> entryList) {
         return entryList.stream().
                 map(entry -> entry.getFields().get("message"))
                 .collect(Collectors.joining(","));
+    }
+
+    @Test
+    public void testParams() {
+        SetParams sp1 = new SetParams();
+        boolean t11 = isSetParamsNX(sp1);
+        boolean t12 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp1));
+        SetParams sp2 = new SetParams();
+        sp2.nx();
+        boolean t21 = isSetParamsNX(sp2);
+        boolean t22 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp2));
+        SetParams sp3 = new SetParams();
+        sp3.px(1L);
+        boolean t31 = isSetParamsNX(sp3);
+        boolean t32 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp3));
+        SetParams sp4 = new SetParams();
+        sp4.nx().px(1L);
+        boolean t41 = isSetParamsNX(sp4);
+        boolean t42 = Long.valueOf(1).equals(extractSetParamsExpireTimePX(sp4));
+
+        boolean finalResult = !t11 && !t12 && t21 && !t22 && !t31 && t32 && t41 && t42;
+        assertTrue(finalResult);
+    }
+
+    @Test
+    public void testDataInsertion() throws InterruptedException {
+        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
+        mockOfJedis.getJedis().set("a", "A2", new SetParams());
+        assertEquals("A2", mockOfJedis.getCurrentData().get("a"));
+        mockOfJedis.getJedis().set("b", "B1", new SetParams().nx());
+        assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
+        mockOfJedis.getJedis().set("b", "B2", new SetParams().nx());
+        assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
+        mockOfJedis.getJedis().set("c", "C1", new SetParams().nx().px(500));
+        assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
+        mockOfJedis.getJedis().set("c", "C2", new SetParams().nx().px(500));
+        assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
+        Thread.sleep(1000);
+        assertNull(mockOfJedis.getCurrentData().get("c"));
+    }
+
+    @Test
+    public void testEval() {
+        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
+        List<String> keys = Collections.singletonList("a");
+        List<String> values = Collections.singletonList("A1");
+        Object response = mockOfJedis.getJedis().evalsha("sha1", keys, values);
+        assertNull( mockOfJedis.getCurrentData().get("a"));
+        assertEquals(1,response);
     }
 
 }

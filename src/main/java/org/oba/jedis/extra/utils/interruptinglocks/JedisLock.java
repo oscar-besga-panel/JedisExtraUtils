@@ -77,8 +77,13 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
         if (name == null || name.trim().isEmpty()) throw new IllegalArgumentException("Name can not be null nor empty nor whitespace");
         this.jedisPool = jedisPool;
         this.name = name;
-        this.leaseTime = leaseTime;
-        this.timeUnit = timeUnit;
+        if (leaseTime != null && leaseTime > 0) {
+            this.leaseTime = leaseTime;
+            this.timeUnit = timeUnit;
+        } else {
+            this.leaseTime = null;
+            this.timeUnit = null;
+        }
         this.uniqueToken = generateUniqueTokenValue(name);
         this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
                 withResoruce(SCRIPT_NAME).

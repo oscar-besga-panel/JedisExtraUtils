@@ -3,11 +3,11 @@ package org.oba.jedis.extra.utils.notificationLock.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.oba.jedis.extra.utils.interruptinglocks.functional.JedisTestFactoryLocks;
 import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
@@ -20,10 +20,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertFalse;
 
 
-public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
+public class FunctionalJedisNotificationLocksOnCriticalZoneWithConnectionPoolTest {
 
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisNotificationLocksOnCriticalZoneWithConnectionPoolTest.class);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -31,8 +31,8 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean otherError = new AtomicBoolean(false);
 
-    private String lockName;
     private JedisPool jedisPool;
+    private String lockName;
     private final List<NotificationLock> lockList = new ArrayList<>();
 
 
@@ -40,16 +40,14 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         jedisPool = jtfTest.createJedisPool();
+        lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            jedisPool.close();
-        }
+        if (jedisPool != null) jedisPool.close();
     }
 
     @Test
@@ -74,29 +72,17 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
             t3.join();
             assertFalse(errorInCriticalZone.get());
             assertFalse(otherError.get());
-            assertFalse(lockList.stream().anyMatch(il ->  il != null && il.isLocked() ));
+            assertFalse(lockList.stream().anyMatch(il -> il != null && il.isLocked()));
         }
     }
 
     private void accesLockOfCriticalZone(int sleepTime) {
-        try {
-            Jedis jedis = jtfTest.createJedisClient();
-            NotificationLock jedisLock = new NotificationLock(jedisPool, lockName);
-            lockList.add(jedisLock);
-            try {
-                boolean locked = jedisLock.tryLockForAWhile(3, TimeUnit.SECONDS);
-                if (locked) {
-                    accessCriticalZone(sleepTime);
-                    jedisLock.unlock();
-                }
-            } catch (InterruptedException e) {
-                // NOOP
-            }
-            jedis.close();
-        } catch (Exception e) {
-            LOGGER.error("Other error", e);
-            otherError.set(true);
-        }
+        NotificationLock jedisLock = new NotificationLock(jedisPool,lockName);
+        lockList.add(jedisLock);
+        jedisLock.lock();
+        JedisTestFactoryLocks.checkLock(jedisLock);
+        accessCriticalZone(sleepTime);
+        jedisLock.unlock();
     }
 
     private void accessCriticalZone(int sleepTime){
@@ -112,4 +98,5 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
         }
         intoCriticalZone.set(false);
     }
+
 }
