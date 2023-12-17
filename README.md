@@ -89,6 +89,7 @@ Also, you will find a little Groovy and a docker composer to setup a testing red
 
 | Library version | Jedis version | JDK Version |
 |-----------------|---------------|-------------|
+| 6.1.0           | 5.1.X         | JDK11       |
 | 6.0.0           | 5.0.X         | JDK11       |
 | 5.3.0           | 4.4.X         | JDK11       |
 
