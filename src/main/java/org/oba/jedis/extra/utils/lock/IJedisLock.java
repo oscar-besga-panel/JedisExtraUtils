@@ -1,4 +1,4 @@
-package org.oba.jedis.extra.utils.interruptinglocks;
+package org.oba.jedis.extra.utils.lock;
 
 
 import org.oba.jedis.extra.utils.utils.JedisPoolUser;

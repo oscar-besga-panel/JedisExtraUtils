@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
+import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;

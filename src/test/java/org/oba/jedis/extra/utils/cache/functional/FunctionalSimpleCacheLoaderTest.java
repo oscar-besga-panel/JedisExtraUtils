@@ -170,7 +170,7 @@ public class FunctionalSimpleCacheLoaderTest {
 
         private synchronized void doWait() {
             try {
-                Thread.sleep(ThreadLocalRandom.current().nextInt(50));
+                Thread.sleep(ThreadLocalRandom.current().nextLong(50L));
             } catch (InterruptedException e) {
                 // Eat this
             }

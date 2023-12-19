@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
 
+import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Named;
 import redis.clients.jedis.JedisPool;
