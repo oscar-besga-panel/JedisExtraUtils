@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Listener is invoked by a background thread, and the connection waits for a new message to arrive
  * No messages are lost in the stream, all are retrieved and passed to the listener
  */
-public class StreamMessageSystem implements JedisPoolUser, Named, AutoCloseable {
+public final class StreamMessageSystem implements JedisPoolUser, Named, AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamMessageSystem.class);
 

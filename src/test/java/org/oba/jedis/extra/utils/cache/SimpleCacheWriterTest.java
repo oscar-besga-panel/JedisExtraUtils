@@ -436,7 +436,7 @@ public class SimpleCacheWriterTest {
                 throw new IllegalStateException("Test error");
             }
             try {
-                Thread.sleep(ThreadLocalRandom.current().nextInt(10));
+                Thread.sleep(ThreadLocalRandom.current().nextLong(10L));
             } catch (InterruptedException e) {
                 // Eat this
             }

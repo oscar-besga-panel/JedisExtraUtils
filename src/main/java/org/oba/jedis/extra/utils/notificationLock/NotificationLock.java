@@ -119,7 +119,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
         return locked && acquired && timeLimit.isInLimit();
     }
 
-
+    @Override
     public synchronized void lock() {
         boolean locked = redisLock();
         while (!locked) {
@@ -133,6 +133,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
     }
 
 
+    @Override
     public synchronized void lockInterruptibly() throws InterruptedException {
         boolean locked = redisLock();
         while (!locked) {

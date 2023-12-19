@@ -142,7 +142,7 @@ public class MockOfJedis {
                 }
             });
             try {
-                Thread.sleep(count * 5);
+                Thread.sleep(count * 5L);
                 count++;
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);

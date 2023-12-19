@@ -57,7 +57,6 @@ public class StreamMessageSystemTest {
         execurtor.shutdownNow();
     }
 
-
     @After
     public void after() throws IOException {
         if (!MockOfJedis.unitTestEnabled()) return;
@@ -69,11 +68,10 @@ public class StreamMessageSystemTest {
         mockOfJedis.clearData();
     }
 
-
     @Test
     public void createBasic1Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        TestStreamMessageSystem streamMessageSystem = new TestStreamMessageSystem(); // This will not as it receibes what it sends
+        StreamMessageSystem streamMessageSystem = new StreamMessageSystem("TestStreamMessageSystem", jedisPool, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
         streamMessageSystem.sendMessage(messageHello);
         Thread.sleep(150);
         boolean acquired = semaphore.tryAcquire(500, TimeUnit.MILLISECONDS);
@@ -84,8 +82,8 @@ public class StreamMessageSystemTest {
     @Test
     public void createBasic2Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        TestStreamMessageSystem streamMessageSystemReciever = new TestStreamMessageSystem(); // This will receive messages via mock
-        TestStreamMessageSystem streamMessageSystemSender = new TestStreamMessageSystem(); // This will not as it receibes what it sends
+        StreamMessageSystem streamMessageSystemReciever = new StreamMessageSystem("TestStreamMessageSystem", jedisPool, StreamMessageSystemTest.this::executeOnMessage); // This will receive messages via mock
+        StreamMessageSystem streamMessageSystemSender = new StreamMessageSystem("TestStreamMessageSystem", jedisPool, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
         Thread.sleep(150);
         streamMessageSystemSender.sendMessage(messageHello);
         Thread.sleep(50);
@@ -99,8 +97,8 @@ public class StreamMessageSystemTest {
     @Test
     public void createBasic3Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        TestStreamMessageSystem streamMessageSystemReciever = new TestStreamMessageSystem(); // This will receive messages via mock
-        TestStreamMessageSystem streamMessageSystemSender = new TestStreamMessageSystem(); // This will not as it receibes what it sends
+        StreamMessageSystem streamMessageSystemReciever = new StreamMessageSystem("TestStreamMessageSystem", jedisPool, StreamMessageSystemTest.this::executeOnMessage); // This will receive messages via mock
+        StreamMessageSystem streamMessageSystemSender = new StreamMessageSystem("TestStreamMessageSystem", jedisPool, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
         execurtor.submit(() -> {
             try {
                 Thread.sleep(150);
@@ -120,11 +118,11 @@ public class StreamMessageSystemTest {
     @Test
     public void createBasic4Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        TestStreamMessageSystem streamMessageSystemSender = new TestStreamMessageSystem(); // This will not as it receibes what it sends
+        StreamMessageSystem streamMessageSystemSender = new StreamMessageSystem("TestStreamMessageSystem", jedisPool, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
         streamMessageSystemSender.sendMessage(messageHello);
         execurtor.submit(() -> {
             try {
-                TestStreamMessageSystem streamMessageSystemReciever = new TestStreamMessageSystem(); // This will receive messages via mock
+                StreamMessageSystem streamMessageSystemReciever = new StreamMessageSystem("TestStreamMessageSystem", jedisPool, StreamMessageSystemTest.this::executeOnMessage); // This will receive messages via mock
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -141,15 +139,6 @@ public class StreamMessageSystemTest {
         Thread.sleep(500);
         streamMessageSystem.close();
         assertEquals(0, messageList.size());
-    }
-
-
-
-    private class TestStreamMessageSystem extends StreamMessageSystem {
-
-        TestStreamMessageSystem() {
-            super("TestStreamMessageSystem", jedisPool, StreamMessageSystemTest.this::executeOnMessage);
-        }
     }
 
 }

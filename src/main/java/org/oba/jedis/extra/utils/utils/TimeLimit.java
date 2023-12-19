@@ -1,6 +1,5 @@
 package org.oba.jedis.extra.utils.utils;
 
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -61,27 +60,6 @@ public class TimeLimit {
      */
     public boolean isInLimit() {
         return inLimit;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TimeLimit timeLimit = (TimeLimit) o;
-        return timeLimitMs == timeLimit.timeLimitMs && inLimit == timeLimit.inLimit;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(timeLimitMs, inLimit);
-    }
-
-    @Override
-    public String toString() {
-        return "TimeLimit{" +
-                "timeLimitMs=" + timeLimitMs +
-                ", inLimit=" + inLimit +
-                '}';
     }
 
 }
