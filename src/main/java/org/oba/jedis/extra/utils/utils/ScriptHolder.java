@@ -16,7 +16,7 @@ public class ScriptHolder implements JedisPoolUser {
     private final Map<String, ScriptEvalSha1> scriptMap = new HashMap<>();
 
 
-    static ScriptHolder generateHolderForJedisExtraUtils(JedisPool jedisPool) {
+    public static ScriptHolder generateHolderForJedisExtraUtils(JedisPool jedisPool) {
         ScriptHolder scriptHolder = new ScriptHolder(jedisPool);
         scriptHolder.addScriptWithResourceAndFile(BucketRateLimiter.SCRIPT_NAME, BucketRateLimiter.FILE_PATH);
         scriptHolder.addScriptWithResourceAndFile(CycleData.SCRIPT_NAME, CycleData.FILE_PATH);

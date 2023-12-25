@@ -24,6 +24,10 @@ import java.util.function.Supplier;
 
 import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateUniqueTokenValue;
 
+/**
+ * A lock that checks if the locks have been freed with a streaming mechanism
+ * This avoid polling and optimizes connection usage
+ */
 public class NotificationLock implements IJedisLock, MessageListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationLock.class);

@@ -53,7 +53,7 @@ It's intended to make possible distributes locking and synchronization, share da
 
 All classes have tests, unit and functional ones.   
 You can test the latter ones by activating them and configuring your own redis server, to test that all the classes work properly in theory and practice.  
-There are **more than 600 working tests**, so the code is pretty secure.
+There are **more than 630 working tests**, so the code is pretty secure.
 
 
 **See the [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki) for more documentation**
@@ -168,6 +168,20 @@ See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/RateLimiter
 A list of elements that every request gets the next element, and if it reaches the last one y cycles to the first.
 Any call gives only one result.
 It can be used with an iterator, but because the list cycles it can lead to an infinite loop, so be aware.
+
+### Rate Limiter
+
+It limits the number of operations/calls/actions you can have
+There are two implementations
+* ThrottlingRateLimiter, based on request/time limitation
+* BucketRateLimiter, based on bucket algorithm, which has a number of autorefilling permits to give to request
+
+### Others
+* StreamMessageSystem is a sender/reciever messages from a stream, with a AL-LEAST-ONCE policy that doesn't skip messages
+* SimplePubSub: a simple pub/sub that only consumes messages via a BiConsumer function
+* ScriptEvalSha1: to evaluate a reuse LUA scripts
+* UniversalReader: (not redis, local) read a file, resource or value; one after another if not present.
+* Others....
 
 
 See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/CycleData) for more information

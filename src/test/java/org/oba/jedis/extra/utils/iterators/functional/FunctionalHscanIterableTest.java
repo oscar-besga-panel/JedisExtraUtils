@@ -10,18 +10,10 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class FunctionalHscanIterableTest {
 
@@ -82,6 +74,8 @@ public class FunctionalHscanIterableTest {
         assertNotNull(iterator);
         assertTrue(sb.length() == 0);
         assertTrue(num == 0);
+        assertNotNull(hscanIterable.getJedisPool());
+        assertEquals(hscanitName, hscanIterable.getName());
     }
 
     @Test

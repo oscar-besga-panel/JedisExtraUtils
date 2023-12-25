@@ -3,6 +3,11 @@ package org.oba.jedis.extra.utils.utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.oba.jedis.extra.utils.collections.JedisList;
+import org.oba.jedis.extra.utils.cycle.CycleData;
+import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
+import org.oba.jedis.extra.utils.rateLimiter.BucketRateLimiter;
+import org.oba.jedis.extra.utils.semaphore.JedisSemaphore;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -34,6 +39,17 @@ public class ScriptHolderTest {
     public void after() throws IOException {
         mockOfJedis.getJedisPool().close();
         mockOfJedis.clearData();
+    }
+
+    @Test
+    public void generateHolderForJedisExtraUtilsTest() {
+        ScriptHolder holder = ScriptHolder.generateHolderForJedisExtraUtils(mockOfJedis.getJedisPool());
+        assertNotNull(holder.getScript(BucketRateLimiter.SCRIPT_NAME));
+        assertNotNull(holder.getScript(CycleData.SCRIPT_NAME));
+        assertNotNull(holder.getScript(JedisList.SCRIPT_NAME_INDEX_OF));
+        assertNotNull(holder.getScript(JedisList.SCRIPT_NAME_LAST_INDEX_OF));
+        assertNotNull(holder.getScript(JedisLock.SCRIPT_NAME));
+        assertNotNull(holder.getScript(JedisSemaphore.SCRIPT_NAME));
     }
 
     @Test
