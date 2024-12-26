@@ -16,7 +16,7 @@ _Current Build_
 
 **(formerly known as InterruptedJedisLocks)**
 
-This is a Java project based on a collection of utilities and helpers to be used with Redis and with Jedis libraries.
+This is a Java project based on a collection of utilities and helpers to be used with (now not open-source) Redis and with Jedis libraries.
 
 Originally conceived as a group of locks, then some synchronization primitives, it has grown until having a respectable collection of utilities.
 
@@ -90,7 +90,7 @@ Also, you will find a little Groovy and a docker composer to setup a testing red
 
 | Library version | Jedis version | JDK Version |
 |-----------------|---------------|-------------|
-| 6.2.0           | 5.2.X         | JDK11       |
+| 6.3.0           | 5.2.X         | JDK11       |
 | 6.1.0           | 5.1.X         | JDK11       |
 | 6.0.0           | 5.0.X         | JDK11       |
 | 5.3.0           | 4.4.X         | JDK11       |
