@@ -63,8 +63,9 @@ There are **more than 630 working tests**, so the code is pretty secure.
 
 Jedis is a Java library to use a Redis server with Java, at a low-level commands
 https://github.com/xetorthio/jedis.  
-See it on mvn repository 
-https://mvnrepository.com/artifact/redis.clients/jedis
+  
+See it on mvn repository: https://mvnrepository.com/artifact/redis.clients/jedis  
+
 
 Made with
 - Intellij
@@ -89,6 +90,7 @@ Also, you will find a little Groovy and a docker composer to setup a testing red
 
 | Library version | Jedis version | JDK Version |
 |-----------------|---------------|-------------|
+| 6.2.0           | 5.2.X         | JDK11       |
 | 6.1.0           | 5.1.X         | JDK11       |
 | 6.0.0           | 5.0.X         | JDK11       |
 | 5.3.0           | 4.4.X         | JDK11       |
