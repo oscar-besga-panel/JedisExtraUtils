@@ -12,6 +12,8 @@ _Current Build_
 [![codecov](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils/branch/master/graph/badge.svg?token=ED9XKSC2F7)](https://codecov.io/gh/oscar-besga-panel/JedisExtraUtils)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/010964cad8f94b07838e53aa41259792)](https://app.codacy.com/gh/oscar-besga-panel/JedisExtraUtils/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
+_Project clone into [Valkey-Java-Extrautils](https://github.com/oscar-besga-panel/valkey-java-extrautils) , which uses [valkey-java](https://github.com/valkey-io/valkey-java); for [Valkey](https://valkey.io/)_  
+
 # Introduction to Jedis Extra Utils
 
 **(formerly known as InterruptedJedisLocks)**
