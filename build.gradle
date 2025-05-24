@@ -34,7 +34,7 @@ dependencies {
             testImplementation group: 'org.mockito', name: 'mockito-inline', version: "${mockitoVersion}"
      */
 
-    // sadly doesnt work => testImplementation 'com.github.fppt:jedis-mock:0.1.14'
+    // sadly doesn't work => testImplementation 'com.github.fppt:jedis-mock:0.1.14'
 }
 
 jacocoTestReport {
