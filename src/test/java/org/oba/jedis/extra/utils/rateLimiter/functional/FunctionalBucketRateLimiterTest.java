@@ -116,11 +116,12 @@ public class FunctionalBucketRateLimiterTest {
 
     @Test
     public void bucketAdvanced02Test() {
+        
         BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
                 create(1, BucketRateLimiter.Mode.GREEDY, 1000, TimeUnit.MILLISECONDS);
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(105);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(205);
         List<ScheduledFuture<Boolean>> scheduledFutureList = new ArrayList<>();
-        for(int i= 0; i < 100; i++) {
+        for(int i= 0; i < 200; i++) {
             long wait = 500L + (i % 3)*1000 + ThreadLocalRandom.current().nextLong(5L,75L);
             ScheduledFuture<Boolean> scheduledFuture = executorService.schedule(() -> tryAcquire(wait, bucketRateLimiter),
                     wait, TimeUnit.MILLISECONDS);

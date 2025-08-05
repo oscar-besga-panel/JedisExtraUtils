@@ -11,8 +11,12 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -45,6 +49,11 @@ public class FunctionalThrottlingRateLimiterTest {
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
+        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPool, throttlingName);
+        if (throttlingRateLimiter.exists()) {
+            throttlingRateLimiter.delete();
+            LOGGER.debug("deleted throttlingRateLimiter {}", throttlingName);
+        }
         if (jedisPool != null) {
             jedisPool.close();
         }
@@ -84,37 +93,49 @@ public class FunctionalThrottlingRateLimiterTest {
         assertFalse(rateLimiter.exists());
     }
 
+
+
     @Test
-    public void throttlingAdvancedTest() throws InterruptedException {
+    public void throttlingAdvancedTest() {
+        SortedMap<Integer, Map.Entry<Long,Boolean>> resultMap = new TreeMap<>();
         ThrottlingRateLimiter rateLimiter = new ThrottlingRateLimiter(jedisPool, throttlingName).
                 create(495, TimeUnit.MILLISECONDS);
-        ExecutorService executor = Executors.newFixedThreadPool(25);
+        ExecutorService executor = Executors.newFixedThreadPool(50);
         List<Future<Boolean>> futureList = new ArrayList<>();
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        for(int i= 0; i < 25; i++) {
+        for(int i= 0; i < 50; i++) {
             final int num = i + 1;
             Future<Boolean> result = executor.submit(() ->
-                    tryToAcquire(rateLimiter, num,countDownLatch)
+                    tryToAcquire(rateLimiter, num, countDownLatch, resultMap)
             );
             futureList.add(result);
         }
         countDownLatch.countDown();
         long result = futureList.stream().
-                filter(r -> futureIsTrue(r)).
+                filter(this::futureIsTrue).
                 count();
         LOGGER.debug("result is {}", result);
+        resultMap.forEach( (entryNum, entryData) ->
+            LOGGER.debug("Resultmap num {} wait {} value {} ", entryNum, entryData.getKey(), entryData.getValue())
+        );
+
         assertTrue(rateLimiter.exists());
         //assertEquals(5, result);
-        assertTrue( result >= 4 && result <= 6);
+        assertTrue( result >= 9 && result <= 11);
     }
 
-    boolean tryToAcquire(ThrottlingRateLimiter rateLimiter, int num, CountDownLatch countDownLatch) {
+    boolean tryToAcquire(ThrottlingRateLimiter rateLimiter, int num, CountDownLatch countDownLatch, SortedMap<Integer, Map.Entry<Long,Boolean>> resultMap) {
         try {
             long waitMillis = (Math.floorDiv(num, 5) * 500L) - ThreadLocalRandom.current().nextLong(5L,15L) + 500L;
             LOGGER.debug("Wait num {} waitMillis {}", num, waitMillis);
             countDownLatch.await();
             Thread.sleep(waitMillis);
-            return rateLimiter.allow();
+            boolean allowed =  rateLimiter.allow();
+            LOGGER.debug("Try to acquire num {} result {} ", num, allowed);
+
+            Map.Entry<Long,Boolean> entry = new AbstractMap.SimpleEntry<>(waitMillis, allowed);
+            resultMap.put(num, entry);
+            return allowed;
         } catch (InterruptedException e) {
             LOGGER.error("Interrupted while waiting num {} ", num, e);
             throw new RuntimeException(e);
