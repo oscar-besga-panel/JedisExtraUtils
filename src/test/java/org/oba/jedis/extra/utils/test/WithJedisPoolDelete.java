@@ -23,12 +23,12 @@ public final class WithJedisPoolDelete {
 
     public static void doDelete(JedisPool jedisPool, List<String> keys) {
         if (jedisPool == null || keys == null) {
-            throw new IllegalArgumentException("JedisPool and key must not be null or empty");
+            throw new IllegalArgumentException("JedisPool and keys must not be null or empty");
         }
         try (var jedis = jedisPool.getResource()) {
             keys.forEach( jedis::del);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to delete keys: " + keys, e);
+            throw new IllegalStateException("Failed to delete keys: " + keys, e);
         }
     }
 
