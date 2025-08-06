@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -36,9 +37,7 @@ public class FunctionalJedisNotificationLockTest {
     public void tearDown() {
         if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedis.del(keyName);
-            }
+            WithJedisPoolDelete.doDelete(jedisPool, keyName);
             jedisPool.close();
         }
     }

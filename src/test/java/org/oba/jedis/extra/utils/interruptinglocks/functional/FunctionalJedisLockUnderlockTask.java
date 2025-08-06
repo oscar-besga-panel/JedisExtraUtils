@@ -7,6 +7,7 @@ import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockBas
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLockUtils;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -36,9 +37,7 @@ public class FunctionalJedisLockUnderlockTask {
     public void tearDown() {
         if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedis.del(keyName);
-            }
+            WithJedisPoolDelete.doDelete(jedisPool, keyName);
             jedisPool.close();
         }
     }

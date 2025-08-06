@@ -5,11 +5,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -17,6 +19,8 @@ import static org.junit.Assert.assertTrue;
 public class FunctionalJedisListStreamTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
+
+    private static final AtomicInteger testNumber = new AtomicInteger(0);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -27,13 +31,14 @@ public class FunctionalJedisListStreamTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        listName = "list:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        listName = "list:" + this.getClass().getName() + ":"  + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
         jedisPool = jtfTest.createJedisPool();
     }
 
     @After
     public void after() {
         if (jedisPool != null) {
+            WithJedisPoolDelete.doDelete(jedisPool, listName);
             jedisPool.close();
         }
     }

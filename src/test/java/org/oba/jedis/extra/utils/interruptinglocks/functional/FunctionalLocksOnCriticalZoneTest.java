@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.LockFromRedis;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
@@ -49,6 +50,7 @@ public class FunctionalLocksOnCriticalZoneTest {
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
+            WithJedisPoolDelete.doDelete(jedisPool, lockName);
             jedisPool.close();
         }
     }

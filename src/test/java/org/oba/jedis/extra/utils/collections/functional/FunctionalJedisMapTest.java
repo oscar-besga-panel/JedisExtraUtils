@@ -5,9 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisMap;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.AbstractMap;
@@ -43,9 +43,8 @@ public class FunctionalJedisMapTest {
     @After
     public void after() {
         if (jedisPool != null) {
-            try(Jedis jedis = jedisPool.getResource()) {
-                jedis.del(mapName, mapName2);
-            }
+            WithJedisPoolDelete.doDelete(jedisPool, mapName);
+            WithJedisPoolDelete.doDelete(jedisPool, mapName2);
             jedisPool.close();
         }
     }

@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.iterators.ScanUtil;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -39,11 +40,9 @@ public class FunctionalScanUtilTest {
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedis.del(varName + "a");
-                jedis.del(varName + "b");
-                jedis.del(varName + "c");
-            }
+            WithJedisPoolDelete.doDelete(jedisPool, varName + "a");
+            WithJedisPoolDelete.doDelete(jedisPool, varName + "b");
+            WithJedisPoolDelete.doDelete(jedisPool, varName + "c");
             jedisPool.close();
         }
     }

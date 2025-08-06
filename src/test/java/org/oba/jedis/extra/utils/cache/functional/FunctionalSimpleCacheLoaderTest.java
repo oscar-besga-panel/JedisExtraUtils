@@ -8,6 +8,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.oba.jedis.extra.utils.cache.CacheLoader;
 import org.oba.jedis.extra.utils.cache.SimpleCache;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import redis.clients.jedis.JedisPool;
 
 import java.util.*;
@@ -19,6 +20,8 @@ import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FunctionalSimpleCacheLoaderTest {
+
+    private static final List<String> listNameKeysToDelete = new ArrayList<>();
 
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
@@ -37,6 +40,7 @@ public class FunctionalSimpleCacheLoaderTest {
     @After
     public void tearDown() {
         if (jedisPool != null) {
+            WithJedisPoolDelete.doDelete(jedisPool, listNameKeysToDelete);
             jedisPool.close();
         }
     }
@@ -46,6 +50,7 @@ public class FunctionalSimpleCacheLoaderTest {
     }
     SimpleCache createNewCache(CacheLoader cacheLoader) {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        listNameKeysToDelete.add(name);
         return new SimpleCache(jedisPool, name, 3_600_000).
                 withCacheLoader(cacheLoader);
     }
