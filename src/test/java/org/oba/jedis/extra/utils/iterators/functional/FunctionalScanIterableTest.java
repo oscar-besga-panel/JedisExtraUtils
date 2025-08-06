@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.iterators.ScanIterable;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -43,11 +44,7 @@ public class FunctionalScanIterableTest {
     @After
     public void after() {
         if (jedisPool != null) {
-            try(Jedis jedis = jedisPool.getResource()) {
-                letters.forEach( letter -> {
-                    jedis.del(scanitName + ":" + letter);
-                });
-            }
+            WithJedisPoolDelete.doDelete(jedisPool, letters);
             jedisPool.close();
         }
     }

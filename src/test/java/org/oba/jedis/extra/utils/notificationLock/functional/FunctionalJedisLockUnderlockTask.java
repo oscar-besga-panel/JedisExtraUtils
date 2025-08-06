@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -38,6 +39,7 @@ public class FunctionalJedisLockUnderlockTask {
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
+            WithJedisPoolDelete.doDelete(jedisPool, lockName);
             jedisPool.close();
         }
     }

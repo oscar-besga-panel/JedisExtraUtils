@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.rateLimiter.BucketRateLimiter;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
@@ -45,6 +46,7 @@ public class FunctionalBucketRateLimiterTest {
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
         if (jedisPool != null) {
+            WithJedisPoolDelete.doDelete(jedisPool, bucketName);
             jedisPool.close();
         }
     }

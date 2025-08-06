@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.iterators.HScanIterable;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -44,9 +45,7 @@ public class FunctionalHscanIterableTest {
     @After
     public void after() {
         if (jedisPool != null) {
-            try(Jedis jedis = jedisPool.getResource()) {
-                jedis.del(hscanitName);
-            }
+            WithJedisPoolDelete.doDelete(jedisPool, hscanitName);
             jedisPool.close();
         }
     }

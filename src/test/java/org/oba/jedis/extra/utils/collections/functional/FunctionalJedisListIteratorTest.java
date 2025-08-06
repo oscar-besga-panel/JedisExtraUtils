@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
@@ -20,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.oba.jedis.extra.utils.utils.functional.WithJedisPoolDelete.doDelete;
 
 public class FunctionalJedisListIteratorTest {
 
@@ -44,7 +44,7 @@ public class FunctionalJedisListIteratorTest {
     @After
     public void after() {
         if (jedisPool != null) {
-            doDelete(jedisPool, listName);
+            WithJedisPoolDelete.doDelete(jedisPool, listName);
             jedisPool.close();
         }
     }

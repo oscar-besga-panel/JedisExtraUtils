@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.oba.jedis.extra.utils.utils.functional.WithJedisPoolDelete.doDelete;
+import static org.oba.jedis.extra.utils.test.WithJedisPoolDelete.doDelete;
 
 public class FunctionalJedisListStreamTest {
 
@@ -38,7 +39,7 @@ public class FunctionalJedisListStreamTest {
     @After
     public void after() {
         if (jedisPool != null) {
-            doDelete(jedisPool, listName);
+            WithJedisPoolDelete.doDelete(jedisPool, listName);
             jedisPool.close();
         }
     }
