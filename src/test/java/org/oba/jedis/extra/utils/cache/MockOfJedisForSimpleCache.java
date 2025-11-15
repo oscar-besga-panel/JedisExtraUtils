@@ -51,8 +51,6 @@ public class MockOfJedisForSimpleCache {
 
 
     public MockOfJedisForSimpleCache() {
-        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
-
 
         timer = new Timer();
 

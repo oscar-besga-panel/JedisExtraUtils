@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, TransactionBase.class })
+@PrepareForTest({Transaction.class })
 public class StreamMessageSystemTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamMessageSystemTest.class);

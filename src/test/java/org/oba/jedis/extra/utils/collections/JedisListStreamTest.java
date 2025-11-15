@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+
 
 import java.util.Arrays;
 
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, TransactionBase.class })
+@PrepareForTest({Transaction.class })
 public class JedisListStreamTest {
 
     private String listName;

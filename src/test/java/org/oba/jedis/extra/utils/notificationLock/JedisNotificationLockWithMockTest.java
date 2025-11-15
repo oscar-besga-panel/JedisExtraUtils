@@ -9,7 +9,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ThreadLocalRandom;
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, TransactionBase.class })
+@PrepareForTest({Transaction.class })
 public class JedisNotificationLockWithMockTest {
 
     private MockOfJedis mockOfJedis;

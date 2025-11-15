@@ -8,7 +8,6 @@ import org.oba.jedis.extra.utils.utils.SimpleEntry;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
 
 import java.util.*;
 
@@ -16,7 +15,7 @@ import static org.junit.Assert.*;
 import static org.oba.jedis.extra.utils.cache.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, TransactionBase.class })
+@PrepareForTest({Transaction.class })
 public class SimpleCacheTest {
 
 

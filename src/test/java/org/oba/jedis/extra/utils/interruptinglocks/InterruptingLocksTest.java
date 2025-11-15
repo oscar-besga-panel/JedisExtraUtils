@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, TransactionBase.class })
+@PrepareForTest({Transaction.class })
 public class InterruptingLocksTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InterruptingLocksTest.class);

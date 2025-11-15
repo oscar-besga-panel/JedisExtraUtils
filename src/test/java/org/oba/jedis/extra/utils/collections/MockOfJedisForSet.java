@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -38,7 +38,7 @@ public class MockOfJedisForSet {
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
 
     public MockOfJedisForSet() {
-        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+
 
 
         jedis = Mockito.mock(Jedis.class);
