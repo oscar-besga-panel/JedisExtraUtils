@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+
 import redis.clients.jedis.args.ListPosition;
 import redis.clients.jedis.params.SetParams;
 
@@ -41,7 +41,7 @@ public class MockOfJedisForList {
     private String sha1LastIndexOf = "y";
 
     public MockOfJedisForList() {
-        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+
 
         timer = new Timer();
 

@@ -53,7 +53,7 @@ public class MockOfJedis {
     private final Timer timer;
 
     public MockOfJedis() {
-        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+
 
         timer = new Timer();
         jedis = Mockito.mock(Jedis.class);

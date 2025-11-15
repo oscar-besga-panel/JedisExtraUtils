@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertFalse;
 
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, TransactionBase.class })
+@PrepareForTest({Transaction.class })
 public class InterruptingLocksOnCriticalZoneBaseTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InterruptingLocksOnCriticalZoneBaseTest.class);

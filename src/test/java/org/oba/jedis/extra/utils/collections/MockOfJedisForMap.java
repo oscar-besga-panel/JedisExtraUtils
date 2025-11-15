@@ -10,7 +10,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
+
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -36,7 +36,7 @@ public class MockOfJedisForMap {
     private final Timer timer;
 
     public MockOfJedisForMap() {
-        PowerMockito.suppress(MemberMatcher.methodsDeclaredIn(TransactionBase.class));
+
 
         timer = new Timer();
 

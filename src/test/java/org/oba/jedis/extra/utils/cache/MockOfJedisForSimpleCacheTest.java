@@ -9,7 +9,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.TransactionBase;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Arrays;
@@ -21,7 +20,7 @@ import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpire
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, TransactionBase.class })
+@PrepareForTest({Transaction.class })
 public class MockOfJedisForSimpleCacheTest {
 
     private MockOfJedisForSimpleCache mockOfJedisForSimpleCache;
