@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.collections;
 
+import org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator;
 import org.oba.jedis.extra.utils.utils.Named;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
@@ -295,18 +296,14 @@ public final class JedisList implements List<String>, Named {
         try (Jedis jedis = jedisPool.getResource()) {
             /* https://stackoverflow.com/questions/31580535/remove-element-at-specific-index-from-redis-list */
             checkIndex(index);
-            String toDeleteTempName = generateToDelete();
-            Transaction tjedis = jedis.multi();
-            Response<String> futureDeleted = tjedis.lindex(name, index);
-            tjedis.lset(name, index, toDeleteTempName);
-            tjedis.lrem(name, 1, toDeleteTempName);
-            tjedis.exec();
+            String toDeleteTempName = UniqueTokenValueGenerator.generateUniqueTokenValue(name);
+            Transaction jedisMulti = jedis.multi();
+            Response<String> futureDeleted = jedisMulti.lindex(name, index);
+            jedisMulti.lset(name, index, toDeleteTempName);
+            jedisMulti.lrem(name, 1, toDeleteTempName);
+            jedisMulti.exec();
             return futureDeleted.get();
         }
-    }
-
-    private static synchronized String generateToDelete() {
-        return TO_DELETE + "_" + System.currentTimeMillis() + "_" + ThreadLocalRandom.current().nextInt();
     }
 
     @Override

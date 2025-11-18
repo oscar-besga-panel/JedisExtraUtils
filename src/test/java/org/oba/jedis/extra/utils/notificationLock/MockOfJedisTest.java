@@ -169,7 +169,7 @@ public class MockOfJedisTest {
 
     }
 
-    @Test
+    @Test(timeout = 15000)
     public void xread1Test() {
         StreamEntryID entryId = mockOfJedis.xadd("stream1", new XAddParams(), Map.of("message", "message456"));
         Map<String, StreamEntryID> streams   = Map.of("stream1", StreamEntryID.LAST_ENTRY);
@@ -178,7 +178,7 @@ public class MockOfJedisTest {
     }
 
 
-    @Test
+    @Test(timeout = 15000)
     public void xread2Test() throws InterruptedException {
         Semaphore semaphore = new Semaphore(0);
         String message = "message" + ThreadLocalRandom.current().nextInt(1000);

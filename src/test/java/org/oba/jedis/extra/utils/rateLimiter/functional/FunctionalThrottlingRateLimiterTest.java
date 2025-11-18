@@ -3,6 +3,7 @@ package org.oba.jedis.extra.utils.rateLimiter.functional;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.rateLimiter.ThrottlingRateLimiter;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+
 
 public class FunctionalThrottlingRateLimiterTest {
 
@@ -77,7 +79,7 @@ public class FunctionalThrottlingRateLimiterTest {
         assertEquals("1500000", jedisPool.getResource().hget(throttlingName, "allow_micros"));
     }
 
-    @Test
+    @Test(timeout = 15000)
     public void throttlingBasicTest() throws InterruptedException {
         ThrottlingRateLimiter rateLimiter = new ThrottlingRateLimiter(jedisPool, throttlingName).
                 create(500, TimeUnit.MILLISECONDS);
@@ -96,8 +98,7 @@ public class FunctionalThrottlingRateLimiterTest {
     }
 
 
-
-    @Test
+    @Test(timeout = 15000)
     public void throttlingAdvancedTest() {
         SortedMap<Integer, Map.Entry<Long,Boolean>> resultMap = new TreeMap<>();
         ThrottlingRateLimiter rateLimiter = new ThrottlingRateLimiter(jedisPool, throttlingName).

@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * This class will use a executor to get a thread to wait for lease time to go zero
  *
+ * This class is not thread safe, do not share within multiple threads
+ *
  * CAUTION: the executor can prevent the interrupting operation to be launched,
  * be aware not to use an exhausted pool
  * For this reason, is recommended a cached thread pool, which will create bew threads on demand or will use old ones if avalible

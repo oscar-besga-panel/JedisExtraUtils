@@ -26,8 +26,8 @@ import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateU
  * It is also closeable to be used in try-with-resources
  *
  * I do not recommend reuse a locked-and-unlocked JedisLock
- * Should be thread-safe, but I do not recommend using between threads
- * Creating a new one is very, very cheap
+ * It is not thread-safe, I do not recommend using between threads
+ * Creating a new one is very, very cheap, as data depends on Redis only
  *
  * https://redis.io/topics/distlock
  *
@@ -127,12 +127,12 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
     }
 
     @Override
-    public synchronized boolean tryLock() {
+    public boolean tryLock() {
         return redisLock();
     }
 
     @Override
-    public synchronized boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
+    public boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
         final TimeLimit timeLimit = new TimeLimit(time,unit);
         boolean locked = redisLock();
         while (!locked && timeLimit.checkInLimit()) {
@@ -143,7 +143,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
     }
 
     @Override
-    public synchronized void lock() {
+    public void lock() {
         boolean locked = redisLock();
         while (!locked) {
             try {
@@ -157,7 +157,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
 
 
     @Override
-    public synchronized void lockInterruptibly() throws InterruptedException {
+    public void lockInterruptibly() throws InterruptedException {
         boolean locked = redisLock();
         while (!locked) {
             Thread.sleep(waitCylce);
@@ -166,17 +166,17 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
     }
 
     @Override
-    public synchronized boolean isLocked(){
+    public boolean isLocked(){
         return redisCheckLock();
     }
 
     @Override
-    public synchronized void unlock() {
+    public void unlock() {
         redisUnlock();
     }
 
     @Override
-    public synchronized void underLock(Runnable task)  {
+    public void underLock(Runnable task)  {
         try (JedisLock jl = this) {
             jl.lock();
             task.run();
@@ -184,7 +184,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
     }
 
     @Override
-    public synchronized <T> T underLock(Supplier<T> task) {
+    public <T> T underLock(Supplier<T> task) {
         try (JedisLock jl = this){
             jl.lock();
             return task.get();
@@ -198,11 +198,11 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
      * The leaseMoment and timeLimit are set if lock is obtained
      * @return true if lock obtained, false otherwise
      */
-    private synchronized boolean redisLock() {
+    private boolean redisLock() {
         return withJedisPoolGet(this::redisLockUnderPool);
     }
 
-    private synchronized boolean redisLockUnderPool(Jedis jedis) {
+    private boolean redisLockUnderPool(Jedis jedis) {
         SetParams setParams = new SetParams().nx();
         if (leaseTime != null) {
             setParams.px(timeUnit.toMillis(leaseTime));
@@ -230,7 +230,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
     /**
      * Attempts to unlock the lock
      */
-    private synchronized void redisUnlock() {
+    private void redisUnlock() {
         if (!redisCheckLock()) return;
         List<String> keys = Collections.singletonList(name);
         List<String> values = Collections.singletonList(uniqueToken);
@@ -251,7 +251,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
      * If not, returns false
      * @return true if the lock is remotely held
      */
-    private synchronized boolean redisCheckLock() {
+    private boolean redisCheckLock() {
         return withJedisPoolGet(this::redisCheckLockUnderPool);
     }
 
@@ -261,7 +261,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
      * If not, returns false
      * @return true if the lock is remotely held
      */
-    private synchronized boolean redisCheckLockUnderPool(Jedis jedis) {
+    private boolean redisCheckLockUnderPool(Jedis jedis) {
         boolean check = false;
         LOGGER.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
         if ((leaseTime == null) || (timeLimit > System.currentTimeMillis())) {

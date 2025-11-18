@@ -10,7 +10,6 @@ public class TimeLimit {
 
 
     private final long timeLimitMs;
-    private boolean inLimit;
 
     /**
      * Creates a TimeLimit from now to this time quantity, in milliseconds
@@ -36,7 +35,7 @@ public class TimeLimit {
      * @return true if time NOT expired
      */
     public synchronized boolean checkInLimit() {
-        return inLimit = timeLimitMs > System.currentTimeMillis();
+        return timeLimitMs > System.currentTimeMillis();
     }
 
     /**
@@ -51,15 +50,6 @@ public class TimeLimit {
         } else {
             return 0L;
         }
-    }
-
-    /**
-     * Returns the last time check result
-     * THIS METHOD DOES NOT CHECK THE CURRENT TIME FOR EXPIRATION
-     * @return true if time NOT expired wihen checked
-     */
-    public boolean isInLimit() {
-        return inLimit;
     }
 
 }

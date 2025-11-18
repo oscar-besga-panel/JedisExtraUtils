@@ -126,6 +126,8 @@ There are other jedis utils in github, most notably
 ### Locks
 
 See [wiki](https://github.com/oscar-besga-panel/JedisExtraUtils/wiki/Locks) for more information and schemas 
+Take in account that these classes are not thread safe, do not share within multiple threads.  
+That is on purpose, because is intented to be used between processes.
 
 ### Collections
 

@@ -12,6 +12,8 @@ import java.util.function.Supplier;
 /**
  * Abstract class base to interrupting locks
  * It carries most of the code, and the thread generation is in the descendants
+ *
+ * This class is not thread safe, do not share within multiple threads
  */
 public abstract class AbstractInterruptingJedisLock implements IJedisLock {
 
@@ -77,7 +79,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         return jedisLock.isLocked();
     }
 
-    public synchronized boolean tryLock() {
+    public boolean tryLock() {
         boolean result = jedisLock.tryLock();
         if (result) {
             afterLock();
@@ -85,7 +87,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
         return result;
     }
 
-    public synchronized boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
+    public boolean tryLockForAWhile(long time, TimeUnit unit) throws InterruptedException {
         boolean result = jedisLock.tryLockForAWhile(time, unit);
         if (result) {
             afterLock();
@@ -94,13 +96,13 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     }
 
 
-    public synchronized void lock() {
+    public void lock() {
         jedisLock.lock();
         afterLock();
     }
 
 
-    public synchronized void lockInterruptibly() throws InterruptedException {
+    public void lockInterruptibly() throws InterruptedException {
         jedisLock.lockInterruptibly();
         afterLock();
     }
@@ -121,7 +123,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     }
 
     @Override
-    public synchronized void unlock() {
+    public void unlock() {
         jedisLock.unlock();
         if (!isLocked()) {
             afterUnLock();
@@ -129,14 +131,14 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     }
 
 
-    public synchronized void underLock(Runnable task) {
+    public void underLock(Runnable task) {
         try(AbstractInterruptingJedisLock aijl = this) {
             aijl.lock();
             task.run();
         }
     }
 
-    public synchronized <T> T underLock(Supplier<T> task) {
+    public <T> T underLock(Supplier<T> task) {
         try(AbstractInterruptingJedisLock aijl = this) {
             aijl.lock();
             return task.get();

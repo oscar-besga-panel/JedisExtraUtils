@@ -104,7 +104,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
         return 0;
     }
 
-    public synchronized boolean tryLock() {
+    public boolean tryLock() {
         return redisLock();
     }
 
@@ -113,18 +113,17 @@ public class NotificationLock implements IJedisLock, MessageListener {
         final TimeLimit timeLimit = new TimeLimit(time,unit);
         boolean acquired = true;
         boolean locked = redisLock();
-        while (!locked && acquired && timeLimit.isInLimit()) {
+        while (!locked && acquired && timeLimit.checkInLimit()) {
             acquired = semaphore.tryAcquire(time, unit);
-            timeLimit.checkInLimit();
-            if (acquired && timeLimit.isInLimit()) {
+            if (acquired && timeLimit.checkInLimit()) {
                 locked = redisLock();
             }
         }
-        return locked && acquired && timeLimit.isInLimit();
+        return locked && acquired && timeLimit.checkInLimit();
     }
 
     @Override
-    public synchronized void lock() {
+    public void lock() {
         boolean locked = redisLock();
         while (!locked) {
             try {
@@ -138,7 +137,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
 
 
     @Override
-    public synchronized void lockInterruptibly() throws InterruptedException {
+    public void lockInterruptibly() throws InterruptedException {
         boolean locked = redisLock();
         while (!locked) {
             semaphore.acquire();
@@ -146,19 +145,19 @@ public class NotificationLock implements IJedisLock, MessageListener {
         }
     }
 
-    public synchronized void unlock() {
+    public void unlock() {
         redisUnlock();
     }
 
 
-    public synchronized void underLock(Runnable task)  {
+    public void underLock(Runnable task)  {
         try (NotificationLock nl = this) {
             nl.lock();
             task.run();
         }
     }
 
-    public synchronized <T> T underLock(Supplier<T> task) {
+    public <T> T underLock(Supplier<T> task) {
         try (NotificationLock nl = this){
             nl.lock();
             return task.get();
@@ -171,7 +170,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * If not, returns false
      * @return true if the lock is remotely held
      */
-    private synchronized boolean redisCheckLock() {
+    private boolean redisCheckLock() {
         return withJedisPoolGet(this::redisCheckLockUnderPool);
     }
 
@@ -181,7 +180,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * If not, returns false
      * @return true if the lock is remotely held
      */
-    private synchronized boolean redisCheckLockUnderPool(Jedis jedis) {
+    private boolean redisCheckLockUnderPool(Jedis jedis) {
         String currentValueRedis = jedis.get(name);
         boolean check = uniqueToken.equals(currentValueRedis);
         LOGGER.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {} check {}",
@@ -195,11 +194,11 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * The leaseMoment and timeLimit are set if lock is obtained
      * @return true if lock obtained, false otherwise
      */
-    private synchronized boolean redisLock() {
+    private boolean redisLock() {
         return withJedisPoolGet(this::redisLockUnderPool);
     }
 
-    private synchronized boolean redisLockUnderPool(Jedis jedis) {
+    private boolean redisLockUnderPool(Jedis jedis) {
         LOGGER.debug("redisLockUnderPool");
         SetParams setParams = new SetParams().nx();
         Transaction t = jedis.multi();
@@ -216,7 +215,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
     /**
      * Attempts to unlock the lock
      */
-    private synchronized void redisUnlock() {
+    private void redisUnlock() {
         if (!redisCheckLock()) return;
         List<String> keys = Collections.singletonList(name);
         List<String> values = Collections.singletonList(uniqueToken);

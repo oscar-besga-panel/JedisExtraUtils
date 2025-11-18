@@ -77,7 +77,7 @@ public class JedisNotificationLockWithMockTest {
         jedisLock1.unlock();
     }
 
-    @Test
+    @Test(timeout = 15000)
     public void testTryLockForAWhile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
         String lockname = getUniqueName();
         NotificationLock jedisLock1 = new NotificationLock(jedisPool,lockname);

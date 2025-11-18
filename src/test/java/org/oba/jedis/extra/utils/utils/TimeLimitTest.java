@@ -22,21 +22,13 @@ public class TimeLimitTest {
     public void checkInLimitTest() {
         TimeLimit timeLimit = new TimeLimit(1, TimeUnit.SECONDS);
         boolean check1 = timeLimit.checkInLimit();
-        boolean isIn1 = timeLimit.isInLimit();
         doWait(550);
         boolean check2 = timeLimit.checkInLimit();
-        boolean isIn2 = timeLimit.isInLimit();
         doWait(550);
-        boolean isIn22 = timeLimit.isInLimit();
         boolean check3 = timeLimit.checkInLimit();
-        boolean isIn3 = timeLimit.isInLimit();
         assertTrue(check1);
-        assertTrue(isIn1);
         assertTrue(check2);
-        assertTrue(isIn2);
-        assertTrue(isIn22);
         assertFalse(check3);
-        assertFalse(isIn3);
     }
 
     @Test

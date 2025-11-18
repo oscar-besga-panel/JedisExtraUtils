@@ -166,7 +166,7 @@ public final class StreamMessageSystem implements JedisPoolUser, Named, AutoClos
      * Stores it's id and text to check if sent from here
      * @param message message to sent
      */
-    public synchronized void sendMessage(String message) {
+    public void sendMessage(String message) {
         if (!active.get()) {
             throw new IllegalStateException("StreamMessageSystem not active, cannot send!");
         }

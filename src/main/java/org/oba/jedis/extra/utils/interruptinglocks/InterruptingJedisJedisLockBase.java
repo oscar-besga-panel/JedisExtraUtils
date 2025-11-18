@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * This interrupting lock will create a background thread into the class
  * This is the preferred method for the interrupting locks
+ *
+ * This class is not thread safe, do not share within multiple threads
  */
 public final class InterruptingJedisJedisLockBase extends AbstractInterruptingJedisLock {
 
