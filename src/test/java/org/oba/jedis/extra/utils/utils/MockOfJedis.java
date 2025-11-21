@@ -98,6 +98,7 @@ public final class MockOfJedis {
             String message = ioc.getArgument(1, String.class);
             return mockPublish(channel, message);
         });
+        Mockito.when(jedis.ping()).thenAnswer(ioc -> Long.toString(System.currentTimeMillis()));
         Mockito.doAnswer( ioc -> {
             JedisPubSub jedisPubSub = ioc.getArgument(0, JedisPubSub.class);
             Object ochannels = ioc.getArgument(1);

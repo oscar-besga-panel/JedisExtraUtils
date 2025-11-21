@@ -11,6 +11,7 @@ import redis.clients.jedis.JedisPool;
 import java.io.IOException;
 
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class JedisPoolUserTest implements JedisPoolUser {
@@ -56,6 +57,7 @@ public class JedisPoolUserTest implements JedisPoolUser {
             jedis.set("b","2");
             jedis.set("c","3");
         });
+        withResource( jedis -> assertNotNull(jedis.ping()));
         assertTrue(jedis.exists("a"));
         assertTrue(jedis.exists("b"));
         assertTrue(jedis.exists("c"));
@@ -69,6 +71,8 @@ public class JedisPoolUserTest implements JedisPoolUser {
             jedis.set("c","3");
             return jedis.exists("a") && jedis.exists("b") && jedis.exists("c");
         });
+        String ping = withResourceGet(Jedis::ping);
+        assertNotNull(ping);
         assertTrue(result);
         assertTrue(jedis.exists("a"));
         assertTrue(jedis.exists("b"));
