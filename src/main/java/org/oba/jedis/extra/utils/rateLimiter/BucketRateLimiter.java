@@ -64,7 +64,7 @@ public class BucketRateLimiter implements JedisPoolUser, Named {
     }
 
     public boolean exists() {
-        return withJedisPoolGet( jedis -> jedis.exists(name));
+        return withResourceGet(jedis -> jedis.exists(name));
     }
 
     public BucketRateLimiter createIfNotExists(long capacity, Mode mode, long timeToRefillMillis) {
@@ -89,7 +89,7 @@ public class BucketRateLimiter implements JedisPoolUser, Named {
     }
 
     public BucketRateLimiter create(long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
-        withJedisPoolDo( jedis ->
+        withResource(jedis ->
             createWithJedis(jedis, capacity, mode, timeToRefill, timeUnit)
         );
         return this;
@@ -122,7 +122,7 @@ public class BucketRateLimiter implements JedisPoolUser, Named {
     }
 
     public void delete() {
-        withJedisPoolDo( jedis ->
+        withResource(jedis ->
                 jedis.del(name)
         );
     }

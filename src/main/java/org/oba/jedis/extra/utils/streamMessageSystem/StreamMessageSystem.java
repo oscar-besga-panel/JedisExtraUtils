@@ -78,7 +78,7 @@ public final class StreamMessageSystem implements JedisPoolUser, Named, AutoClos
      */
     void listenMessages() {
         try {
-            withJedisPoolDo(this::listenMessagesWithXREAD);
+            withResource(this::listenMessagesWithXREAD);
         } catch (Exception e) {
             LOGGER.error("Error in messagesThread", e);
         }
@@ -170,7 +170,7 @@ public final class StreamMessageSystem implements JedisPoolUser, Named, AutoClos
         if (!active.get()) {
             throw new IllegalStateException("StreamMessageSystem not active, cannot send!");
         }
-        withJedisPoolDo(jedis -> {
+        withResource(jedis -> {
             XAddParams addParams = new XAddParams();
             Map<String, String> data = Map.of(MESSAGE, message);
             lastMessageSent = data;

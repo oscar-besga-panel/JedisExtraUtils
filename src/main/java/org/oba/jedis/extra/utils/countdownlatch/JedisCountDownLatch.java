@@ -113,7 +113,7 @@ public class JedisCountDownLatch implements Named, JedisPoolUser {
      * @return the current value, after operation
      */
     public long countDown() {
-        long value = withJedisPoolGet(jedis -> jedis.decr(name));
+        long value = withResourceGet(jedis -> jedis.decr(name));
         LOGGER.debug("countDown name {} value {}", name, value);
         return value;
     }
@@ -127,7 +127,7 @@ public class JedisCountDownLatch implements Named, JedisPoolUser {
      * @return current value
      */
     public long getCount() {
-        String value = withJedisPoolGet(jedis -> jedis.get(name));
+        String value = withResourceGet(jedis -> jedis.get(name));
         LOGGER.debug("getCount name {} value {}", name, value);
         if (value != null && !value.isEmpty()) {
             return Long.parseLong(value);
@@ -142,7 +142,7 @@ public class JedisCountDownLatch implements Named, JedisPoolUser {
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
     public void destroy() {
-        withJedisPoolDo(jedis -> jedis.del(name));
+        withResource(jedis -> jedis.del(name));
     }
 
 

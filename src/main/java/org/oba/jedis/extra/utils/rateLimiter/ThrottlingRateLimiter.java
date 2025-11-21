@@ -55,7 +55,7 @@ public class ThrottlingRateLimiter implements JedisPoolUser, Named {
     }
 
     public boolean exists() {
-        return withJedisPoolGet( jedis -> jedis.exists(name));
+        return withResourceGet(jedis -> jedis.exists(name));
     }
 
     public ThrottlingRateLimiter createIfNotExists(long timeToAllowMillis) {
@@ -79,7 +79,7 @@ public class ThrottlingRateLimiter implements JedisPoolUser, Named {
     }
 
     public ThrottlingRateLimiter create(long timeToAllow, TimeUnit timeUnit) {
-        withJedisPoolDo( jedis ->
+        withResource(jedis ->
                 createWithJedis(jedis, timeToAllow, timeUnit)
         );
         return this;
@@ -105,7 +105,7 @@ public class ThrottlingRateLimiter implements JedisPoolUser, Named {
     }
 
     public void delete() {
-        withJedisPoolDo( jedis ->
+        withResource(jedis ->
                 jedis.del(name)
         );
     }

@@ -55,7 +55,7 @@ public class CycleData implements JedisPoolUser, Named, Iterator<String> {
     }
 
     public CycleData create(String... data) {
-        withJedisPoolDo(jedis -> createWithJedis(jedis, data));
+        withResource(jedis -> createWithJedis(jedis, data));
         return this;
     }
 
@@ -78,7 +78,7 @@ public class CycleData implements JedisPoolUser, Named, Iterator<String> {
     }
 
     public boolean exists() {
-        return withJedisPoolGet( jedis -> jedis.exists(name));
+        return withResourceGet(jedis -> jedis.exists(name));
     }
 
     @Override
@@ -102,7 +102,7 @@ public class CycleData implements JedisPoolUser, Named, Iterator<String> {
     }
 
     public void delete() {
-        withJedisPoolDo( jedis ->
+        withResource(jedis ->
                 jedis.del(name)
         );
     }

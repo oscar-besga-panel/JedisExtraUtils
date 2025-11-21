@@ -171,7 +171,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * @return true if the lock is remotely held
      */
     private boolean redisCheckLock() {
-        return withJedisPoolGet(this::redisCheckLockUnderPool);
+        return withResourceGet(this::redisCheckLockUnderPool);
     }
 
     /**
@@ -195,7 +195,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * @return true if lock obtained, false otherwise
      */
     private boolean redisLock() {
-        return withJedisPoolGet(this::redisLockUnderPool);
+        return withResourceGet(this::redisLockUnderPool);
     }
 
     private boolean redisLockUnderPool(Jedis jedis) {

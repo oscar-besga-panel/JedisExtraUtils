@@ -66,7 +66,7 @@ public class ScriptEvalSha1 implements JedisPoolUser {
             if (scriptToLoad == null || scriptToLoad.isBlank()) {
                 throw new IllegalArgumentException("Script to load cannot be null nor empty");
             }
-            sha1Digest = withJedisPoolGet(jedis -> jedis.scriptLoad(scriptToLoad));
+            sha1Digest = withResourceGet(jedis -> jedis.scriptLoad(scriptToLoad));
             LOGGER.debug("SHA1 load from script {}", sha1Digest);
             if (sha1Digest == null || sha1Digest.isBlank()) {
                 LOGGER.error("SHA1 from reddit is null or empty !");
@@ -87,7 +87,7 @@ public class ScriptEvalSha1 implements JedisPoolUser {
             load();
         }
         LOGGER.debug("SHA1 eval {}", sha1Digest);
-        return withJedisPoolGet(jedis -> jedis.evalsha(sha1Digest, keys, params));
+        return withResourceGet(jedis -> jedis.evalsha(sha1Digest, keys, params));
     }
 
     /**

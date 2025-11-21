@@ -102,7 +102,7 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K>, Jedi
                 currentCursor = currentResult.getCursor();
             }
             LOGGER.debug("Petition with currentCursor " + currentCursor);
-            currentResult = withJedisPoolGet(jedis -> doScan(jedis, currentCursor, getScanParams()));
+            currentResult = withResourceGet(jedis -> doScan(jedis, currentCursor, getScanParams()));
             LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
 
             if (currentResult.getResult().isEmpty() && !currentResult.isCompleteIteration()) {
@@ -128,7 +128,7 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K>, Jedi
 
     public void remove() {
         if (next != null) {
-            withJedisPoolDo(jedis -> doRemove(jedis, next));
+            withResource(jedis -> doRemove(jedis, next));
             next = null;
         } else {
             throw new IllegalStateException("Next not called or other error");

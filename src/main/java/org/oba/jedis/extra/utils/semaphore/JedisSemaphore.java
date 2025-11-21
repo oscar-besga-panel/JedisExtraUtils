@@ -106,7 +106,7 @@ public class JedisSemaphore implements Named, JedisPoolUser {
         if (initialPermits < 0) {
             throw new IllegalArgumentException("initial permit on semaphore must be always equal or more than zero");
         }
-        withJedisPoolDo(jedis -> jedis.set(name, String.valueOf(initialPermits), new SetParams().nx()));
+        withResource(jedis -> jedis.set(name, String.valueOf(initialPermits), new SetParams().nx()));
     }
 
     @Override
@@ -215,7 +215,7 @@ public class JedisSemaphore implements Named, JedisPoolUser {
         if (permits <= 0) {
             throw new IllegalArgumentException("permit to release on semaphore must be always more than zero");
         }
-        withJedisPoolDo(jedis -> jedis.incrBy(name, permits));
+        withResource(jedis -> jedis.incrBy(name, permits));
     }
 
     /**
@@ -224,7 +224,7 @@ public class JedisSemaphore implements Named, JedisPoolUser {
      * @return number of permits
      */
     public int availablePermits() {
-        String permits = withJedisPoolGet(jedis -> jedis.get(name));
+        String permits = withResourceGet(jedis -> jedis.get(name));
         if (permits == null || permits.isEmpty()) {
             return -1;
         } else {
@@ -238,7 +238,7 @@ public class JedisSemaphore implements Named, JedisPoolUser {
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
     public void destroy() {
-        withJedisPoolDo(jedis -> jedis.del(name));
+        withResource(jedis -> jedis.del(name));
     }
 
 }

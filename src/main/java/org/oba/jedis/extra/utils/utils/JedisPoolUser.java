@@ -10,13 +10,13 @@ public interface JedisPoolUser {
 
     JedisPool getJedisPool();
 
-    default void withJedisPoolDo(Consumer<Jedis> consumer) {
+    default void withResource(Consumer<Jedis> consumer) {
         try (Jedis jedis = getJedisPool().getResource()) {
             consumer.accept(jedis);
         }
     }
 
-    default <K> K withJedisPoolGet(Function<Jedis, K> function) {
+    default <K> K withResourceGet(Function<Jedis, K> function) {
         try (Jedis jedis = getJedisPool().getResource()) {
             return function.apply(jedis);
         }
