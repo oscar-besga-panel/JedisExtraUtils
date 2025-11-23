@@ -7,6 +7,7 @@ import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.params.SetParams;
@@ -149,12 +150,29 @@ public class JedisTestFactory {
         }
     }
 
+    public JedisPooled createJedisPooled() {
+        if (enableSentinel) {
+            return createJedisPooledSentinel();
+        } else {
+            return createJedisPooledClassic();
+        }
+    }
+
     public JedisPool createJedisPoolClassic() {
         JedisPoolConfig jedisPoolConfig = createJedisPoolConfig();
         if (pass != null && !pass.trim().isEmpty()) {
             return new JedisPool(jedisPoolConfig, host, port, Protocol.DEFAULT_TIMEOUT, pass);
         } else {
             return new JedisPool(jedisPoolConfig, host, port);
+        }
+    }
+
+    public JedisPooled createJedisPooledClassic() {
+        JedisPoolConfig jedisPoolConfig = createJedisPoolConfig();
+        if (pass != null && !pass.trim().isEmpty()) {
+            return new JedisPooled(host, port, "", pass);
+        } else {
+            return new JedisPooled(host, port);
         }
     }
 
@@ -171,6 +189,11 @@ public class JedisTestFactory {
 
         return JedisSentinelPoolAdapter.poolFromSentinel(jedisSentinelPool);
     }
+
+    public JedisPooled createJedisPooledSentinel() {
+        throw new UnsupportedOperationException("no sentinel available for JedisPooled");
+    }
+
 
     private JedisPoolConfig createJedisPoolConfig() {
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
