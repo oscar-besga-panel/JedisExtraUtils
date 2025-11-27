@@ -4,7 +4,6 @@ import org.oba.jedis.extra.utils.iterators.ScanIterator;
 import org.oba.jedis.extra.utils.utils.Listable;
 import org.oba.jedis.extra.utils.utils.Mapeable;
 import org.oba.jedis.extra.utils.utils.SimpleEntry;
-import redis.clients.jedis.Jedis;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +34,7 @@ public final class CacheIterator implements Iterator<Map.Entry<String, String>>,
      */
     CacheIterator(SimpleCache cache) {
         this.cache = cache;
-        this.scanIterator = new ScanIterator(cache.getJedisPool(), cache.resolveKey("*"), DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+        this.scanIterator = new ScanIterator(cache.getJedisPooled(), cache.resolveKey("*"), DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     @Override
@@ -47,11 +46,9 @@ public final class CacheIterator implements Iterator<Map.Entry<String, String>>,
     public Map.Entry<String, String> next() {
         String redisKey = scanIterator.next();
         if (redisKey != null) {
-            try(Jedis jedis = cache.getJedisPool().getResource()) {
-                String value = jedis.get(redisKey);
-                String key = cache.unresolveKey(redisKey);
-                return new SimpleEntry(key, value);
-            }
+            String value = cache.getJedisPooled().get(redisKey);
+            String key = cache.unresolveKey(redisKey);
+            return new SimpleEntry(key, value);
         } else {
             throw new NoSuchElementException("No next value");
         }

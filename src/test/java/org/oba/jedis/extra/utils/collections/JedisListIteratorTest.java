@@ -8,7 +8,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -41,7 +40,7 @@ public class JedisListIteratorTest {
 
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
@@ -135,7 +134,7 @@ public class JedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest2() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
@@ -152,7 +151,7 @@ public class JedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest3() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
             String s = it.next();
@@ -166,7 +165,7 @@ public class JedisListIteratorTest {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void listIteratorRemoveOneTestError() {
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         it.remove();
@@ -174,7 +173,7 @@ public class JedisListIteratorTest {
 
     @Test
     public void listIteratorRemoveOneTest() {
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         if (it.hasNext()) {

@@ -44,7 +44,7 @@ public final class CacheKeyIterator implements Iterator<String>, Listable<String
     CacheKeyIterator(SimpleCache cache, boolean resolve) {
         this.cache = cache;
         this.resolve = resolve;
-        this.scanIterator = new ScanIterator(cache.getJedisPool(), cache.resolveKey("*"), DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+        this.scanIterator = new ScanIterator(cache.getJedisPooled(), cache.resolveKey("*"), DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     @Override

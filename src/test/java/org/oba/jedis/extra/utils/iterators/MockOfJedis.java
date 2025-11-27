@@ -4,19 +4,29 @@ import org.mockito.Mockito;
 import org.oba.jedis.extra.utils.test.TTL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
 import redis.clients.jedis.resps.Tuple;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Timer;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
@@ -43,8 +53,7 @@ public class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private final JedisPool jedisPool;
-    private final Jedis jedis;
+    private final JedisPooled jedisPooled;
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Map<String,String>> hdata = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Set<String>> sdata = Collections.synchronizedMap(new HashMap<>());
@@ -53,110 +62,108 @@ public class MockOfJedis {
 
     public MockOfJedis() {
         timer = new Timer();
-        jedis = Mockito.mock(Jedis.class);
-        jedisPool = Mockito.mock(JedisPool.class);
-        Mockito.when(jedisPool.getResource()).thenReturn(jedis);
-        Mockito.when(jedis.exists(anyString())).thenAnswer(ioc -> {
+        jedisPooled = Mockito.mock(JedisPooled.class);
+        Mockito.when(jedisPooled.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExists(key);
         });
-        Mockito.when(jedis.get(anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);
         });
-        Mockito.when(jedis.set(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.set(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = new SetParams();
             return mockSet(key, value, setParams);
         });
-        Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = ioc.getArgument(2);
             return mockSet(key, value, setParams);
         });
-        Mockito.when(jedis.del(anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
-        Mockito.when(jedis.scan(anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.scan(anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String pattern = ioc.getArgument(0);
             ScanParams scanParams = ioc.getArgument(1);
             return mockScan(pattern, scanParams);
         });
-        Mockito.when(jedis.scan(anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.scan(anyString())).thenAnswer(ioc -> {
             String pattern = ioc.getArgument(0);
             ScanParams scanParams = new ScanParams().match("*");
             return mockScan(pattern, scanParams);
         });
-        Mockito.when(jedis.hget(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.hget(anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String key = ioc.getArgument(1);
             return mockHGet(name, key);
         });
-        Mockito.when(jedis.hset(anyString(), anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.hset(anyString(), anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String key = ioc.getArgument(1);
             String value = ioc.getArgument(2);
             return mockHSet(name, key, value);
         });
-        Mockito.when(jedis.hset(anyString(), any(Map.class))).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.hset(anyString(), any(Map.class))).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             Map<String,String> values = ioc.getArgument(1);
             return mockHSet(name, values);
         });
-        Mockito.when(jedis.hdel(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.hdel(anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String key = ioc.getArgument(1);
             return mockHDel(name, key);
         });
-        Mockito.when(jedis.hscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.hscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String pattern = ioc.getArgument(1);
             ScanParams scanParams = ioc.getArgument(2);
             return mockHScan(name, pattern, scanParams);
         });
-        Mockito.when(jedis.hscan(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.hscan(anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String pattern = ioc.getArgument(1);
             ScanParams scanParams = new ScanParams();
             return mockHScan(name, pattern, scanParams);
         });
-        Mockito.when(jedis.sadd(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.sadd(anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             return mockSAdd(name, value);
         });
-        Mockito.when(jedis.srem(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.srem(anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             return mockSRem(name, value);
         });
-        Mockito.when(jedis.sismember(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.sismember(anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             return mockSIsMember(name, value);
         });
-        Mockito.when(jedis.sscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.sscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String pattern = ioc.getArgument(1);
             ScanParams scanParams = ioc.getArgument(2);
             return mockSScan(name, pattern, scanParams);
         });
-        Mockito.when(jedis.sscan(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.sscan(anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String pattern = ioc.getArgument(1);
             ScanParams scanParams = new ScanParams();
             return mockSScan(name, pattern, scanParams);
         });
-        Mockito.when(jedis.zadd(anyString(), anyDouble(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.zadd(anyString(), anyDouble(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             double score = ioc.getArgument(1);
             String value = ioc.getArgument(2);
             return mockZAdd(name, score, value);
         });
-        Mockito.when(jedis.zrem(anyString(), any())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.zrem(anyString(), any())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             Object value = ioc.getArgument(1);
             if (value instanceof  String) {
@@ -167,18 +174,18 @@ public class MockOfJedis {
                 throw new IllegalArgumentException("Bad argument for mock zrem " +  ioc.getArgument(1));
             }
         });
-        Mockito.when(jedis.zscore(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.zscore(anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             return mockZScore(name, value);
         });
-        Mockito.when(jedis.zscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.zscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String pattern = ioc.getArgument(1);
             ScanParams scanParams = ioc.getArgument(2);
             return mockZScan(name, pattern, scanParams);
         });
-        Mockito.when(jedis.zscan(anyString(), anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.zscan(anyString(), anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0);
             String pattern = ioc.getArgument(1);
             ScanParams scanParams = new ScanParams();
@@ -335,12 +342,9 @@ public class MockOfJedis {
                 zdata.containsKey(key);
     }
 
-    public Jedis getJedis(){
-        return jedis;
-    }
 
-    public JedisPool getJedisPool(){
-        return jedisPool;
+    public JedisPooled getJedisPooled(){
+        return jedisPooled;
     }
 
     public synchronized void clearData(){

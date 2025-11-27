@@ -8,7 +8,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -43,20 +42,20 @@ public class JedisListTest {
 
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
 
     @Test
     public void getNameTest() {
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         assertEquals(listName, jedisList.getName());
     }
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         jedisList.checkExists();
     }
 
@@ -76,7 +75,7 @@ public class JedisListTest {
 
     @Test
     public void basicTest() {
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         assertFalse(jedisList.exists());
         assertTrue(jedisList.isEmpty());
         assertEquals(0L, jedisList.size());
@@ -151,7 +150,7 @@ public class JedisListTest {
 
     @Test
     public void containsIndexOf(){
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         jedisList.addAll(Arrays.asList("a", "b", "c", "a", "d"));
         assertTrue(jedisList.contains("a"));
         assertEquals(0, jedisList.indexOf("a"));
@@ -215,12 +214,12 @@ public class JedisListTest {
         assertEquals(2, jedisList3.size());
         assertEquals("b", jedisList3.get(0));
         assertEquals("c", jedisList3.get(1));
-        JedisList jedisList4 = new JedisList(mockOfJedisForList.getJedisPool(), listName2);
+        JedisList jedisList4 = new JedisList(mockOfJedisForList.getJedisPooled(), listName2);
         assertTrue(jedisList4.exists());
         assertEquals(2, jedisList4.size());
         assertEquals("b", jedisList4.get(0));
         assertEquals("c", jedisList4.get(1));
-        mockOfJedisForList.getJedis().del(listName2);
+        mockOfJedisForList.getJedisPooled().del(listName2);
     }
 
     @Test

@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,28 +30,28 @@ public class FunctionalJedisListIteratorTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String listName;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         listName = "list:" + this.getClass().getName() + ":" + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, listName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(listName);
+            jedisPooled.close();
         }
     }
 
 
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
@@ -146,7 +145,7 @@ public class FunctionalJedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest2() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
@@ -163,7 +162,7 @@ public class FunctionalJedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest3() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
             String s = it.next();
@@ -177,7 +176,7 @@ public class FunctionalJedisListIteratorTest {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void listIteratorRemoveOneTestError() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         it.remove();
@@ -185,7 +184,7 @@ public class FunctionalJedisListIteratorTest {
 
     @Test
     public void listIteratorRemoveOneTest() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         if (it.hasNext()) {

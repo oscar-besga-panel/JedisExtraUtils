@@ -10,10 +10,18 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.oba.jedis.extra.utils.cache.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
 
 @RunWith(PowerMockRunner.class)
@@ -39,7 +47,7 @@ public class SimpleCacheIteratorTest {
 
     SimpleCache createNewCache() {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        return new SimpleCache(mockOfJedisForSimpleCache.getJedisPool(), name, 3_600_000);
+        return new SimpleCache(mockOfJedisForSimpleCache.getJedisPooled(), name, 3_600_000);
     }
 
     @Test
