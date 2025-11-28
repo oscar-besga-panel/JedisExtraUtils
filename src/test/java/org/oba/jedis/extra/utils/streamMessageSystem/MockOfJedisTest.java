@@ -8,7 +8,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.StreamEntryID;
 import redis.clients.jedis.Transaction;
-
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.params.XAddParams;
 import redis.clients.jedis.params.XReadParams;
@@ -18,11 +17,19 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
@@ -52,7 +59,7 @@ public class MockOfJedisTest {
 
     @Test
     public void existsTest() {
-        assertNotNull(mockOfJedis.getJedis());
+        assertNotNull(mockOfJedis.getJedisPooled());
     }
 
     @Test
@@ -229,17 +236,17 @@ public class MockOfJedisTest {
 
     @Test
     public void testDataInsertion() throws InterruptedException {
-        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("a", "A2", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A2", new SetParams());
         assertEquals("A2", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("b", "B1", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("b", "B1", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedis().set("b", "B2", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("b", "B2", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedis().set("c", "C1", new SetParams().nx().px(500));
+        mockOfJedis.getJedisPooled().set("c", "C1", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
-        mockOfJedis.getJedis().set("c", "C2", new SetParams().nx().px(500));
+        mockOfJedis.getJedisPooled().set("c", "C2", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
         Thread.sleep(1000);
         assertNull(mockOfJedis.getCurrentData().get("c"));
@@ -247,11 +254,11 @@ public class MockOfJedisTest {
 
     @Test
     public void testEval() {
-        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
         List<String> keys = Collections.singletonList("a");
         List<String> values = Collections.singletonList("A1");
-        Object response = mockOfJedis.getJedis().evalsha("sha1", keys, values);
+        Object response = mockOfJedis.getJedisPooled().evalsha("sha1", keys, values);
         assertNull( mockOfJedis.getCurrentData().get("a"));
         assertEquals(1,response);
     }

@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +31,7 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean otherError = new AtomicBoolean(false);
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String lockName;
     private final List<JedisLock> lockList = new ArrayList<>();
 
@@ -42,7 +41,7 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After
@@ -56,9 +55,9 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
                     }
                     il.unlock();
         });
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(lockName);
+            jedisPooled.close();
         }
     }
 
@@ -90,7 +89,7 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisLock jedisLock = new JedisLock(jedisPool, lockName);
+            JedisLock jedisLock = new JedisLock(jedisPooled, lockName);
             lockList.add(jedisLock);
             jedisLock.underLock(() -> {
                 JedisTestFactoryLocks.checkLock(jedisLock);

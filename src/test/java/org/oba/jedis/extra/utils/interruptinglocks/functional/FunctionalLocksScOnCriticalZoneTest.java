@@ -6,12 +6,12 @@ import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.LockFromRedis;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.utils.JedisPoolAdapter;
 import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,14 +63,6 @@ public class FunctionalLocksScOnCriticalZoneTest {
 
     }
 
-    JedisPool createJedisPoolAdapter() {
-        Jedis jedis = jtfTest.createJedisClient();
-        jedisList.add(jedis);
-        JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
-        jedisPoolList.add(jedisPool);
-        return jedisPool;
-    }
-
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
@@ -99,8 +91,8 @@ public class FunctionalLocksScOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPool jedisPool = createJedisPoolAdapter();
-            Lock lock = new JedisLock(jedisPool, lockName).asConcurrentLock();
+            JedisPooled jedisPooled = jtfTest.createJedisPooled();
+            Lock lock = new JedisLock(jedisPooled, lockName).asConcurrentLock();
             lockList.add(lock);
             lock.lock();
             JedisTestFactoryLocks.checkLock(lock);

@@ -2,13 +2,14 @@ package org.oba.jedis.extra.utils.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+
 
 /**
  * Evals a script to its SHA-1 representation in redis
@@ -23,21 +24,21 @@ import java.util.List;
  *
  *
  */
-public class ScriptEvalSha1 implements JedisPoolUser {
+public class ScriptEvalSha1 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptEvalSha1.class);
     public static final String SHA_1 = "SHA-1";
 
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final UniversalReader scriptSource;
     private String sha1Digest;
 
-    public ScriptEvalSha1(JedisPool jedisPool, UniversalReader scriptSource) {
-        this(jedisPool, scriptSource, false);
+    public ScriptEvalSha1(JedisPooled jedisPooled, UniversalReader scriptSource) {
+        this(jedisPooled, scriptSource, false);
     }
 
-    public ScriptEvalSha1(JedisPool jedisPool, UniversalReader scriptSource, boolean autoload) {
-        this.jedisPool = jedisPool;
+    public ScriptEvalSha1(JedisPooled jedisPooled, UniversalReader scriptSource, boolean autoload) {
+        this.jedisPooled = jedisPooled;
         this.scriptSource = scriptSource;
         if (autoload) {
             load();
@@ -46,11 +47,6 @@ public class ScriptEvalSha1 implements JedisPoolUser {
 
     public String getSha1Digest() {
         return sha1Digest;
-    }
-
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
     }
 
     public boolean load() {
@@ -66,7 +62,7 @@ public class ScriptEvalSha1 implements JedisPoolUser {
             if (scriptToLoad == null || scriptToLoad.isBlank()) {
                 throw new IllegalArgumentException("Script to load cannot be null nor empty");
             }
-            sha1Digest = withResourceGet(jedis -> jedis.scriptLoad(scriptToLoad));
+            sha1Digest = jedisPooled.scriptLoad(scriptToLoad);
             LOGGER.debug("SHA1 load from script {}", sha1Digest);
             if (sha1Digest == null || sha1Digest.isBlank()) {
                 LOGGER.error("SHA1 from reddit is null or empty !");
@@ -87,7 +83,7 @@ public class ScriptEvalSha1 implements JedisPoolUser {
             load();
         }
         LOGGER.debug("SHA1 eval {}", sha1Digest);
-        return withResourceGet(jedis -> jedis.evalsha(sha1Digest, keys, params));
+        return jedisPooled.evalsha(sha1Digest, keys, params);
     }
 
     /**

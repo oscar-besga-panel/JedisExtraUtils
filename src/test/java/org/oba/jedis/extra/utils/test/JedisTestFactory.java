@@ -1,15 +1,11 @@
 package org.oba.jedis.extra.utils.test;
 
-import org.oba.jedis.extra.utils.utils.JedisSentinelPoolAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPooled;
-import redis.clients.jedis.JedisSentinelPool;
-import redis.clients.jedis.Protocol;
 import redis.clients.jedis.params.SetParams;
 
 import java.io.FileInputStream;
@@ -17,11 +13,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class JedisTestFactory {
@@ -142,28 +135,11 @@ public class JedisTestFactory {
     }
 
 
-    public JedisPool createJedisPool() {
-        if (enableSentinel) {
-            return createJedisPoolSentinel();
-        } else {
-            return createJedisPoolClassic();
-        }
-    }
-
     public JedisPooled createJedisPooled() {
         if (enableSentinel) {
             return createJedisPooledSentinel();
         } else {
             return createJedisPooledClassic();
-        }
-    }
-
-    public JedisPool createJedisPoolClassic() {
-        JedisPoolConfig jedisPoolConfig = createJedisPoolConfig();
-        if (pass != null && !pass.trim().isEmpty()) {
-            return new JedisPool(jedisPoolConfig, host, port, Protocol.DEFAULT_TIMEOUT, pass);
-        } else {
-            return new JedisPool(jedisPoolConfig, host, port);
         }
     }
 
@@ -176,19 +152,6 @@ public class JedisTestFactory {
         }
     }
 
-    public JedisPool createJedisPoolSentinel() {
-        JedisPoolConfig jedisPoolConfig = createJedisPoolConfig();
-        Set<String> sentinels = new HashSet<>();
-        Collections.addAll(sentinels, sentinelHosts.split(","));
-        JedisSentinelPool jedisSentinelPool;
-        if (sentinelPass != null && !sentinelPass.isBlank()) {
-            jedisSentinelPool = new JedisSentinelPool(sentinelMaster, sentinels, jedisPoolConfig,sentinelPass);
-        } else {
-            jedisSentinelPool = new JedisSentinelPool(sentinelMaster, sentinels, jedisPoolConfig);
-        }
-
-        return JedisSentinelPoolAdapter.poolFromSentinel(jedisSentinelPool);
-    }
 
     public JedisPooled createJedisPooledSentinel() {
         throw new UnsupportedOperationException("no sentinel available for JedisPooled");
@@ -232,22 +195,20 @@ public class JedisTestFactory {
     }
 
     public void testPoolConnection() {
-        try (JedisPool jedisPool = createJedisPool()){
-            testPoolConnection(jedisPool);
+        try (JedisPooled jedisPooled = createJedisPooled()){
+            testPoolConnection(jedisPooled);
         }
     }
 
-    public void testPoolConnection(JedisPool jedisPool){
-        try (Jedis jedis = jedisPool.getResource() ) {
-            String val = "test:" + System.currentTimeMillis();
-            jedis.set(val, val, new SetParams().px(5000));
-            String check = jedis.get(val);
-            jedis.del(val);
-            if (!val.equalsIgnoreCase(check))
-                throw new IllegalStateException("Jedis connection not ok");
-            if (!jedis.ping().equalsIgnoreCase("PONG"))
-                throw new IllegalStateException("Jedis connection not pong");
-        }
+    public void testPoolConnection(JedisPooled jedisPooled){
+        String val = "test:" + System.currentTimeMillis();
+        jedisPooled.set(val, val, new SetParams().px(5000));
+        String check = jedisPooled.get(val);
+        jedisPooled.del(val);
+        if (!val.equalsIgnoreCase(check))
+            throw new IllegalStateException("Jedis connection not ok");
+        if (!jedisPooled.ping().equalsIgnoreCase("PONG"))
+            throw new IllegalStateException("Jedis connection not pong");
     }
 
     public List<String> randomSizedListOfChars() {

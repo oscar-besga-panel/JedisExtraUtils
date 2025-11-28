@@ -4,7 +4,7 @@ package org.oba.jedis.extra.utils.collections;
 
 import org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator;
 import org.oba.jedis.extra.utils.utils.Named;
-import org.oba.jedis.extra.utils.utils.ScriptEvalSha12;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +55,8 @@ public final class JedisList implements List<String>, Named {
 
     private final JedisPooled jedisPooled;
     private final String name;
-    private final ScriptEvalSha12 scriptIndexOf;
-    private final ScriptEvalSha12 scriptLastIndexOf;
+    private final ScriptEvalSha1 scriptIndexOf;
+    private final ScriptEvalSha1 scriptLastIndexOf;
 
     /**
      * Creates a new list in jedis with given name, or references an existing one
@@ -69,10 +69,10 @@ public final class JedisList implements List<String>, Named {
     public JedisList(JedisPooled jedisPooled, String name){
         this.jedisPooled = jedisPooled;
         this.name = name;
-        this.scriptIndexOf = new ScriptEvalSha12(jedisPooled, new UniversalReader().
+        this.scriptIndexOf = new ScriptEvalSha1(jedisPooled, new UniversalReader().
                 withResoruce(SCRIPT_NAME_INDEX_OF).
                 withFile(FILE_PATH_INDEX_OF));
-        this.scriptLastIndexOf = new ScriptEvalSha12(jedisPooled, new UniversalReader().
+        this.scriptLastIndexOf = new ScriptEvalSha1(jedisPooled, new UniversalReader().
                 withResoruce(SCRIPT_NAME_LAST_INDEX_OF).
                 withFile(FILE_PATH_LAST_INDEX_OF));
 

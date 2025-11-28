@@ -2,8 +2,8 @@ package org.oba.jedis.extra.utils.semaphore;
 
 
 import org.oba.jedis.extra.utils.utils.Named;
-import org.oba.jedis.extra.utils.utils.ScriptEvalSha12;
-import org.oba.jedis.extra.utils.utils.ScriptHolder2;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.oba.jedis.extra.utils.utils.ScriptHolder;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.params.SetParams;
@@ -40,7 +40,7 @@ public class JedisSemaphore implements Named {
 
     private final JedisPooled jedisPooled;
     private final String name;
-    private final ScriptEvalSha12 script;
+    private final ScriptEvalSha1 script;
     private long waitingMilis = 150;
 
     /**
@@ -61,7 +61,7 @@ public class JedisSemaphore implements Named {
     public JedisSemaphore(JedisPooled jedisPooled, String name, int initialPermits) {
         this.jedisPooled = jedisPooled;
         this.name = name;
-        this.script = new ScriptEvalSha12(jedisPooled, new UniversalReader().
+        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
         init(initialPermits);
@@ -73,7 +73,7 @@ public class JedisSemaphore implements Named {
      *                     The pool of the holder will be used with the semaphore
      * @param name Name of the semaphore
      */
-    public JedisSemaphore(ScriptHolder2 scriptHolder, String name) {
+    public JedisSemaphore(ScriptHolder scriptHolder, String name) {
         this(scriptHolder, name, 1);
     }
 
@@ -84,7 +84,7 @@ public class JedisSemaphore implements Named {
      * @param name Name of the semaphore
      * @param initialPermits Initial permits of the semaphore
      */
-    public JedisSemaphore(ScriptHolder2 scriptHolder, String name, int initialPermits) {
+    public JedisSemaphore(ScriptHolder scriptHolder, String name, int initialPermits) {
         this.jedisPooled = scriptHolder.getJedisPooled();
         this.name = name;
         this.script = scriptHolder.getScript(SCRIPT_NAME);

@@ -1,9 +1,8 @@
 package org.oba.jedis.extra.utils.rateLimiter;
 
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPooled;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,10 +20,18 @@ class CommonRateLimiter {
         return BigInteger.valueOf(timeUnit.toMillis(timeToRefill)).multiply(BI_THOUSAND);
     }
 
-    public static BigInteger fromRedisTimestampAsMicros(Jedis jedis) {
-        List<String> time = jedis.time();
+    public static BigInteger fromRedisTimestampAsMicros(JedisPooled jedisPooled) {
+        //TODO time
+        // BAD FIX
+        /*
+        List<String> time = jedisPooled.time();
         return BigInteger.valueOf(Long.parseLong(time.get(0))).multiply(BI_MILLION).
                 add(BigInteger.valueOf(Long.parseLong(time.get(1))));
+
+         */
+        jedisPooled.ping();
+        String micros = Long.toString(System.currentTimeMillis() * 1000L);
+        return new BigInteger(micros);
     }
 
     public static boolean scriptResultAsBoolean(Object result) {

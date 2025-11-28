@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,14 +31,14 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseUnderlockTest {
     private final AtomicBoolean otherError = new AtomicBoolean(false);
     private String lockName;
     private final List<InterruptingJedisJedisLockBase> interruptingLockBaseList = new ArrayList<>();
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
         lockName = "flock:" + this.getClass().getName() + ":lockT" + System.currentTimeMillis();
     }
 
@@ -54,9 +53,9 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseUnderlockTest {
                     }
                     il.unlock();
         });
-        if (jedisPool!= null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(lockName);
+            jedisPooled.close();
         }
     }
 
@@ -88,7 +87,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseUnderlockTest {
 
     private void accesLockOfCriticalZone(int sleepTime){
         try {
-            InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5, TimeUnit.SECONDS);
+            InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(jedisPooled, lockName, 5, TimeUnit.SECONDS);
             interruptingLockBaseList.add(interruptingJedisJedisLockBase);
             interruptingJedisJedisLockBase.underLock( () -> {
                 boolean c = JedisTestFactoryLocks.checkLock(interruptingJedisJedisLockBase);

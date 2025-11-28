@@ -8,10 +8,9 @@ import org.junit.rules.TemporaryFolder;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -32,7 +31,7 @@ public class FunctionalWritingFileTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String lockName;
     private final List<IJedisLock> lockList = new ArrayList<>();
     private final AtomicBoolean otherError = new AtomicBoolean(false);
@@ -48,7 +47,7 @@ public class FunctionalWritingFileTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
 
     }
@@ -57,9 +56,9 @@ public class FunctionalWritingFileTest {
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(lockName);
+            jedisPooled.close();
         }
     }
 
@@ -106,7 +105,7 @@ public class FunctionalWritingFileTest {
         public void run() {
             //try (Jedis jedis = authJedis(jedisPool.getResource())) {
             try {
-                jedisLock = new JedisLock(jedisPool, lockName, milis, TimeUnit.MILLISECONDS);
+                jedisLock = new JedisLock(jedisPooled, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
                 JedisTestFactoryLocks.checkLock(jedisLock);

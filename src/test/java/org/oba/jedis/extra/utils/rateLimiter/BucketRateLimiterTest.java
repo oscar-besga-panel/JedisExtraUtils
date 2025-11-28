@@ -3,7 +3,7 @@ package org.oba.jedis.extra.utils.rateLimiter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 public class BucketRateLimiterTest {
 
     private MockOfJedis mockOfJedis;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String rateLimiterName;
 
     @Before
@@ -25,19 +25,19 @@ public class BucketRateLimiterTest {
         org.junit.Assume.assumeTrue(MockOfJedis.unitTestEnabled());
         if (!MockOfJedis.unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
-        jedisPool = mockOfJedis.getJedisPool();
+        jedisPooled = mockOfJedis.getJedisPooled();
         rateLimiterName = "rateLimiterName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
-        jedisPool.close();
+        jedisPooled.close();
         mockOfJedis.clearData();
     }
 
     @Test
     public void create0Test() {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, rateLimiterName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, rateLimiterName).
                 create(10, BucketRateLimiter.Mode.INTERVAL, 1 , TimeUnit.SECONDS);
         assertTrue(bucketRateLimiter.exists());
         bucketRateLimiter.delete();
@@ -53,7 +53,7 @@ public class BucketRateLimiterTest {
 
     @Test
     public void create1Test() {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, rateLimiterName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, rateLimiterName).
                 create(10, BucketRateLimiter.Mode.INTERVAL, 1 , TimeUnit.SECONDS);
         assertTrue(bucketRateLimiter.exists());
         assertEquals("1000000", mockOfJedis.getData(rateLimiterName).get(BucketRateLimiter.REFILL_MICROS));
@@ -66,7 +66,7 @@ public class BucketRateLimiterTest {
 
     @Test
     public void create2Test() {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, rateLimiterName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, rateLimiterName).
                 create(5, BucketRateLimiter.Mode.GREEDY, 2 , TimeUnit.SECONDS);
         assertTrue(bucketRateLimiter.exists());
         assertEquals("2000000", mockOfJedis.getData(rateLimiterName).get(BucketRateLimiter.REFILL_MICROS));
@@ -85,7 +85,7 @@ public class BucketRateLimiterTest {
             int permits = Integer.parseInt(v.get(0));
             return Boolean.valueOf(permits % 2 == 0);
         });
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, rateLimiterName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, rateLimiterName).
                 create(5, BucketRateLimiter.Mode.GREEDY, 2, TimeUnit.SECONDS);
         assertFalse(bucketRateLimiter.acquire());
         assertTrue(bucketRateLimiter.acquire(2));
