@@ -5,19 +5,23 @@ import org.oba.jedis.extra.utils.test.TTL;
 import org.oba.jedis.extra.utils.test.TransactionOrder;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Transaction;
-
+import redis.clients.jedis.AbstractTransaction;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.args.ListPosition;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
@@ -32,8 +36,7 @@ public class MockOfJedisForList {
     public static final String CLIENT_RESPONSE_OK = "OK";
     public static final String CLIENT_RESPONSE_KO = "KO";
 
-    private final Jedis jedis;
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
@@ -45,43 +48,41 @@ public class MockOfJedisForList {
 
         timer = new Timer();
 
-        jedis = Mockito.mock(Jedis.class);
-        jedisPool = Mockito.mock(JedisPool.class);
-        when(jedisPool.getResource()).thenReturn(jedis);
+        jedisPooled = Mockito.mock(JedisPooled.class);
 
-        Transaction transaction = PowerMockito.mock(Transaction.class);
+        AbstractTransaction transaction = PowerMockito.mock(AbstractTransaction.class);
 
-        when(jedis.multi()).thenReturn(transaction);
-        when(jedis.exists(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.multi()).thenReturn(transaction);
+        when(jedisPooled.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExists(key);
         });
-        when(jedis.del(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
-        when(jedis.get(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return (String)mockGet(key);
         });
-        when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+        when(jedisPooled.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = ioc.getArgument(2);
             return mockSet(key, value, setParams);
         });
 
-        when(jedis.llen(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.llen(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockListLlen(key);
         });
-        when(jedis.lrange(anyString(), anyLong(), anyLong())).thenAnswer(ioc -> {
+        when(jedisPooled.lrange(anyString(), anyLong(), anyLong())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long from = ioc.getArgument(1);
             long to = ioc.getArgument(2);
             return mockListLrange(key, from, to);
         });
-        when(jedis.rpush(anyString(), any())).thenAnswer(ioc -> {
+        when(jedisPooled.rpush(anyString(), any())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String[] data = null;
             if (ioc.getArguments().length > 1) {
@@ -100,35 +101,35 @@ public class MockOfJedisForList {
             }
             return mockListRpush(key, data);
         });
-        when(jedis.lindex(anyString(), anyLong())).thenAnswer(ioc -> {
+        when(jedisPooled.lindex(anyString(), anyLong())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long index = ioc.getArgument(1);
             return mockListLindex(key, index);
         });
-        when(jedis.lrem(anyString(), anyLong(), anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.lrem(anyString(), anyLong(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             long count = ioc.getArgument(1);
             String value = ioc.getArgument(2);
             return mockListLlrem(key, count, value);
         });
-        when(jedis.linsert(anyString(), any(ListPosition.class), anyString(), anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.linsert(anyString(), any(ListPosition.class), anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             ListPosition listPosition = ioc.getArgument(1);
             String pivot = ioc.getArgument(2);
             String argument = ioc.getArgument(3);
             return mockListLlinsert(key, listPosition, pivot, argument);
         });
-        PowerMockito.when(jedis.scriptLoad(anyString())).thenAnswer(ioc -> {
+        PowerMockito.when(jedisPooled.scriptLoad(anyString())).thenAnswer(ioc -> {
             String script = ioc.getArgument(0, String.class);
             return mockScriptLoad(script);
         });
-        PowerMockito.when(jedis.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer(ioc -> {
+        PowerMockito.when(jedisPooled.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer(ioc -> {
             String sha1 = ioc.getArgument(0, String.class);
             List<String> keys = ioc.getArgument(1, List.class);
             List<String> args = ioc.getArgument(2, List.class);
             return mockEvalSha(sha1, keys, args);
         });
-        Mockito.when(jedis.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> {
             String script = ioc.getArgument(0);
             String sha1 = ScriptEvalSha1.sha1(script);
             List<String> keys = ioc.getArgument(1);
@@ -156,17 +157,9 @@ public class MockOfJedisForList {
 
     }
 
-
-
-    Jedis getJedis(){
-        return jedis;
+    JedisPooled getJedisPooled() {
+        return jedisPooled;
     }
-
-    JedisPool getJedisPool() {
-        return jedisPool;
-    }
-
-
 
     synchronized boolean mockExists(String key) {
         return data.containsKey(key);

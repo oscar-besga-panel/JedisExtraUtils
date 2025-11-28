@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockExecutor;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,7 +23,7 @@ public class FunctionalInterruptingLocksWithExecutorTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String lockName;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private ExecutorService executorService;
 
 
@@ -33,16 +32,16 @@ public class FunctionalInterruptingLocksWithExecutorTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         executorService = Executors.newFixedThreadPool(4);
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
         lockName = "lock_" + this.getClass().getName() + "_" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(lockName);
+            jedisPooled.close();
         }
         if (executorService != null) executorService.shutdown();
     }
@@ -69,7 +68,7 @@ public class FunctionalInterruptingLocksWithExecutorTest {
 
     private boolean wasInterrupted(int sleepSeconds){
         boolean wasInterrupted = false;
-        InterruptingJedisJedisLockExecutor interruptingLock = new InterruptingJedisJedisLockExecutor(jedisPool, lockName, 5, TimeUnit.SECONDS, executorService);
+        InterruptingJedisJedisLockExecutor interruptingLock = new InterruptingJedisJedisLockExecutor(jedisPooled, lockName, 5, TimeUnit.SECONDS, executorService);
         interruptingLock.lock();
         JedisTestFactoryLocks.checkLock(interruptingLock);
         try {

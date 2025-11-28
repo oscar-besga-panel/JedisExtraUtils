@@ -11,6 +11,7 @@ import org.oba.jedis.extra.utils.cache.SimpleCache;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,27 +32,27 @@ public class FunctionalSimpleCacheKeyIteratorTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
     @Before
     public void setup() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After
     public void tearDown() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, listNameKeysToDelete);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            listNameKeysToDelete.forEach(k -> jedisPooled.del(k));
+            jedisPooled.close();
         }
     }
 
     SimpleCache createNewCache() {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         listNameKeysToDelete.add(name);
-        return new SimpleCache(jedisPool, name, 3_600_000);
+        return new SimpleCache(jedisPooled, name, 3_600_000);
     }
 
     @Test

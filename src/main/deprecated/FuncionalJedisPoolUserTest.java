@@ -1,8 +1,10 @@
-package org.oba.jedis.extra.utils.utils;
+package org.oba.jedis.extra.utils.utils.functional;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.oba.jedis.extra.utils.test.JedisTestFactory;
+import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -10,43 +12,40 @@ import redis.clients.jedis.JedisPool;
 
 import java.io.IOException;
 
-
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class JedisPoolUserTest implements JedisPoolUser {
+public class FuncionalJedisPoolUserTest implements JedisPoolUser {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(JedisPoolUserTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FuncionalJedisPoolUserTest.class);
 
-    private MockOfJedis mockOfJedis;
+    private final JedisTestFactory jtfTest = JedisTestFactory.get();
+
     private JedisPool jedisPool;
     private Jedis jedis;
 
-
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(MockOfJedis.unitTestEnabled());
-        if (!MockOfJedis.unitTestEnabled()) return;
-        mockOfJedis = new MockOfJedis();
-        jedisPool = mockOfJedis.getJedisPool();
-        jedis = mockOfJedis.getJedis();
+        org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
+        if (!jtfTest.functionalTestEnabled()) return;
+        jedisPool = jtfTest.createJedisPool();
+        jedis = jedisPool.getResource();
     }
 
     @After
     public void after() throws IOException {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.del("a");
-            jedis.del("b");
-            jedis.del("c");
+        if (!jtfTest.functionalTestEnabled()) return;
+        if (jedis != null) {
+            jedis.close();
         }
-        jedisPool.close();
-        jedis.close();
-        mockOfJedis.clearData();
+        if (jedisPool != null) {
+            jedisPool.close();
+        }
     }
 
 
     @Override
-    public JedisPool getJedisPool() {
+    public JedisPool getJedisPooled() {
         return jedisPool;
     }
 

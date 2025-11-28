@@ -5,8 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +22,7 @@ public class ScanUtilTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanUtilTest.class);
 
     private MockOfJedis mockOfJedis;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
 
     @Before
@@ -31,13 +30,13 @@ public class ScanUtilTest {
         org.junit.Assume.assumeTrue(MockOfJedis.unitTestEnabled());
         if (!MockOfJedis.unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
-        jedisPool = mockOfJedis.getJedisPool();
+        jedisPooled = mockOfJedis.getJedisPooled();
     }
 
     @After
     public void after() throws IOException {
-        if (jedisPool != null) {
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.close();
         }
         if (mockOfJedis != null) {
             mockOfJedis.clearData();
@@ -46,15 +45,11 @@ public class ScanUtilTest {
 
     @Test
     public void retrieveListOfKeys1Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set("a","1");
-            jedis.set("b","2");
-            jedis.set("c","3");
-        }
+        mockOfJedis.getJedisPooled().set("a","1");
+        mockOfJedis.getJedisPooled().set("b","2");
+        mockOfJedis.getJedisPooled().set("c","3");
         List<String> keys;
-        try (Jedis jedis = jedisPool.getResource()) {
-            keys = ScanUtil.retrieveListOfKeys(jedis, "*");
-        }
+        keys = ScanUtil.retrieveListOfKeys(mockOfJedis.getJedisPooled(), "*");
         assertEquals(3, keys.size());
         assertTrue(keys.contains("a"));
         assertTrue(keys.contains("b"));
@@ -64,12 +59,10 @@ public class ScanUtilTest {
 
     @Test
     public void retrieveListOfKeys2Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set("a","1");
-            jedis.set("b","2");
-            jedis.set("c","3");
-        }
-        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPool, "*");
+        mockOfJedis.getJedisPooled().set("a","1");
+        mockOfJedis.getJedisPooled().set("b","2");
+        mockOfJedis.getJedisPooled().set("c","3");
+        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPooled, "*");
         assertEquals(3, keys.size());
         assertTrue(keys.contains("a"));
         assertTrue(keys.contains("b"));
@@ -78,31 +71,25 @@ public class ScanUtilTest {
 
     @Test
     public void retrieveListOfKeys3Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set("a","1");
-            jedis.set("b","2");
-            jedis.set("c","3");
-        }
-        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPool, "a*");
+        mockOfJedis.getJedisPooled().set("a","1");
+        mockOfJedis.getJedisPooled().set("b","2");
+        mockOfJedis.getJedisPooled().set("c","3");
+        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPooled, "a*");
         assertEquals(1, keys.size());
         assertTrue(keys.contains("a"));
     }
 
     @Test
     public void useListOfKeys1Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set("a","1");
-            jedis.set("b","2");
-            jedis.set("c","3");
-        }
+        mockOfJedis.getJedisPooled().set("a","1");
+        mockOfJedis.getJedisPooled().set("b","2");
+        mockOfJedis.getJedisPooled().set("c","3");
         List<String> keys = new ArrayList<>();
-        try (Jedis jedis = jedisPool.getResource()) {
-            ScanUtil.useListOfKeys(jedis, "*", k -> {
-                if ( k != null && !k.isEmpty()) {
-                    keys.add(k);
-                }
-            });
-        }
+        ScanUtil.useListOfKeys(mockOfJedis.getJedisPooled(), "*", k -> {
+            if ( k != null && !k.isEmpty()) {
+                keys.add(k);
+            }
+        });
         assertEquals(3, keys.size());
         assertTrue(keys.contains("a"));
         assertTrue(keys.contains("b"));
@@ -111,13 +98,11 @@ public class ScanUtilTest {
 
     @Test
     public void useListOfKeys2Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set("a","1");
-            jedis.set("b","2");
-            jedis.set("c","3");
-        }
+        mockOfJedis.getJedisPooled().set("a","1");
+        mockOfJedis.getJedisPooled().set("b","2");
+        mockOfJedis.getJedisPooled().set("c","3");
         List<String> keys = new ArrayList<>();
-        ScanUtil.useListOfKeys(jedisPool, "*", k -> {
+        ScanUtil.useListOfKeys(jedisPooled, "*", k -> {
             if ( k != null && !k.isEmpty()) {
                 keys.add(k);
             }
@@ -130,13 +115,11 @@ public class ScanUtilTest {
 
     @Test
     public void useListOfKeys3Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set("a","1");
-            jedis.set("b","2");
-            jedis.set("c","3");
-        }
+        mockOfJedis.getJedisPooled().set("a","1");
+        mockOfJedis.getJedisPooled().set("b","2");
+        mockOfJedis.getJedisPooled().set("c","3");
         List<String> keys = new ArrayList<>();
-        ScanUtil.useListOfKeys(jedisPool, "c*", k -> {
+        ScanUtil.useListOfKeys(jedisPooled, "c*", k -> {
             if ( k != null && !k.isEmpty()) {
                 keys.add(k);
             }

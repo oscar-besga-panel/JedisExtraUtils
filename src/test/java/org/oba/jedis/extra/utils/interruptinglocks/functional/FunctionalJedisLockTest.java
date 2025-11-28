@@ -6,9 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -23,14 +21,14 @@ public class FunctionalJedisLockTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String keyName;
 
     @Before
     public void setup() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
         keyName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
 
     }
@@ -38,52 +36,48 @@ public class FunctionalJedisLockTest {
     @After
     public void tearDown() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, keyName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(keyName);
+            jedisPooled.close();
         }
     }
 
     @Test
     public void testLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        try (Jedis jedis = jedisPool.getResource()) {
-            if (!jtfTest.functionalTestEnabled()) return;
-            JedisLock jedisLock = new JedisLock(jedisPool, keyName);
-            jedisLock.lock();
-            assertTrue(jedisLock.isLocked());
-            Assert.assertEquals(getJedisLockUniqueToken(jedisLock), jedis.get(jedisLock.getName()));
-            jedisLock.unlock();
-            assertFalse(jedisLock.isLocked());
-            assertNull(jedis.get(jedisLock.getName()));
-        }
+        if (!jtfTest.functionalTestEnabled()) return;
+        JedisLock jedisLock = new JedisLock(jedisPooled, keyName);
+        jedisLock.lock();
+        assertTrue(jedisLock.isLocked());
+        Assert.assertEquals(getJedisLockUniqueToken(jedisLock), jedisPooled.get(jedisLock.getName()));
+        jedisLock.unlock();
+        assertFalse(jedisLock.isLocked());
+        assertNull(jedisPooled.get(jedisLock.getName()));
     }
 
     @Test
     public void testTryLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        try (Jedis jedis = jedisPool.getResource()) {
-            if (!jtfTest.functionalTestEnabled()) return;
-            JedisLock jedisLock1 = new JedisLock(jedisPool, keyName);
-            boolean result1 = jedisLock1.tryLock();
-            assertTrue(jedisLock1.isLocked());
-            assertTrue(result1);
-            Assert.assertEquals(getJedisLockUniqueToken(jedisLock1), jedis.get(jedisLock1.getName()));
-            JedisLock jedisLock2 = new JedisLock(jedisPool, keyName);
-            boolean result2 = jedisLock2.tryLock();
-            assertFalse(jedisLock2.isLocked());
-            assertFalse(result2);
-            Assert.assertNotEquals(getJedisLockUniqueToken(jedisLock2), jedis.get(jedisLock2.getName()));
-            jedisLock1.unlock();
-        }
+        if (!jtfTest.functionalTestEnabled()) return;
+        JedisLock jedisLock1 = new JedisLock(jedisPooled, keyName);
+        boolean result1 = jedisLock1.tryLock();
+        assertTrue(jedisLock1.isLocked());
+        assertTrue(result1);
+        Assert.assertEquals(getJedisLockUniqueToken(jedisLock1), jedisPooled.get(jedisLock1.getName()));
+        JedisLock jedisLock2 = new JedisLock(jedisPooled, keyName);
+        boolean result2 = jedisLock2.tryLock();
+        assertFalse(jedisLock2.isLocked());
+        assertFalse(result2);
+        Assert.assertNotEquals(getJedisLockUniqueToken(jedisLock2), jedisPooled.get(jedisLock2.getName()));
+        jedisLock1.unlock();
     }
 
     @Test
     public void testTryLockForAWhile() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
-        JedisLock jedisLock1 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock1 = new JedisLock(jedisPooled, keyName);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        JedisLock jedisLock2 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock2 = new JedisLock(jedisPooled, keyName);
         boolean result2 = jedisLock2.tryLockForAWhile(1, TimeUnit.SECONDS);
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);
@@ -93,11 +87,11 @@ public class FunctionalJedisLockTest {
     @Test
     public void testLockInterruptibly() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
-        JedisLock jedisLock1 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock1 = new JedisLock(jedisPooled, keyName);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        JedisLock jedisLock2 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock2 = new JedisLock(jedisPooled, keyName);
         final AtomicBoolean triedLock = new AtomicBoolean(false);
         final AtomicBoolean interrupted = new AtomicBoolean(false);
         Thread t = new Thread(() -> {
@@ -124,11 +118,11 @@ public class FunctionalJedisLockTest {
     @Test
     public void testLockNotInterruptibly() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
-        JedisLock jedisLock1 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock1 = new JedisLock(jedisPooled, keyName);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        JedisLock jedisLock2 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock2 = new JedisLock(jedisPooled, keyName);
         final AtomicBoolean triedLock = new AtomicBoolean(false);
         final AtomicBoolean interrupted = new AtomicBoolean(false);
         Thread t = new Thread(() -> {
@@ -157,7 +151,7 @@ public class FunctionalJedisLockTest {
     @Test
     public void testOneLockWithLeaseTime() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
-        JedisLock jedisLock1 = new JedisLock(jedisPool,  keyName, 5L, TimeUnit.SECONDS);
+        JedisLock jedisLock1 = new JedisLock(jedisPooled,  keyName, 5L, TimeUnit.SECONDS);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(result1);
         assertTrue(jedisLock1.isLocked());
@@ -168,16 +162,16 @@ public class FunctionalJedisLockTest {
     @Test
     public void testLocksWithLeaseTime() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
-        JedisLock jedisLock1 = new JedisLock(jedisPool, keyName,5L, TimeUnit.SECONDS);
+        JedisLock jedisLock1 = new JedisLock(jedisPooled, keyName,5L, TimeUnit.SECONDS);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        JedisLock jedisLock2 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock2 = new JedisLock(jedisPooled, keyName);
         boolean result2 = jedisLock2.tryLockForAWhile(1, TimeUnit.SECONDS);
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);
         Thread.sleep(5000);
-        JedisLock jedisLock3 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock3 = new JedisLock(jedisPooled, keyName);
         boolean result3 = jedisLock3.tryLockForAWhile(1, TimeUnit.SECONDS);
         assertTrue(jedisLock3.isLocked());
         assertTrue(result3);

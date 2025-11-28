@@ -4,11 +4,9 @@ import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.LockFromRedis;
 import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.utils.JedisPoolAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 public class JedisTestFactoryLocks {
 
@@ -52,26 +50,24 @@ public class JedisTestFactoryLocks {
     public static void main(String[] args) {
         LOGGER.debug("main ini >>>> ");
         JedisTestFactory jtfTest = JedisTestFactory.get();
-        Jedis jedis = jtfTest.createJedisClient();
+        JedisPooled jedisPooled = jtfTest.createJedisPooled();
         jtfTest.testConnection();
-        JedisPoolAdapter jedisPoolAdapter = JedisPoolAdapter.poolFromJedis(jedis);
-        LockFromRedis jedisLockFromRedis = new JedisLock(jedisPoolAdapter,"jedisLockSc").asConcurrentLock();
+        LockFromRedis jedisLockFromRedis = new JedisLock(jedisPooled,"jedisLockSc").asConcurrentLock();
         boolean locked = jedisLockFromRedis.tryLock();
         boolean reallyLocked = jedisLockFromRedis.isLocked();
         jedisLockFromRedis.unlock();
-        jedisPoolAdapter.close();
-        jedis.close();
+        jedisPooled.close();
         System.out.println("JEDISLOCK " + locked + " " + reallyLocked);
 
-        jtfTest.testPoolConnection();
-        JedisPool jedisPool = jtfTest.createJedisPool();
-        LockFromRedis jedisPoolLock = new JedisLock(jedisPool,"jedisPoolLock").asConcurrentLock();
-        boolean plocked = jedisPoolLock.tryLock();
-        boolean preallyLocked = jedisPoolLock.isLocked();
-        jedisPoolLock.unlock();
-        jedisPool.close();
-        System.out.println("JEDISPOOLLOCK " + plocked + " " + preallyLocked);
-        LOGGER.debug("main fin <<<< ");
+//        jtfTest.testPoolConnection();
+//        jedisPooled = jtfTest.createJedisPooled();
+//        LockFromRedis jedisPoolLock = new JedisLock(jedisPooled,"jedisPoolLock").asConcurrentLock();
+//        boolean plocked = jedisPoolLock.tryLock();
+//        boolean preallyLocked = jedisPoolLock.isLocked();
+//        jedisPoolLock.unlock();
+//        jedisPooled.close();
+//        System.out.println("JEDISPOOLLOCK " + plocked + " " + preallyLocked);
+//        LOGGER.debug("main fin <<<< ");
 
     }
 

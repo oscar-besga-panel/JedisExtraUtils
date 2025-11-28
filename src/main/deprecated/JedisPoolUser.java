@@ -8,16 +8,16 @@ import java.util.function.Function;
 
 public interface JedisPoolUser {
 
-    JedisPool getJedisPool();
+    JedisPool getJedisPooled();
 
     default void withResource(Consumer<Jedis> consumer) {
-        try (Jedis jedis = getJedisPool().getResource()) {
+        try (Jedis jedis = getJedisPooled().getResource()) {
             consumer.accept(jedis);
         }
     }
 
     default <K> K withResourceGet(Function<Jedis, K> function) {
-        try (Jedis jedis = getJedisPool().getResource()) {
+        try (Jedis jedis = getJedisPooled().getResource()) {
             return function.apply(jedis);
         }
     }

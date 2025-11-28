@@ -3,7 +3,7 @@ package org.oba.jedis.extra.utils.rateLimiter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +19,7 @@ public class ThrottlingRateLimiterTest {
 
 
     private MockOfJedis mockOfJedis;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String rateLimiterName;
 
     @Before
@@ -27,19 +27,19 @@ public class ThrottlingRateLimiterTest {
         org.junit.Assume.assumeTrue(MockOfJedis.unitTestEnabled());
         if (!MockOfJedis.unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
-        jedisPool = mockOfJedis.getJedisPool();
+        jedisPooled = mockOfJedis.getJedisPooled();
         rateLimiterName = "rateLimiterName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
-        jedisPool.close();
+        jedisPooled.close();
         mockOfJedis.clearData();
     }
 
     @Test
     public void create0Test() {
-        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPool, rateLimiterName).
+        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPooled, rateLimiterName).
                 create(1, TimeUnit.SECONDS);
         assertTrue(throttlingRateLimiter.exists());
         throttlingRateLimiter.delete();
@@ -55,7 +55,7 @@ public class ThrottlingRateLimiterTest {
 
     @Test
     public void create1Test() {
-        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPool, rateLimiterName).
+        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPooled, rateLimiterName).
                 create(1000);
         assertTrue(throttlingRateLimiter.exists());
         assertEquals("1000000", mockOfJedis.getData(rateLimiterName).get(ThrottlingRateLimiter.ALLOW_MICROS));
@@ -72,7 +72,7 @@ public class ThrottlingRateLimiterTest {
             passedName.set(u.get(0));
             return Boolean.valueOf(num.incrementAndGet() % 2 == 0);
         });
-        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPool, rateLimiterName).
+        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPooled, rateLimiterName).
                 create(1000);
         assertTrue(throttlingRateLimiter.allow());
         assertFalse(throttlingRateLimiter.allow());

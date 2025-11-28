@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.oba.jedis.extra.utils.iterators.ScanUtil;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import redis.clients.jedis.AbstractTransaction;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.SetParams;
@@ -15,7 +16,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
@@ -65,53 +71,53 @@ public class MockOfJedisForSimpleCacheTest {
     public void testDataRecovery() {
         mockOfJedisForSimpleCache.put("a","A1");
         assertEquals("A1", mockOfJedisForSimpleCache.getCurrentData().get("a"));
-        assertEquals("A1", mockOfJedisForSimpleCache.getJedis().get("a"));
-        assertTrue(mockOfJedisForSimpleCache.getJedis().exists("a"));
+        assertEquals("A1", mockOfJedisForSimpleCache.getJedisPooled().get("a"));
+        assertTrue(mockOfJedisForSimpleCache.getJedisPooled().exists("a"));
         mockOfJedisForSimpleCache.put("b","B1");
         assertEquals("B1", mockOfJedisForSimpleCache.getCurrentData().get("b"));
-        assertEquals("B1", mockOfJedisForSimpleCache.getJedis().get("b"));
-        assertTrue(mockOfJedisForSimpleCache.getJedis().exists("b"));
+        assertEquals("B1", mockOfJedisForSimpleCache.getJedisPooled().get("b"));
+        assertTrue(mockOfJedisForSimpleCache.getJedisPooled().exists("b"));
         mockOfJedisForSimpleCache.put("c","C1");
         assertNull(mockOfJedisForSimpleCache.getCurrentData().get("d"));
-        assertNull(mockOfJedisForSimpleCache.getJedis().get("d"));
-        assertFalse(mockOfJedisForSimpleCache.getJedis().exists("d"));
-        assertTrue(mockOfJedisForSimpleCache.getJedis().exists("c"));
+        assertNull(mockOfJedisForSimpleCache.getJedisPooled().get("d"));
+        assertFalse(mockOfJedisForSimpleCache.getJedisPooled().exists("d"));
+        assertTrue(mockOfJedisForSimpleCache.getJedisPooled().exists("c"));
     }
 
     @Test
     public void testDataInsertion() throws InterruptedException {
-        mockOfJedisForSimpleCache.getJedis().set("a", "A1", new SetParams());
-        assertEquals("A1", mockOfJedisForSimpleCache.getJedis().get("a"));
+        mockOfJedisForSimpleCache.getJedisPooled().set("a", "A1", new SetParams());
+        assertEquals("A1", mockOfJedisForSimpleCache.getJedisPooled().get("a"));
         assertEquals("A1", mockOfJedisForSimpleCache.getCurrentData().get("a"));
-        assertTrue(mockOfJedisForSimpleCache.getJedis().exists("a"));
+        assertTrue(mockOfJedisForSimpleCache.getJedisPooled().exists("a"));
         assertTrue(mockOfJedisForSimpleCache.getCurrentData().containsKey("a"));
-        mockOfJedisForSimpleCache.getJedis().set("a", "A2", new SetParams());
-        assertEquals("A2", mockOfJedisForSimpleCache.getJedis().get("a"));
+        mockOfJedisForSimpleCache.getJedisPooled().set("a", "A2", new SetParams());
+        assertEquals("A2", mockOfJedisForSimpleCache.getJedisPooled().get("a"));
         assertEquals("A2", mockOfJedisForSimpleCache.getCurrentData().get("a"));
-        mockOfJedisForSimpleCache.getJedis().set("b", "B1", new SetParams().nx());
-        assertEquals("B1", mockOfJedisForSimpleCache.getJedis().get("b"));
+        mockOfJedisForSimpleCache.getJedisPooled().set("b", "B1", new SetParams().nx());
+        assertEquals("B1", mockOfJedisForSimpleCache.getJedisPooled().get("b"));
         assertEquals("B1", mockOfJedisForSimpleCache.getCurrentData().get("b"));
-        mockOfJedisForSimpleCache.getJedis().set("b", "B2", new SetParams().nx());
-        assertEquals("B1", mockOfJedisForSimpleCache.getJedis().get("b"));
+        mockOfJedisForSimpleCache.getJedisPooled().set("b", "B2", new SetParams().nx());
+        assertEquals("B1", mockOfJedisForSimpleCache.getJedisPooled().get("b"));
         assertEquals("B1", mockOfJedisForSimpleCache.getCurrentData().get("b"));
-        mockOfJedisForSimpleCache.getJedis().set("c", "C1", new SetParams().nx().px(500));
-        assertEquals("C1", mockOfJedisForSimpleCache.getJedis().get("c"));
+        mockOfJedisForSimpleCache.getJedisPooled().set("c", "C1", new SetParams().nx().px(500));
+        assertEquals("C1", mockOfJedisForSimpleCache.getJedisPooled().get("c"));
         assertEquals("C1", mockOfJedisForSimpleCache.getCurrentData().get("c"));
-        assertTrue(mockOfJedisForSimpleCache.getJedis().exists("c"));
+        assertTrue(mockOfJedisForSimpleCache.getJedisPooled().exists("c"));
         assertTrue(mockOfJedisForSimpleCache.getCurrentData().containsKey("c"));
-        mockOfJedisForSimpleCache.getJedis().set("d", "D1");
-        assertEquals("D1", mockOfJedisForSimpleCache.getJedis().get("d"));
+        mockOfJedisForSimpleCache.getJedisPooled().set("d", "D1");
+        assertEquals("D1", mockOfJedisForSimpleCache.getJedisPooled().get("d"));
         assertEquals("D1", mockOfJedisForSimpleCache.getCurrentData().get("d"));
-        assertTrue(mockOfJedisForSimpleCache.getJedis().exists("d"));
+        assertTrue(mockOfJedisForSimpleCache.getJedisPooled().exists("d"));
         assertTrue(mockOfJedisForSimpleCache.getCurrentData().containsKey("d"));
-        mockOfJedisForSimpleCache.getJedis().set("c", "C2", new SetParams().nx().px(500));
-        assertEquals("C1", mockOfJedisForSimpleCache.getJedis().get("c"));
+        mockOfJedisForSimpleCache.getJedisPooled().set("c", "C2", new SetParams().nx().px(500));
+        assertEquals("C1", mockOfJedisForSimpleCache.getJedisPooled().get("c"));
         assertEquals("C1", mockOfJedisForSimpleCache.getCurrentData().get("c"));
         Thread.sleep(1000);
         assertNull(mockOfJedisForSimpleCache.getCurrentData().get("c"));
-        assertFalse(mockOfJedisForSimpleCache.getJedis().exists("c"));
+        assertFalse(mockOfJedisForSimpleCache.getJedisPooled().exists("c"));
         assertFalse(mockOfJedisForSimpleCache.getCurrentData().containsKey("c"));
-        assertFalse(mockOfJedisForSimpleCache.getJedis().exists("j"));
+        assertFalse(mockOfJedisForSimpleCache.getJedisPooled().exists("j"));
         assertFalse(mockOfJedisForSimpleCache.getCurrentData().containsKey("j"));
     }
 
@@ -119,12 +125,12 @@ public class MockOfJedisForSimpleCacheTest {
     public void testDataDeletionBasic() throws InterruptedException {
         mockOfJedisForSimpleCache.put("a","A1");
         assertEquals("A1", mockOfJedisForSimpleCache.getCurrentData().get("a"));
-        assertEquals("A1", mockOfJedisForSimpleCache.getJedis().get("a"));
-        long result1 = mockOfJedisForSimpleCache.getJedis().del("a");
+        assertEquals("A1", mockOfJedisForSimpleCache.getJedisPooled().get("a"));
+        long result1 = mockOfJedisForSimpleCache.getJedisPooled().del("a");
         assertEquals(1L, result1);
         assertNull(mockOfJedisForSimpleCache.getCurrentData().get("a"));
-        assertNull(mockOfJedisForSimpleCache.getJedis().get("a"));
-        long result2 = mockOfJedisForSimpleCache.getJedis().del("b");
+        assertNull(mockOfJedisForSimpleCache.getJedisPooled().get("a"));
+        long result2 = mockOfJedisForSimpleCache.getJedisPooled().del("b");
         assertEquals(0L, result2);
     }
 
@@ -139,11 +145,11 @@ public class MockOfJedisForSimpleCacheTest {
         mockOfJedisForSimpleCache.put("g", "G1");
         mockOfJedisForSimpleCache.put("h", "H1");
         mockOfJedisForSimpleCache.put("i", "I1");
-        long delResult1 = mockOfJedisForSimpleCache.getJedis().del("b", "e");
-        long delResult2 = mockOfJedisForSimpleCache.getJedis().del("f");
-        long delResult3 = mockOfJedisForSimpleCache.getJedis().del("e", "h", "c");
+        long delResult1 = mockOfJedisForSimpleCache.getJedisPooled().del("b", "e");
+        long delResult2 = mockOfJedisForSimpleCache.getJedisPooled().del("f");
+        long delResult3 = mockOfJedisForSimpleCache.getJedisPooled().del("e", "h", "c");
         List<String> expectedKeys = Arrays.asList("a","d","g","i");
-        List<String> keys = ScanUtil.retrieveListOfKeys(mockOfJedisForSimpleCache.getJedisPool(), "*");
+        List<String> keys = ScanUtil.retrieveListOfKeys(mockOfJedisForSimpleCache.getJedisPooled(), "*");
         assertTrue(keys.containsAll(expectedKeys));
         assertTrue(expectedKeys.containsAll(keys));
         assertEquals(2L, delResult1);
@@ -155,7 +161,7 @@ public class MockOfJedisForSimpleCacheTest {
     @Test
     public void testTransactionInsertionRecovery(){
         mockOfJedisForSimpleCache.put("a","A1");
-        Transaction t = mockOfJedisForSimpleCache.getJedis().multi();
+        AbstractTransaction t = mockOfJedisForSimpleCache.getJedisPooled().multi();
         t.set("b","B1");
         Response<String> response1 = t.get("a");
         try {
@@ -168,12 +174,12 @@ public class MockOfJedisForSimpleCacheTest {
         }
         t.exec();
         assertEquals("A1", response1.get());
-        assertEquals("B1", mockOfJedisForSimpleCache.getJedis().get("b"));
+        assertEquals("B1", mockOfJedisForSimpleCache.getJedisPooled().get("b"));
         assertEquals("B1", mockOfJedisForSimpleCache.getCurrentData().get("b"));
-        Transaction t2 = mockOfJedisForSimpleCache.getJedis().multi();
+        AbstractTransaction t2 = mockOfJedisForSimpleCache.getJedisPooled().multi();
         t2.set("d", "D1", new SetParams());
         t2.exec();
-        assertEquals("D1", mockOfJedisForSimpleCache.getJedis().get("d"));
+        assertEquals("D1", mockOfJedisForSimpleCache.getJedisPooled().get("d"));
         assertEquals("D1", mockOfJedisForSimpleCache.getCurrentData().get("d"));
     }
 
@@ -181,7 +187,7 @@ public class MockOfJedisForSimpleCacheTest {
     public void testTransactionDeleteRecovery() {
         mockOfJedisForSimpleCache.put("a", "A1");
         mockOfJedisForSimpleCache.put("b", "B1");
-        Transaction t = mockOfJedisForSimpleCache.getJedis().multi();
+        AbstractTransaction t = mockOfJedisForSimpleCache.getJedisPooled().multi();
         Response<String> response1 = t.get("a");
         Response<Long> response2 = t.del("a");
         Response<Long> response3 = t.del("b");
@@ -192,9 +198,9 @@ public class MockOfJedisForSimpleCacheTest {
         assertEquals(1L, (long) response3.get());
         assertEquals(0L, (long) response4.get());
         assertNull(mockOfJedisForSimpleCache.getCurrentData().get("a"));
-        assertNull(mockOfJedisForSimpleCache.getJedis().get("a"));
+        assertNull(mockOfJedisForSimpleCache.getJedisPooled().get("a"));
         assertNull(mockOfJedisForSimpleCache.getCurrentData().get("b"));
-        assertNull(mockOfJedisForSimpleCache.getJedis().get("b"));
+        assertNull(mockOfJedisForSimpleCache.getJedisPooled().get("b"));
     }
 
     @Test
@@ -208,7 +214,7 @@ public class MockOfJedisForSimpleCacheTest {
         mockOfJedisForSimpleCache.put("g", "G1");
         mockOfJedisForSimpleCache.put("h", "H1");
         mockOfJedisForSimpleCache.put("i", "I1");
-        Transaction transaction = mockOfJedisForSimpleCache.getJedis().multi();
+        AbstractTransaction transaction = mockOfJedisForSimpleCache.getJedisPooled().multi();
         Response<Long> rdelResult1 = transaction.del("b", "e");
         Response<Long> rdelResult2 = transaction.del("f");
         Response<Long> rdelResult3 = transaction.del("e", "h", "c");
@@ -217,7 +223,7 @@ public class MockOfJedisForSimpleCacheTest {
         long delResult2 = rdelResult2.get();
         long delResult3 = rdelResult3.get();
         List<String> expectedKeys = Arrays.asList("a","d","g","i");
-        List<String> keys = ScanUtil.retrieveListOfKeys(mockOfJedisForSimpleCache.getJedisPool(), "*");
+        List<String> keys = ScanUtil.retrieveListOfKeys(mockOfJedisForSimpleCache.getJedisPooled(), "*");
         assertTrue(keys.containsAll(expectedKeys));
         assertTrue(expectedKeys.containsAll(keys));
         assertEquals(2L, delResult1);
@@ -232,12 +238,12 @@ public class MockOfJedisForSimpleCacheTest {
         mockOfJedisForSimpleCache.put("c", "C1");
         mockOfJedisForSimpleCache.put("e", "E1");
         List<String> expectedKeys1 = Arrays.asList("e","b","c","a");
-        List<String> keys1 = ScanUtil.retrieveListOfKeys(mockOfJedisForSimpleCache.getJedisPool(), "*");
+        List<String> keys1 = ScanUtil.retrieveListOfKeys(mockOfJedisForSimpleCache.getJedisPooled(), "*");
         assertTrue(keys1.containsAll(expectedKeys1));
         assertTrue(expectedKeys1.containsAll(keys1));
-        long delResult = mockOfJedisForSimpleCache.getJedis().del("b", "e");
+        long delResult = mockOfJedisForSimpleCache.getJedisPooled().del("b", "e");
         List<String> expectedKeys2 = Arrays.asList("a","c");
-        List<String> keys2 = ScanUtil.retrieveListOfKeys(mockOfJedisForSimpleCache.getJedisPool(), "*");
+        List<String> keys2 = ScanUtil.retrieveListOfKeys(mockOfJedisForSimpleCache.getJedisPooled(), "*");
         assertTrue(keys2.containsAll(expectedKeys2));
         assertTrue(expectedKeys2.containsAll(keys2));
         assertEquals(2L, delResult);
@@ -249,7 +255,7 @@ public class MockOfJedisForSimpleCacheTest {
     public void testEvalSha() {
         List<String> keys = Collections.singletonList("a");
         List<String> values = Collections.singletonList("A1");
-        Object response = mockOfJedisForSimpleCache.getJedis().eval("script", keys, values);
+        Object response = mockOfJedisForSimpleCache.getJedisPooled().eval("script", keys, values);
         assertNull( response);
     }
 

@@ -2,9 +2,7 @@ package org.oba.jedis.extra.utils.interruptinglocks;
 
 
 import org.oba.jedis.extra.utils.lock.IJedisLock;
-import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Named;
-import redis.clients.jedis.JedisPool;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -14,7 +12,7 @@ import java.util.concurrent.locks.Lock;
 /**
  * java.util.concurrent.locks.Lock from a Redis Lock
  */
-public class LockFromRedis implements Lock, AutoCloseable, Named, JedisPoolUser {
+public class LockFromRedis implements Lock, AutoCloseable, Named {
 
 
     private final IJedisLock jedisLock;
@@ -30,11 +28,6 @@ public class LockFromRedis implements Lock, AutoCloseable, Named, JedisPoolUser 
 
     public String getName() {
         return jedisLock.getName();
-    }
-
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisLock.getJedisPool();
     }
 
 

@@ -4,12 +4,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.oba.jedis.extra.utils.utils.JedisPoolAdapter;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
-
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -40,10 +38,10 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLockTask() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock.underLockTask(mockOfJedis.getJedisPool(), lockName,() ->
+        NotificationLock.underLockTask(mockOfJedis.getJedisPooled(), lockName,() ->
                 result1.set(true)
         );
-        boolean result2 = NotificationLock.underLockTask(mockOfJedis.getJedisPool(), lockName,() -> true);
+        boolean result2 = NotificationLock.underLockTask(mockOfJedis.getJedisPooled(), lockName,() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }
@@ -51,9 +49,9 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLock() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock jedisLock1 = new NotificationLock(mockOfJedis.getJedisPool(), lockName);
+        NotificationLock jedisLock1 = new NotificationLock(mockOfJedis.getJedisPooled(), lockName);
         jedisLock1.underLock(() -> result1.set(true));
-        NotificationLock jedisLock2 = new NotificationLock(mockOfJedis.getJedisPool(), lockName);
+        NotificationLock jedisLock2 = new NotificationLock(mockOfJedis.getJedisPooled(), lockName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
@@ -62,9 +60,9 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLockSc() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock jedisLock1 = new NotificationLock(JedisPoolAdapter.poolFromJedis(mockOfJedis.getJedis()), lockName);
+        NotificationLock jedisLock1 = new NotificationLock(mockOfJedis.getJedisPooled(), lockName);
         jedisLock1.underLock(() -> result1.set(true));
-        NotificationLock jedisLock2 = new NotificationLock(JedisPoolAdapter.poolFromJedis(mockOfJedis.getJedis()), lockName);
+        NotificationLock jedisLock2 = new NotificationLock(mockOfJedis.getJedisPooled(), lockName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);

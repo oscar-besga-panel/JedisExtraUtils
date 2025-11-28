@@ -4,8 +4,7 @@ import org.mockito.Mockito;
 import org.oba.jedis.extra.utils.test.TTL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
@@ -38,8 +37,7 @@ public class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private final Jedis jedis;
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
@@ -47,24 +45,22 @@ public class MockOfJedis {
         timer = new Timer();
 
 
-        jedis = Mockito.mock(Jedis.class);
-        jedisPool = Mockito.mock(JedisPool.class);
-        Mockito.when(jedisPool.getResource()).thenReturn(jedis);
-        Mockito.when(jedis.get(anyString())).thenAnswer(ioc -> {
+        jedisPooled = Mockito.mock(JedisPooled.class);
+        Mockito.when(jedisPooled.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);
         });
-        Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = ioc.getArgument(2);
             return mockSet(key, value, setParams);
         });
-        Mockito.when(jedis.del(anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
-        Mockito.when(jedis.decr(anyString())).thenAnswer(ioc -> {
+        Mockito.when(jedisPooled.decr(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDecr(key);
         });
@@ -114,13 +110,8 @@ public class MockOfJedis {
         }
     }
 
-
-    public Jedis getJedis(){
-        return jedis;
-    }
-
-    public JedisPool getJedisPool() {
-        return jedisPool;
+    public JedisPooled getJedisPooled() {
+        return jedisPooled;
     }
 
     public synchronized void clearData(){

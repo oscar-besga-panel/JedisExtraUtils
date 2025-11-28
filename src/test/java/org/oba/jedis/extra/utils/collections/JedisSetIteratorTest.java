@@ -8,7 +8,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,7 +41,7 @@ public class JedisSetIteratorTest {
     @Test
     public void testIterator() {
         List<String> data = new ArrayList<>(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
         jedisSet.addAll(data);
         Iterator<String> iterator = jedisSet.iterator();
         while (iterator.hasNext()) {
@@ -59,7 +58,7 @@ public class JedisSetIteratorTest {
     @Test
     public void testIteratorOne() {
         List<String> data = new ArrayList<>(Collections.singletonList("a"));
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
         jedisSet.addAll(data);
         Iterator<String> iterator = jedisSet.iterator();
         while (iterator.hasNext()) {
@@ -75,7 +74,7 @@ public class JedisSetIteratorTest {
     @Test
     public void testIteratorNone() {
         List<String> data = new ArrayList<>();
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
         jedisSet.addAll(data);
         Iterator<String> iterator = jedisSet.iterator();
         while (iterator.hasNext()) {
@@ -91,7 +90,7 @@ public class JedisSetIteratorTest {
     public void testIteratorRemove() {
         List<String> todel = new ArrayList<>(Arrays.asList("a", "d", "g"));
         List<String> data = new ArrayList<>(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
         jedisSet.addAll(data);
         Iterator<String> iterator = jedisSet.iterator();
         while (iterator.hasNext()) {

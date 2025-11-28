@@ -1,11 +1,9 @@
 package org.oba.jedis.extra.utils.countdownlatch;
 
-import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.concurrent.TimeUnit;
@@ -23,25 +21,24 @@ import java.util.concurrent.TimeUnit;
  *
  *
  */
-public class JedisCountDownLatch implements Named, JedisPoolUser {
+public class JedisCountDownLatch implements Named {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisCountDownLatch.class);
     private static final Long LONG_NULL_VALUE = -1L;
 
-
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final String name;
     private int waitTimeMilis = 150;
 
 
     /**
      * Creates a new shared CountDownLatch
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Shared name
      * @param count Initial count
      */
-    public JedisCountDownLatch(JedisPool jedisPool, String name, long count) {
-        this.jedisPool = jedisPool;
+    public JedisCountDownLatch(JedisPooled jedisPooled, String name, long count) {
+        this.jedisPooled = jedisPooled;
         this.name = name;
         init(count);
     }
@@ -65,9 +62,7 @@ public class JedisCountDownLatch implements Named, JedisPoolUser {
         if (count <= 0) {
             throw new IllegalArgumentException("initial count on countdownlatch must be always more than zero");
         }
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(name, String.valueOf(count), new SetParams().nx());
-        }
+        jedisPooled.set(name, String.valueOf(count), new SetParams().nx());
     }
 
     @Override
@@ -75,10 +70,6 @@ public class JedisCountDownLatch implements Named, JedisPoolUser {
         return name;
     }
 
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
-    }
 
     /**
      * Wait until interrupted or shared value reaches zero
@@ -113,7 +104,7 @@ public class JedisCountDownLatch implements Named, JedisPoolUser {
      * @return the current value, after operation
      */
     public long countDown() {
-        long value = withResourceGet(jedis -> jedis.decr(name));
+        long value = jedisPooled.decr(name);
         LOGGER.debug("countDown name {} value {}", name, value);
         return value;
     }
@@ -127,7 +118,7 @@ public class JedisCountDownLatch implements Named, JedisPoolUser {
      * @return current value
      */
     public long getCount() {
-        String value = withResourceGet(jedis -> jedis.get(name));
+        String value = jedisPooled.get(name);
         LOGGER.debug("getCount name {} value {}", name, value);
         if (value != null && !value.isEmpty()) {
             return Long.parseLong(value);
@@ -142,7 +133,7 @@ public class JedisCountDownLatch implements Named, JedisPoolUser {
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
     public void destroy() {
-        withResource(jedis -> jedis.del(name));
+        jedisPooled.del(name);
     }
 
 

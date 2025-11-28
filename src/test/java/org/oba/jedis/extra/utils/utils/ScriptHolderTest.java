@@ -32,18 +32,18 @@ public class ScriptHolderTest {
         org.junit.Assume.assumeTrue(unitTestEnabled());
         if (!unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
-        scriptHolder = new ScriptHolder(mockOfJedis.getJedisPool());
+        scriptHolder = new ScriptHolder(mockOfJedis.getJedisPooled());
     }
 
     @After
     public void after() throws IOException {
-        mockOfJedis.getJedisPool().close();
+        mockOfJedis.getJedisPooled().close();
         mockOfJedis.clearData();
     }
 
     @Test
     public void generateHolderForJedisExtraUtilsTest() {
-        ScriptHolder holder = ScriptHolder.generateHolderForJedisExtraUtils(mockOfJedis.getJedisPool());
+        ScriptHolder holder = ScriptHolder.generateHolderForJedisExtraUtils(mockOfJedis.getJedisPooled());
         assertNotNull(holder.getScript(BucketRateLimiter.SCRIPT_NAME));
         assertNotNull(holder.getScript(CycleData.SCRIPT_NAME));
         assertNotNull(holder.getScript(JedisList.SCRIPT_NAME_INDEX_OF));
@@ -54,7 +54,7 @@ public class ScriptHolderTest {
 
     @Test
     public void addTest() {
-        ScriptEvalSha1 scriptEvalSha1 = new ScriptEvalSha1(mockOfJedis.getJedisPool(),
+        ScriptEvalSha1 scriptEvalSha1 = new ScriptEvalSha1(mockOfJedis.getJedisPooled(),
                 new UniversalReader().withResoruce(SCRIPT_NAME).withFile(FILE_PATH));
         scriptHolder.addScript(SCRIPT_NAME, scriptEvalSha1);
         assertNotNull(scriptHolder.getScript(SCRIPT_NAME));

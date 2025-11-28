@@ -1,13 +1,11 @@
 package org.oba.jedis.extra.utils.cycle;
 
-import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Named;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,7 +22,7 @@ import java.util.Map;
  * - removing elements is not possible (exception will be thrown)
  * - using forEachRemaining will lead to a infinite loop, as it cycles , it has no end
  */
-public class CycleData implements JedisPoolUser, Named, Iterator<String> {
+public class CycleData implements Named, Iterator<String> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CycleData.class);
 
@@ -34,14 +32,14 @@ public class CycleData implements JedisPoolUser, Named, Iterator<String> {
     public static final String CURRENT = "current";
     public static final String CURRENT_VALUE = "0"; // Use 0 based index
 
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final String name;
     private final ScriptEvalSha1 script;
 
-    public CycleData(JedisPool jedisPool, String name) {
-        this.jedisPool = jedisPool;
+    public CycleData(JedisPooled jedisPooled, String name) {
+        this.jedisPooled = jedisPooled;
         this.name = name;
-        this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
+        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
     }
@@ -55,22 +53,13 @@ public class CycleData implements JedisPoolUser, Named, Iterator<String> {
     }
 
     public CycleData create(String... data) {
-        withResource(jedis -> createWithJedis(jedis, data));
-        return this;
-    }
-
-    private void createWithJedis(Jedis jedis, String... data) {
         Map<String, String> dataMap = new HashMap<>();
         dataMap.put(CURRENT, CURRENT_VALUE);
         for (int i = 0; i < data.length; i++) {
             dataMap.put(Integer.toString(i), data[i]);
         }
-        jedis.hset(name, dataMap);
-    }
-
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
+        jedisPooled.hset(name, dataMap);
+        return this;
     }
 
     public String getName() {
@@ -78,7 +67,7 @@ public class CycleData implements JedisPoolUser, Named, Iterator<String> {
     }
 
     public boolean exists() {
-        return withResourceGet(jedis -> jedis.exists(name));
+        return jedisPooled.exists(name);
     }
 
     @Override
@@ -102,9 +91,7 @@ public class CycleData implements JedisPoolUser, Named, Iterator<String> {
     }
 
     public void delete() {
-        withResource(jedis ->
-                jedis.del(name)
-        );
+        jedisPooled.del(name);
     }
 
 }

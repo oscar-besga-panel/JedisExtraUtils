@@ -7,7 +7,6 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
-
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -35,7 +34,7 @@ public class MockOfJedisForSetTest {
 
     @Test
     public void testMockExists() {
-        JedisSet jedisSet = new JedisSet(mockOfJedis.getJedisPool(), "set1");
+        JedisSet jedisSet = new JedisSet(mockOfJedis.getJedisPooled(), "set1");
         jedisSet.add("a");
         assertTrue(mockOfJedis.mockExists("set1"));
         assertEquals( Long.valueOf(1L), mockOfJedis.mockScard("set1"));
@@ -44,7 +43,7 @@ public class MockOfJedisForSetTest {
 
     @Test
     public void testMockDel() {
-        JedisSet jedisSet = new JedisSet(mockOfJedis.getJedisPool(), "set1");
+        JedisSet jedisSet = new JedisSet(mockOfJedis.getJedisPooled(), "set1");
         jedisSet.add("a");
         assertTrue(mockOfJedis.mockExists("set1"));
         assertEquals( Long.valueOf(1L), mockOfJedis.mockScard("set1"));
@@ -57,7 +56,7 @@ public class MockOfJedisForSetTest {
 
     @Test
     public void testMockSaddScardSismember() {
-        JedisSet jedisSet = new JedisSet(mockOfJedis.getJedisPool(), "set1");
+        JedisSet jedisSet = new JedisSet(mockOfJedis.getJedisPooled(), "set1");
         jedisSet.add("a");
         assertEquals( Long.valueOf(1L), mockOfJedis.mockScard("set1"));
         assertTrue(mockOfJedis.mockSismember("set1", "a"));

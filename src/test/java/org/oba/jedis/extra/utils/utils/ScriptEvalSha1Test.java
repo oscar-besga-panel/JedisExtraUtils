@@ -27,13 +27,13 @@ public class ScriptEvalSha1Test {
 
     @After
     public void after() throws IOException {
-        mockOfJedis.getJedisPool().close();
+        mockOfJedis.getJedisPooled().close();
         mockOfJedis.clearData();
     }
 
 
     ScriptEvalSha1 createNewScript() {
-        return new ScriptEvalSha1(mockOfJedis.getJedisPool(), new UniversalReader().withValue(script));
+        return new ScriptEvalSha1(mockOfJedis.getJedisPooled(), new UniversalReader().withValue(script));
     }
 
 

@@ -5,8 +5,7 @@ import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,46 +34,43 @@ public class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private final JedisPool jedisPool;
-    private final Jedis jedis;
+    private final JedisPooled jedisPooled;
     private final Map<String, Map<String,String>> data = Collections.synchronizedMap(new HashMap<>());
 
     private TriFunction<String, List<String>, List<String>, Object> doWithEvalSha;
 
     public MockOfJedis() {
 
-        jedis = Mockito.mock(Jedis.class);
-        jedisPool = Mockito.mock(JedisPool.class);
-        when(jedis.exists(anyString())).thenAnswer( ioc -> {
+        jedisPooled = Mockito.mock(JedisPooled.class);
+        when(jedisPooled.exists(anyString())).thenAnswer( ioc -> {
             String name = ioc.getArgument(0, String.class);
             return exists(name);
         });
-        when(jedis.del(anyString())).thenAnswer( ioc -> {
+        when(jedisPooled.del(anyString())).thenAnswer( ioc -> {
             String name = ioc.getArgument(0, String.class);
             return delete(name);
         });
-        when(jedis.hset(anyString(), any(Map.class))).thenAnswer( ioc ->  {
+        when(jedisPooled.hset(anyString(), any(Map.class))).thenAnswer( ioc ->  {
             String name = ioc.getArgument(0, String.class);
             Map<String, String> map = ioc.getArgument(1, Map.class);
             return hset(name, map);
         });
-        when(jedis.hset(anyString(), anyString(), anyString())).thenAnswer( ioc ->  {
+        when(jedisPooled.hset(anyString(), anyString(), anyString())).thenAnswer( ioc ->  {
             String name = ioc.getArgument(0, String.class);
             String key = ioc.getArgument(1, String.class);
             String value = ioc.getArgument(2, String.class);
             return hset(name, key, value);
         });
-        when(jedis.scriptLoad(anyString())).thenAnswer( ioc -> {
+        when(jedisPooled.scriptLoad(anyString())).thenAnswer( ioc -> {
             String script = ioc.getArgument(0, String.class);
             return ScriptEvalSha1.sha1(script);
         });
-        when(jedis.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
+        when(jedisPooled.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
             String name = ioc.getArgument(0, String.class);
             List<String> keys = ioc.getArgument(1, List.class);
             List<String> args = ioc.getArgument(2, List.class);
             return executeSha(name, keys, args);
         });
-        Mockito.when(jedisPool.getResource()).thenReturn(jedis);
     }
 
 
@@ -106,12 +102,8 @@ public class MockOfJedis {
         this.doWithEvalSha = doWithEvalSha;
     }
 
-    public Jedis getJedis(){
-        return jedis;
-    }
-
-    public JedisPool getJedisPool(){
-        return jedisPool;
+    public JedisPooled getJedisPooled(){
+        return jedisPooled;
     }
 
     public synchronized void clearData(){

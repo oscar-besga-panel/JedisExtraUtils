@@ -8,9 +8,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Transaction;
-
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -45,7 +44,7 @@ public class InterruptingLocksTest {
     @After
     public void after() {
         if (mockOfJedis!= null) {
-            mockOfJedis.getJedisPool().close();
+            mockOfJedis.getJedisPooled().close();
             mockOfJedis.clearData();
         }
         interruptingLockBaseList.stream().
@@ -60,8 +59,8 @@ public class InterruptingLocksTest {
 
     @Test
     public void testInterruptingLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        JedisPool jedisPool = mockOfJedis.getJedisPool();
-        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5L , TimeUnit.SECONDS);
+        JedisPooled jedisPooled = mockOfJedis.getJedisPooled();
+        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPooled, lockName, 5L , TimeUnit.SECONDS);
         assertEquals(lockName, jedisLock1.getName());
         assertEquals(Long.valueOf(5L) , Long.valueOf(jedisLock1.getLeaseTime()));
         assertEquals(TimeUnit.SECONDS , jedisLock1.getTimeUnit());
@@ -77,12 +76,12 @@ public class InterruptingLocksTest {
 
         @Test
     public void testTryLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        JedisPool jedisPool = mockOfJedis.getJedisPool();
-        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5L , TimeUnit.SECONDS);
+            JedisPooled jedisPooled = mockOfJedis.getJedisPooled();
+        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPooled, lockName, 5L , TimeUnit.SECONDS);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5L , TimeUnit.SECONDS);
+        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(jedisPooled, lockName, 5L , TimeUnit.SECONDS);
         boolean result2 = jedisLock2.tryLock();
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);
@@ -91,12 +90,12 @@ public class InterruptingLocksTest {
 
     @Test
     public void testTryLockForAWhile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
-        JedisPool jedisPool = mockOfJedis.getJedisPool();
-        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPool,lockName, 5L , TimeUnit.SECONDS);
+        JedisPooled jedisPooled = mockOfJedis.getJedisPooled();
+        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPooled, lockName, 5L , TimeUnit.SECONDS);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
-        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(jedisPool,lockName, 5L , TimeUnit.SECONDS);
+        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(jedisPooled, lockName, 5L , TimeUnit.SECONDS);
         boolean result2 = jedisLock2.tryLockForAWhile(1, TimeUnit.SECONDS);
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);

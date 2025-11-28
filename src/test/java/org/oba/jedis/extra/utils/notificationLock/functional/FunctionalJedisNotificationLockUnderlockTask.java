@@ -5,8 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,7 +15,7 @@ public class FunctionalJedisNotificationLockUnderlockTask {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String keyName;
 
 
@@ -24,7 +23,7 @@ public class FunctionalJedisNotificationLockUnderlockTask {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
         keyName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
@@ -32,9 +31,9 @@ public class FunctionalJedisNotificationLockUnderlockTask {
     @After
     public void tearDown() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, keyName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(keyName);
+            jedisPooled.close();
         }
     }
 
@@ -42,9 +41,9 @@ public class FunctionalJedisNotificationLockUnderlockTask {
     @Test
     public void underLock() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock jedisLock1 = new NotificationLock(jedisPool, keyName);
+        NotificationLock jedisLock1 = new NotificationLock(jedisPooled, keyName);
         jedisLock1.underLock(() -> result1.set(true) );
-        NotificationLock jedisLock2 = new NotificationLock(jedisPool, keyName);
+        NotificationLock jedisLock2 = new NotificationLock(jedisPooled, keyName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);

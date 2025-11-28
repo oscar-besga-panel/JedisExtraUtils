@@ -5,19 +5,19 @@ import org.oba.jedis.extra.utils.cycle.CycleData;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.rateLimiter.BucketRateLimiter;
 import org.oba.jedis.extra.utils.semaphore.JedisSemaphore;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class ScriptHolder implements JedisPoolUser {
+public class ScriptHolder {
 
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final Map<String, ScriptEvalSha1> scriptMap = new HashMap<>();
 
 
-    public static ScriptHolder generateHolderForJedisExtraUtils(JedisPool jedisPool) {
-        ScriptHolder scriptHolder = new ScriptHolder(jedisPool);
+    public static ScriptHolder generateHolderForJedisExtraUtils(JedisPooled jedisPooled) {
+        ScriptHolder scriptHolder = new ScriptHolder(jedisPooled);
         scriptHolder.addScriptWithResourceAndFile(BucketRateLimiter.SCRIPT_NAME, BucketRateLimiter.FILE_PATH);
         scriptHolder.addScriptWithResourceAndFile(CycleData.SCRIPT_NAME, CycleData.FILE_PATH);
         scriptHolder.addScriptWithResourceAndFile(JedisList.SCRIPT_NAME_INDEX_OF, JedisList.FILE_PATH_INDEX_OF);
@@ -28,13 +28,8 @@ public class ScriptHolder implements JedisPoolUser {
     }
 
 
-    public ScriptHolder(JedisPool jedisPool) {
-        this.jedisPool = jedisPool;
-    }
-
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
+    public ScriptHolder(JedisPooled jedisPooled) {
+        this.jedisPooled = jedisPooled;
     }
 
     public void addScript(String key, ScriptEvalSha1 script) {
@@ -50,7 +45,7 @@ public class ScriptHolder implements JedisPoolUser {
         UniversalReader reader = new UniversalReader().
                 withResoruce(resource).
                 withFile(file);
-        ScriptEvalSha1 script = new ScriptEvalSha1(jedisPool, reader, true);
+        ScriptEvalSha1 script = new ScriptEvalSha1(jedisPooled, reader, true);
         scriptMap.put(key, script);
     }
 
@@ -58,6 +53,10 @@ public class ScriptHolder implements JedisPoolUser {
         return scriptMap.computeIfAbsent(key, k -> {
             throw new IllegalStateException("No script for key " + key);
         });
+    }
+
+    public JedisPooled getJedisPooled() {
+        return jedisPooled;
     }
 
 }

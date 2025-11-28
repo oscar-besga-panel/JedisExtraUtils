@@ -8,12 +8,12 @@ import org.junit.rules.TemporaryFolder;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.utils.JedisPoolAdapter;
 import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -74,16 +74,6 @@ public class FunctionalWritingFileScTest {
         }
     }
 
-
-    JedisPool createJedisPoolAdapter() {
-        Jedis jedis = jtfTest.createJedisClient();
-        jedisList.add(jedis);
-        JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
-        jedisPoolList.add(jedisPool);
-        return jedisPool;
-    }
-
-
     @Test
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
@@ -126,8 +116,8 @@ public class FunctionalWritingFileScTest {
         @Override
         public void run() {
             try  {
-                JedisPool jedisPool = createJedisPoolAdapter();
-                jedisLock = new JedisLock(jedisPool, lockName, milis, TimeUnit.MILLISECONDS);
+                JedisPooled jedisPooled = jtfTest.createJedisPooled();
+                jedisLock = new JedisLock(jedisPooled, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
                 JedisTestFactoryLocks.checkLock(jedisLock);

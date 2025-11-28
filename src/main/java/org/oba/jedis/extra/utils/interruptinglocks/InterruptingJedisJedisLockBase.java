@@ -1,6 +1,6 @@
 package org.oba.jedis.extra.utils.interruptinglocks;
 
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.concurrent.TimeUnit;
 
@@ -18,11 +18,11 @@ public final class InterruptingJedisJedisLockBase extends AbstractInterruptingJe
 
     /**
      * Main constructor
-     * @param jedisPool client connections pool to generate the lock
+     * @param jedisPooled client connections pool to generate the lock
      * @param name Lock name
      */
-    public InterruptingJedisJedisLockBase(JedisPool jedisPool, String name, long leaseTime, TimeUnit timeUnit) {
-        super(jedisPool, name, leaseTime, timeUnit);
+    public InterruptingJedisJedisLockBase(JedisPooled jedisPooled, String name, long leaseTime, TimeUnit timeUnit) {
+        super(jedisPooled, name, leaseTime, timeUnit);
         interruptingThread = new Thread(this::runInterruptThread);
         interruptingThread.setDaemon(true);
         interruptingThread.setName(name + "_interruptingThread");
@@ -39,7 +39,5 @@ public final class InterruptingJedisJedisLockBase extends AbstractInterruptingJe
     void stopInterruptingThread() {
         interruptingThread.interrupt();
     }
-
-
 
 }

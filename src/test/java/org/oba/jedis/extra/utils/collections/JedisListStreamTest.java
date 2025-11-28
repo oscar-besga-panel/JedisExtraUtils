@@ -9,7 +9,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
 
-
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
@@ -35,7 +34,7 @@ public class JedisListStreamTest {
 
 
     private JedisList createABCDEList(){
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPool(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
         jedisList.addAll(Arrays.asList("a", "b", "c", "d", "e"));
         return jedisList;
     }

@@ -1,3 +1,9 @@
+/*
+# https://mvnrepository.com/artifact/org.javassist/javassist
+#javassistVersion=3.30.1-GA
+
+//    implementation group: 'org.javassist', name: 'javassist', version: "${javassistVersion}"
+*/
 package org.oba.jedis.extra.utils.utils;
 
 import javassist.util.proxy.MethodHandler;

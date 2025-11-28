@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisSet;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -25,40 +24,40 @@ public class FunctionalJedisSetTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String setName;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         setName = "set:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, setName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(setName);
+            jedisPooled.close();
         }
     }
 
     JedisSet createABCSet() {
-        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
         jedisSet.addAll(Arrays.asList("a","b","c"));
         return jedisSet;
     }
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
         jedisSet.checkExists();
     }
 
 
     @Test
     public void basicTestExists() {
-        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
         jedisSet.add("a");
         assertTrue(jedisSet.exists());
     }
@@ -78,7 +77,7 @@ public class FunctionalJedisSetTest {
 
     @Test
     public void testDataInsertion() {
-        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
         boolean exists0 = jedisSet.exists();
         boolean add1 = jedisSet.add("a");
         boolean exists1 = jedisSet.exists();
@@ -100,7 +99,7 @@ public class FunctionalJedisSetTest {
 
     @Test
     public void testDataMultiInsertionAndContains() {
-        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
         jedisSet.add("a");
         boolean add1 = jedisSet.addAll(Arrays.asList("b","c"));
         boolean add2 = jedisSet.addAll(Arrays.asList("c","d"));
@@ -118,7 +117,7 @@ public class FunctionalJedisSetTest {
 
     @Test
     public void testDataRemove() {
-        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
         jedisSet.addAll(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
         assertEquals(Integer.valueOf(7), Integer.valueOf(jedisSet.size()));
         assertTrue(jedisSet.remove("b"));
@@ -134,7 +133,7 @@ public class FunctionalJedisSetTest {
 
     @Test
     public void testDataRemoveAll() {
-        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
         jedisSet.addAll(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
         assertEquals(Integer.valueOf(7), Integer.valueOf(jedisSet.size()));
         assertTrue(jedisSet.removeAll(Arrays.asList("b","c")));
@@ -153,7 +152,7 @@ public class FunctionalJedisSetTest {
 
     @Test
     public void testDataRetainAll() {
-        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
         jedisSet.addAll(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
         boolean result1 = jedisSet.retainAll(Arrays.asList("a", "b", "c", "x", "y"));
         assertEquals(Integer.valueOf(3), Integer.valueOf(jedisSet.size()));

@@ -32,7 +32,7 @@ public class SimplePubSubTest {
 
     @After
     public void after() throws IOException {
-        mockOfJedis.getJedisPool().close();
+        mockOfJedis.getJedisPooled().close();
         mockOfJedis.clearData();
     }
 
@@ -52,11 +52,9 @@ public class SimplePubSubTest {
         t.setName("doSubscribe");
         t.start();
         Thread.sleep(250);
-        try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
-            LOGGER.debug("onMessageTest publish  channel1 message1 >");
-            jedis.publish("channel1", "message1");
-            LOGGER.debug("onMessageTest publish  channel1 message1 <");
-        }
+        LOGGER.debug("onMessageTest publish  channel1 message1 >");
+        mockOfJedis.getJedisPooled().publish("channel1", "message1");
+        LOGGER.debug("onMessageTest publish  channel1 message1 <");
         boolean acquired = semaphore.tryAcquire(750, TimeUnit.MILLISECONDS);
         assertTrue(acquired);
         assertEquals(1, recolectedData.size());
@@ -65,9 +63,7 @@ public class SimplePubSubTest {
     }
 
     private void doSubscribe(SimplePubSub simplePubSub) {
-        try(Jedis jedis = mockOfJedis.getJedisPool().getResource()) {
-            jedis.subscribe(simplePubSub, "channel1");
-        }
+        mockOfJedis.getJedisPooled().subscribe(simplePubSub, "channel1");
     }
 
 }
