@@ -1,60 +1,44 @@
 /**
  * Example of groovy script
  */
+/*
+@Grab(group='redis.clients', module='jedis', version='7.1.0')
+@Grab(group='org.obapanel.jedis', module='interruptinglocks', version='7.1.0')
+*/
+
+import org.oba.jedis.extra.utils.iterators.ScanIterable
+import redis.clients.jedis.ConnectionPoolConfig;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.JedisClientConfig;
+import redis.clients.jedis.JedisPooled;
 import org.oba.jedis.extra.utils.iterators.ScanIterator
-@Grab(group='redis.clients', module='jedis', version='3.6.3')
-@Grab(group='org.obapanel.jedis', module='interruptinglocks', version='2.12.0')
 
-import org.obapanel.jedis.iterators.*
-import redis.clients.jedis.*
-
-import java.time.Duration
 
 host = "localhost"
 port = 6379
+user = ""
 pass = ""
 
 
-JedisPool jedisPool = null;
-JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-jedisPoolConfig.setMaxTotal(24);
-jedisPoolConfig.setMaxIdle(24);
-jedisPoolConfig.setMinIdle(4);
-// High performance
-//        jedisPoolConfig.setMaxTotal(128);
-//        jedisPoolConfig.setMaxIdle(128);
-//        jedisPoolConfig.setMinIdle(16);
-jedisPoolConfig.setTestOnBorrow(true);
-jedisPoolConfig.setTestOnReturn(true);
-jedisPoolConfig.setTestWhileIdle(true);
-jedisPoolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(30).toMillis());
-jedisPoolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(10).toMillis());
-jedisPoolConfig.setNumTestsPerEvictionRun(1);
-jedisPoolConfig.setBlockWhenExhausted(true);
+DefaultJedisClientConfig.Builder configBuilder = DefaultJedisClientConfig.builder()
+if (user != null && !user.trim().isEmpty()) {
+    configBuilder.user(user)
+}
 if (pass != null && !pass.trim().isEmpty()) {
-    jedisPool = new JedisPool(jedisPoolConfig, host, port, Protocol.DEFAULT_TIMEOUT, pass);
-} else {
-    jedisPool = new JedisPool(jedisPoolConfig, host, port);
+    configBuilder.password(pass)
 }
+configBuilder.clientName( String.join("_", "JedisTestFactory",
+        "Groovy", Long.toString(System.currentTimeMillis())));
+configBuilder.database(0).timeoutMillis(120000)
+JedisClientConfig config = configBuilder.build()
+HostAndPort address = new HostAndPort(host, port)
+ConnectionPoolConfig poolConfig = new ConnectionPoolConfig()
+poolConfig.setMaxTotal(5)
+poolConfig.setTestOnReturn(true)
+poolConfig.setMinIdle(1)
+JedisPooled jedisPooled = new JedisPooled(poolConfig, address, config)
 
-def getRedisType(JedisPool jedisPool1, String key1) {
-    String result1 = ""
-    Jedis jedis1 = null
-    try {
-        jedis1 = jedisPool1.getResource()
-        result1 = jedis1.type(key1)
-    } catch (Exception e) {
-        e.printStackTrace();
-    } finally {
-        if (jedis1 != null) {
-            jedis1.close();
-        }
-    }
-    result1
-}
+ScanIterable scanIterable = new ScanIterable(jedisPooled);
+scanIterable.forEach(rkey -> println "KEY ${rkey} - VALUE ${jedisPooled.type(rkey)}");
 
-ScanIterator scanIterator = new ScanIterator(jedisPool);
-for (String rkey : scanIterator) {
-    String rtype = getRedisType(jedisPool, rkey)
-    println "${rkey} ${rtype}"
-}

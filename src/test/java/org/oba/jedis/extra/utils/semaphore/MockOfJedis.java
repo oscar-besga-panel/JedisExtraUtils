@@ -5,14 +5,18 @@ import org.oba.jedis.extra.utils.test.TTL;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -38,17 +42,13 @@ public class MockOfJedis {
     }
 
     private final JedisPooled jedisPooled;
-    private final Jedis jedis;
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
     public MockOfJedis() {
         timer = new Timer();
 
-        jedis = Mockito.mock(Jedis.class);
         jedisPooled = Mockito.mock(JedisPooled.class);
-//        Mockito.when(jedisPooled.getResource()).thenReturn(jedis);
-//
         Mockito.when(jedisPooled.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);

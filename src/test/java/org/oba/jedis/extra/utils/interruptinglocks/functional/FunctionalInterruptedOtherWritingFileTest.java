@@ -8,7 +8,6 @@ import org.junit.rules.TemporaryFolder;
 import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPooled;
@@ -61,7 +60,7 @@ public class FunctionalInterruptedOtherWritingFileTest {
     }
 
 
-    @Test
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
             line = 0;

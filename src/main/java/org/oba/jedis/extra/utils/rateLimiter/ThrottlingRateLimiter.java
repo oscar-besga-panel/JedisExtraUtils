@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.rateLimiter;
 
 import org.oba.jedis.extra.utils.utils.Named;
+import org.oba.jedis.extra.utils.utils.RedisTime;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
@@ -13,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.fromRedisTimestampAsMicros;
 import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.scriptResultAsBoolean;
 import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.toRedisMicros;
 
@@ -78,8 +78,9 @@ public class ThrottlingRateLimiter implements Named {
 
     private ThrottlingRateLimiter createWithJedis(long timeToAllow, TimeUnit timeUnit) {
         if (!jedisPooled.exists(name)) {
+            RedisTime redisTime = new RedisTime(jedisPooled);
             BigInteger timeToAllowMicros = toRedisMicros(timeToAllow, timeUnit);
-            BigInteger redisTimestampMicros = fromRedisTimestampAsMicros(jedisPooled);
+            BigInteger redisTimestampMicros = redisTime.callTimeInMicros();
             Map<String, String> internalData = new HashMap<>();
             internalData.put(ALLOW_MICROS, timeToAllowMicros.toString());
             internalData.put(LAST_ALLOW_MICROS, redisTimestampMicros.toString());

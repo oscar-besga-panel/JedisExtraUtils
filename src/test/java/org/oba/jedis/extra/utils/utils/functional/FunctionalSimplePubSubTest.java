@@ -8,7 +8,6 @@ import org.oba.jedis.extra.utils.utils.SimpleEntry;
 import org.oba.jedis.extra.utils.utils.SimplePubSub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPooled;
 
 import java.io.IOException;

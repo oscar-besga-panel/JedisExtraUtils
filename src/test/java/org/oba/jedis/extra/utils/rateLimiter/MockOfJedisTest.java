@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -42,22 +43,6 @@ public class MockOfJedisTest {
         boolean exists2 = mockOfJedis.getJedisPooled().exists("test");
         assertFalse(exists1);
         assertTrue(exists2);
-    }
-
-    @Test
-    public void testTime() {
-        long t0 =  System.currentTimeMillis();
-        //TODO time
-        /*
-        List<String> listTime = mockOfJedis.getJedisPooled().time();
-
-         */
-        List<String> listTime = Arrays.asList("" + System.currentTimeMillis(), "0");
-        long t = Long.parseLong(listTime.get(0)) * 1000;
-        long t1 =  System.currentTimeMillis();
-        assertEquals("0", listTime.get(1));
-        assertTrue((t + 999) >= t0);
-//        assertTrue(t <= t1);
     }
 
     @Test
@@ -108,6 +93,13 @@ public class MockOfJedisTest {
         assertEquals(Boolean.TRUE, result);
     }
 
+    @Test
+    public void testMockScriptEvalTime() {
+        List<String> result = mockOfJedis.mockScriptEvalTime();
+        assertEquals(2, result.size());
+        assertTrue( new BigInteger(result.get(0)).compareTo(BigInteger.ZERO) > 0 );
+        assertTrue( new BigInteger(result.get(1)).compareTo(BigInteger.ZERO) > 0 );
+    }
 
 
 

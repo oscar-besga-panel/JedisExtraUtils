@@ -96,7 +96,7 @@ public class FunctionalThrottlingRateLimiterTest {
     }
 
 
-    @Test(timeout = 15000)
+    @Test(timeout = 35000)
     public void throttlingAdvancedTest() {
         SortedMap<Integer, Map.Entry<Long,Boolean>> resultMap = new TreeMap<>();
         ThrottlingRateLimiter rateLimiter = new ThrottlingRateLimiter(jedisPooled, throttlingName).

@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.rateLimiter;
 
 import org.oba.jedis.extra.utils.utils.Named;
+import org.oba.jedis.extra.utils.utils.RedisTime;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
@@ -13,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.fromRedisTimestampAsMicros;
 import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.scriptResultAsBoolean;
 import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.toRedisMicros;
 
@@ -84,8 +84,9 @@ public class BucketRateLimiter implements Named {
 
     public BucketRateLimiter create(long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
         if (!jedisPooled.exists(name)) {
+            RedisTime redisTime = new RedisTime(jedisPooled);
             BigInteger timeToRefillMicros = toRedisMicros(timeToRefill, timeUnit);
-            BigInteger redisTimestampMicros = fromRedisTimestampAsMicros(jedisPooled);
+            BigInteger redisTimestampMicros = redisTime.callTimeInMicros();
             Map<String, String> internalData = new HashMap<>();
             internalData.put(CAPACITY, Long.toString(capacity));
             internalData.put(AVAILABLE, Long.toString(capacity));

@@ -5,10 +5,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPooled;
 
 import java.util.concurrent.TimeUnit;
@@ -73,7 +71,6 @@ public class FunctionalInterruptingLocksBaseTest {
 
     private boolean wasInterrupted(int sleepSeconds){
         boolean wasInterrupted = false;
-        Jedis jedis = jtfTest.createJedisClient();
         InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(jedisPooled, lockName, 5, TimeUnit.SECONDS);
         interruptingJedisJedisLockBase.lock();
         JedisTestFactoryLocks.checkLock(interruptingJedisJedisLockBase);
@@ -83,7 +80,6 @@ public class FunctionalInterruptingLocksBaseTest {
             wasInterrupted = true;
         }
         interruptingJedisJedisLockBase.unlock();
-        jedis.close();
         return wasInterrupted;
     }
 }

@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.countdownlatch.JedisCountDownLatch;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPooled;

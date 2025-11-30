@@ -7,8 +7,10 @@ import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -18,7 +20,6 @@ import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpire
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 public class MockOfJedisTest {
-
 
     private MockOfJedis mockOfJedis;
 
@@ -129,8 +130,12 @@ public class MockOfJedisTest {
         assertEquals("13830a510bd451927a72d44de40b9a85266af06d", sha1);
     }
 
-
-
-
+    @Test
+    public void testMockScriptEvalTime() {
+        List<String> result = mockOfJedis.mockScriptEvalTime();
+        assertEquals(2, result.size());
+        assertTrue( new BigInteger(result.get(0)).compareTo(BigInteger.ZERO) > 0 );
+        assertTrue( new BigInteger(result.get(1)).compareTo(BigInteger.ZERO) > 0 );
+    }
 
 }

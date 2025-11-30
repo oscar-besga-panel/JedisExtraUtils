@@ -90,14 +90,15 @@ Also, you will find a little Groovy and a docker composer to setup a testing red
 
 ### Compatibility Matrix
 
-| Library version | Jedis version | JDK Version |
-|-----------------|---------------|-------------|
-| 7.0.0           | 7.0.X         | JDK11       |
-| 6.5.0           | 6.0.X         | JDK11       |
-| 6.3.0           | 5.2.X         | JDK11       |
-| 6.1.0           | 5.1.X         | JDK11       |
-| 6.0.0           | 5.0.X         | JDK11       |
-| 5.3.0           | 4.4.X         | JDK11       |
+| Library version | Jedis version | JDK Version | Pool Used   |
+|-----------------|---------------|-------------|-------------|
+| 7.1.0           | 7.1.X         | JDK11       | JedisPooled |
+| 7.0.0           | 7.0.X         | JDK11       | JedisPool   |
+| 6.5.0           | 6.0.X         | JDK11       | JedisPool   |
+| 6.3.0           | 5.2.X         | JDK11       | JedisPool   |
+| 6.1.0           | 5.1.X         | JDK11       | JedisPool   |
+| 6.0.0           | 5.0.X         | JDK11       | JedisPool   |
+| 5.3.0           | 4.4.X         | JDK11       | JedisPool   |
   
 The Redis server version will be from 6.0 to the latest one, as it is compatible with all the jedis versions used in this project.
 

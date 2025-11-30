@@ -21,8 +21,10 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 public class MockOfJedis {
 
-
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedis.class);
+
+    public static final long NANOS_PER_SECOND = 1_000_000_000L;
+    public static final long NANOS_PER_MICRO = 1_000L;
 
     public static final String CLIENT_RESPONSE_OK = "OK";
     public static final String CLIENT_RESPONSE_KO = "KO";
@@ -66,10 +68,6 @@ public class MockOfJedis {
             String value = ioc.getArgument(2, String.class);
             return hset(name, key, value);
         });
-        /*
-        TODO time
-        when(jedisPooled.time()).thenAnswer(ioc -> time());
-         */
         when(jedisPooled.scriptLoad(anyString())).thenAnswer( ioc -> {
             String script = ioc.getArgument(0, String.class);
             return ScriptEvalSha1.sha1(script);
@@ -79,6 +77,13 @@ public class MockOfJedis {
             List<String> keys = ioc.getArgument(1, List.class);
             List<String> args = ioc.getArgument(2, List.class);
             return executeSha(name, keys, args);
+        });
+        when(jedisPooled.eval(anyString() )).thenAnswer(ioc -> {
+            if (ioc.getArgument(0, String.class).contains("TIME")) {
+                return mockScriptEvalTime();
+            } else {
+                throw new IllegalStateException("Unsupported script");
+            }
         });
     }
 
@@ -114,6 +119,14 @@ public class MockOfJedis {
 
     public void setDoWithEvalSha(TriFunction<String, List<String>, List<String>, Object> doWithEvalSha) {
         this.doWithEvalSha = doWithEvalSha;
+    }
+
+    public List<String> mockScriptEvalTime() {
+        long currentNanos = System.nanoTime();
+        LOGGER.debug("mockScriptEvalTime nanos {} ", currentNanos);
+        long seconds = currentNanos / NANOS_PER_SECOND;
+        long micros = (currentNanos % NANOS_PER_SECOND) / NANOS_PER_MICRO;
+        return Arrays.asList(Long.toString(seconds), Long.toString(micros));
     }
 
     public JedisPooled getJedisPooled(){

@@ -7,7 +7,6 @@ import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
@@ -81,7 +80,6 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneWithWaitingTimeTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            Jedis jedis = jtfTest.createJedisClient();
             NotificationLock jedisLock = new NotificationLock(jedisPooled, lockName);
             lockList.add(jedisLock);
             try {
@@ -93,7 +91,6 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneWithWaitingTimeTest {
             } catch (InterruptedException e) {
                 // NOOP
             }
-            jedis.close();
         } catch (Exception e) {
             LOGGER.error("Other error", e);
             otherError.set(true);
