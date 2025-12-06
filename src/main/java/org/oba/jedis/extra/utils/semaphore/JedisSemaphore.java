@@ -1,8 +1,11 @@
 package org.oba.jedis.extra.utils.semaphore;
 
 
-import org.oba.jedis.extra.utils.utils.*;
-import redis.clients.jedis.JedisPool;
+import org.oba.jedis.extra.utils.utils.Named;
+import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
+import org.oba.jedis.extra.utils.utils.ScriptHolder;
+import org.oba.jedis.extra.utils.utils.UniversalReader;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
@@ -30,35 +33,35 @@ import java.util.concurrent.TimeUnit;
  *
  *
  */
-public class JedisSemaphore implements Named, JedisPoolUser {
+public class JedisSemaphore implements Named {
 
     public static final String SCRIPT_NAME = "semaphore.lua";
     public static final String FILE_PATH = "./src/main/resources/semaphore.lua";
 
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final String name;
     private final ScriptEvalSha1 script;
     private long waitingMilis = 150;
 
     /**
      * Creates a semaphore with one initial permit
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the semaphore
      */
-    public JedisSemaphore(JedisPool jedisPool, String name) {
-        this(jedisPool, name, 1);
+    public JedisSemaphore(JedisPooled jedisPooled, String name) {
+        this(jedisPooled, name, 1);
     }
 
     /**
      * Creates a semaphore with one permit
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the semaphore
      * @param initialPermits Initial permits of the semaphore
      */
-    public JedisSemaphore(JedisPool jedisPool, String name, int initialPermits) {
-        this.jedisPool = jedisPool;
+    public JedisSemaphore(JedisPooled jedisPooled, String name, int initialPermits) {
+        this.jedisPooled = jedisPooled;
         this.name = name;
-        this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
+        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
         init(initialPermits);
@@ -82,7 +85,7 @@ public class JedisSemaphore implements Named, JedisPoolUser {
      * @param initialPermits Initial permits of the semaphore
      */
     public JedisSemaphore(ScriptHolder scriptHolder, String name, int initialPermits) {
-        this.jedisPool = scriptHolder.getJedisPool();
+        this.jedisPooled = scriptHolder.getJedisPooled();
         this.name = name;
         this.script = scriptHolder.getScript(SCRIPT_NAME);
         init(initialPermits);
@@ -106,14 +109,8 @@ public class JedisSemaphore implements Named, JedisPoolUser {
         if (initialPermits < 0) {
             throw new IllegalArgumentException("initial permit on semaphore must be always equal or more than zero");
         }
-        withResource(jedis -> jedis.set(name, String.valueOf(initialPermits), new SetParams().nx()));
+        jedisPooled.set(name, String.valueOf(initialPermits), new SetParams().nx());
     }
-
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
-    }
-
 
     /**
      * Returns the sempahore name
@@ -215,7 +212,7 @@ public class JedisSemaphore implements Named, JedisPoolUser {
         if (permits <= 0) {
             throw new IllegalArgumentException("permit to release on semaphore must be always more than zero");
         }
-        withResource(jedis -> jedis.incrBy(name, permits));
+        jedisPooled.incrBy(name, permits);
     }
 
     /**
@@ -224,7 +221,7 @@ public class JedisSemaphore implements Named, JedisPoolUser {
      * @return number of permits
      */
     public int availablePermits() {
-        String permits = withResourceGet(jedis -> jedis.get(name));
+        String permits = jedisPooled.get(name);
         if (permits == null || permits.isEmpty()) {
             return -1;
         } else {
@@ -238,7 +235,7 @@ public class JedisSemaphore implements Named, JedisPoolUser {
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
     public void destroy() {
-        withResource(jedis -> jedis.del(name));
+        jedisPooled.del(name);
     }
 
 }

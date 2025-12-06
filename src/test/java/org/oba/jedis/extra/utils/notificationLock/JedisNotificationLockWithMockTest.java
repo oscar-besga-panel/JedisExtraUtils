@@ -6,8 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Transaction;
 
 
@@ -23,16 +22,14 @@ import static org.junit.Assert.*;
 public class JedisNotificationLockWithMockTest {
 
     private MockOfJedis mockOfJedis;
-    private Jedis jedis;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
     @Before
     public void setup() {
         org.junit.Assume.assumeTrue(MockOfJedis.unitTestEnabled());
         if (!MockOfJedis.unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
-        jedis = mockOfJedis.getJedis();
-        jedisPool = mockOfJedis.getJedisPool();
+        jedisPooled = mockOfJedis.getJedisPooled();
     }
 
     @After
@@ -40,19 +37,15 @@ public class JedisNotificationLockWithMockTest {
         if (mockOfJedis != null) {
             mockOfJedis.clearData();
         }
-        if (jedis != null) {
-            jedis.close();
-        }
-
-        if (jedisPool != null) {
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.close();
         }
     }
 
     @Test
     public void testLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         String lockname = getUniqueName();
-        NotificationLock jedisLock = new NotificationLock(jedisPool,lockname);
+        NotificationLock jedisLock = new NotificationLock(jedisPooled,lockname);
         jedisLock.lock();
         assertTrue(jedisLock.isLocked());
         assertEquals(jedisLock.getUniqueToken(), mockOfJedis.getCurrentData().get(jedisLock.getName()));
@@ -64,12 +57,12 @@ public class JedisNotificationLockWithMockTest {
     @Test
     public void testTryLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         String lockname = getUniqueName();
-        NotificationLock jedisLock1 = new NotificationLock(jedisPool,lockname);
+        NotificationLock jedisLock1 = new NotificationLock(jedisPooled,lockname);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
         assertEquals(jedisLock1.getUniqueToken(), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
-        NotificationLock jedisLock2 = new NotificationLock(jedisPool,lockname);
+        NotificationLock jedisLock2 = new NotificationLock(jedisPooled,lockname);
         boolean result2 = jedisLock2.tryLock();
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);
@@ -80,12 +73,12 @@ public class JedisNotificationLockWithMockTest {
     @Test(timeout = 15000)
     public void testTryLockForAWhile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
         String lockname = getUniqueName();
-        NotificationLock jedisLock1 = new NotificationLock(jedisPool,lockname);
+        NotificationLock jedisLock1 = new NotificationLock(jedisPooled,lockname);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
         assertEquals(jedisLock1.getUniqueToken(), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
-        NotificationLock jedisLock2 = new NotificationLock(jedisPool,lockname);
+        NotificationLock jedisLock2 = new NotificationLock(jedisPooled,lockname);
         boolean result2 = jedisLock2.tryLockForAWhile(1, TimeUnit.SECONDS);
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);
@@ -96,12 +89,12 @@ public class JedisNotificationLockWithMockTest {
     @Test
     public void testLockInterruptibly() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
         String lockname = getUniqueName();
-        NotificationLock jedisLock1 = new NotificationLock(jedisPool, lockname);
+        NotificationLock jedisLock1 = new NotificationLock(jedisPooled, lockname);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
         assertEquals(jedisLock1.getUniqueToken(), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
-        NotificationLock jedisLock2 = new NotificationLock(jedisPool, lockname);
+        NotificationLock jedisLock2 = new NotificationLock(jedisPooled, lockname);
         final AtomicBoolean triedLock = new AtomicBoolean(false);
         final AtomicBoolean interrupted = new AtomicBoolean(false);
         Thread t = new Thread(() -> {
@@ -129,12 +122,12 @@ public class JedisNotificationLockWithMockTest {
     @Test
     public void testLockNotInterruptibly() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
         String lockname = getUniqueName();
-        NotificationLock jedisLock1 = new NotificationLock(jedisPool, lockname);
+        NotificationLock jedisLock1 = new NotificationLock(jedisPooled, lockname);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
         assertEquals(jedisLock1.getUniqueToken(), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
-        NotificationLock jedisLock2 = new NotificationLock(jedisPool, lockname);
+        NotificationLock jedisLock2 = new NotificationLock(jedisPooled, lockname);
         final AtomicBoolean triedLock = new AtomicBoolean(false);
         final AtomicBoolean interrupted = new AtomicBoolean(false);
         Thread t = new Thread(() -> {
@@ -162,8 +155,8 @@ public class JedisNotificationLockWithMockTest {
     @Test
     public void testEqualsAndHashcode() {
         String lockname = getUniqueName();
-        NotificationLock jedisLock1 = new NotificationLock(jedisPool, lockname);
-        NotificationLock jedisLock2 = new NotificationLock(jedisPool, lockname);
+        NotificationLock jedisLock1 = new NotificationLock(jedisPooled, lockname);
+        NotificationLock jedisLock2 = new NotificationLock(jedisPooled, lockname);
         assertNotEquals(jedisLock1, jedisLock2);
         assertNotEquals(jedisLock1.hashCode(), jedisLock2.hashCode());
         assertEquals(jedisLock1.getName(), jedisLock2.getName());

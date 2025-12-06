@@ -1,9 +1,8 @@
 package org.oba.jedis.extra.utils.iterators;
 
-import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Listable;
 import org.oba.jedis.extra.utils.utils.Named;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.resps.Tuple;
 
 import java.util.List;
@@ -20,60 +19,55 @@ import java.util.List;
  *
  * Can return duplicated results, but is rare
  */
-public class ZScanIterable implements Iterable<Tuple>, Listable<Tuple>, Named, JedisPoolUser {
+public class ZScanIterable implements Iterable<Tuple>, Listable<Tuple>, Named {
 
 
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final String name;
     private final String pattern;
     private final int resultsPerScan;
 
     /**
      * Iterable for zset entries (ordered set)
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the set
      */
-    public ZScanIterable(JedisPool jedisPool, String name) {
-        this(jedisPool, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public ZScanIterable(JedisPooled jedisPooled, String name) {
+        this(jedisPooled, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterable for zset entries (ordered set)
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      */
-    public ZScanIterable(JedisPool jedisPool, String name, String pattern) {
-        this(jedisPool, name, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public ZScanIterable(JedisPooled jedisPooled, String name, String pattern) {
+        this(jedisPooled, name, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterable for zset entries (ordered set)
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the set
      * @param resultsPerScan results per call to redis
      */
-    public ZScanIterable(JedisPool jedisPool, String name, int resultsPerScan) {
-        this(jedisPool, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    public ZScanIterable(JedisPooled jedisPooled, String name, int resultsPerScan) {
+        this(jedisPooled, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, resultsPerScan);
     }
 
     /**
      * Iterable for zset entries (ordered set)
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */
-    public ZScanIterable(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
-        this.jedisPool = jedisPool;
+    public ZScanIterable(JedisPooled jedisPooled, String name, String pattern, int resultsPerScan) {
+        this.jedisPooled = jedisPooled;
         this.name = name;
         this.pattern = pattern;
         this.resultsPerScan = resultsPerScan;
-    }
-
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
     }
 
     @Override
@@ -83,7 +77,7 @@ public class ZScanIterable implements Iterable<Tuple>, Listable<Tuple>, Named, J
 
     @Override
     public ZScanIterator iterator() {
-        return new ZScanIterator(jedisPool, name, pattern, resultsPerScan);
+        return new ZScanIterator(jedisPooled, name, pattern, resultsPerScan);
     }
 
     /**

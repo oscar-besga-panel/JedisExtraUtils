@@ -8,8 +8,7 @@ import org.oba.jedis.extra.utils.utils.SimpleEntry;
 import org.oba.jedis.extra.utils.utils.SimplePubSub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,22 +25,22 @@ public class FunctionalSimplePubSubTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String channelName;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
         channelName = "channel:" + this.getClass().getName() + ":" + System.currentTimeMillis() + "_";
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.close();
         }
     }
 
@@ -61,11 +60,9 @@ public class FunctionalSimplePubSubTest {
         t.setName("doSubscribe");
         t.start();
         Thread.sleep(250);
-        try(Jedis jedis = jedisPool.getResource()) {
-            LOGGER.debug("onMessageTest publish  {} message1{} >", channelName, channelName);
-            jedis.publish(channelName, "message1" + channelName);
-            LOGGER.debug("onMessageTest publish  {} message1{} <", channelName, channelName);
-        }
+        LOGGER.debug("onMessageTest publish  {} message1{} >", channelName, channelName);
+        jedisPooled.publish(channelName, "message1" + channelName);
+        LOGGER.debug("onMessageTest publish  {} message1{} <", channelName, channelName);
         boolean acquired = semaphore.tryAcquire(750, TimeUnit.MILLISECONDS);
         assertTrue(acquired);
         assertEquals(1, recolectedData.size());
@@ -74,9 +71,7 @@ public class FunctionalSimplePubSubTest {
     }
 
     private void doSubscribe(SimplePubSub simplePubSub) {
-        try(Jedis jedis = jedisPool.getResource()) {
-            jedis.subscribe(simplePubSub, channelName);
-        }
+        jedisPooled.subscribe(simplePubSub, channelName);
     }
 
 }

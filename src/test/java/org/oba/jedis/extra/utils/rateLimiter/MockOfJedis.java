@@ -5,10 +5,14 @@ import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -17,8 +21,10 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 public class MockOfJedis {
 
-
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedis.class);
+
+    public static final long NANOS_PER_SECOND = 1_000_000_000L;
+    public static final long NANOS_PER_MICRO = 1_000L;
 
     public static final String CLIENT_RESPONSE_OK = "OK";
     public static final String CLIENT_RESPONSE_KO = "KO";
@@ -33,8 +39,7 @@ public class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private final JedisPool jedisPool;
-    private final Jedis jedis;
+    private final JedisPooled jedisPooled;
     private final Map<String, Map<String,String>> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
@@ -43,39 +48,43 @@ public class MockOfJedis {
     public MockOfJedis() {
         timer = new Timer();
 
-        jedis = Mockito.mock(Jedis.class);
-        jedisPool = Mockito.mock(JedisPool.class);
-        when(jedis.exists(anyString())).thenAnswer( ioc -> {
+        jedisPooled = Mockito.mock(JedisPooled.class);
+        when(jedisPooled.exists(anyString())).thenAnswer( ioc -> {
             String name = ioc.getArgument(0, String.class);
             return exists(name);
         });
-        when(jedis.del(anyString())).thenAnswer( ioc -> {
+        when(jedisPooled.del(anyString())).thenAnswer( ioc -> {
             String name = ioc.getArgument(0, String.class);
             return delete(name);
         });
-        when(jedis.hset(anyString(), any(Map.class))).thenAnswer( ioc ->  {
+        when(jedisPooled.hset(anyString(), any(Map.class))).thenAnswer( ioc ->  {
             String name = ioc.getArgument(0, String.class);
             Map<String, String> map = ioc.getArgument(1, Map.class);
             return hset(name, map);
         });
-        when(jedis.hset(anyString(), anyString(), anyString())).thenAnswer( ioc ->  {
+        when(jedisPooled.hset(anyString(), anyString(), anyString())).thenAnswer( ioc ->  {
             String name = ioc.getArgument(0, String.class);
             String key = ioc.getArgument(1, String.class);
             String value = ioc.getArgument(2, String.class);
             return hset(name, key, value);
         });
-        when(jedis.time()).thenAnswer(ioc -> time());
-        when(jedis.scriptLoad(anyString())).thenAnswer( ioc -> {
+        when(jedisPooled.scriptLoad(anyString())).thenAnswer( ioc -> {
             String script = ioc.getArgument(0, String.class);
             return ScriptEvalSha1.sha1(script);
         });
-        when(jedis.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
+        when(jedisPooled.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
             String name = ioc.getArgument(0, String.class);
             List<String> keys = ioc.getArgument(1, List.class);
             List<String> args = ioc.getArgument(2, List.class);
             return executeSha(name, keys, args);
         });
-        Mockito.when(jedisPool.getResource()).thenReturn(jedis);
+        when(jedisPooled.eval(anyString() )).thenAnswer(ioc -> {
+            if (ioc.getArgument(0, String.class).contains("TIME")) {
+                return mockScriptEvalTime();
+            } else {
+                throw new IllegalStateException("Unsupported script");
+            }
+        });
     }
 
 
@@ -112,12 +121,16 @@ public class MockOfJedis {
         this.doWithEvalSha = doWithEvalSha;
     }
 
-    public Jedis getJedis(){
-        return jedis;
+    public List<String> mockScriptEvalTime() {
+        long currentNanos = System.nanoTime();
+        LOGGER.debug("mockScriptEvalTime nanos {} ", currentNanos);
+        long seconds = currentNanos / NANOS_PER_SECOND;
+        long micros = (currentNanos % NANOS_PER_SECOND) / NANOS_PER_MICRO;
+        return Arrays.asList(Long.toString(seconds), Long.toString(micros));
     }
 
-    public JedisPool getJedisPool(){
-        return jedisPool;
+    public JedisPooled getJedisPooled(){
+        return jedisPooled;
     }
 
     public synchronized void clearData(){

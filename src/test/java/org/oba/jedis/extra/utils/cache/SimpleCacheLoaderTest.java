@@ -8,12 +8,19 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.oba.jedis.extra.utils.cache.MockOfJedisForSimpleCache.unitTestEnabledForSimpleCache;
 
 @RunWith(PowerMockRunner.class)
@@ -45,7 +52,7 @@ public class SimpleCacheLoaderTest {
     }
     SimpleCache createNewCache(CacheLoader cacheLoader) {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        return new SimpleCache(mockOfJedisForsimpleCache.getJedisPool(), name, 3_600_000).
+        return new SimpleCache(mockOfJedisForsimpleCache.getJedisPooled(), name, 3_600_000).
             withCacheLoader(cacheLoader);
     }
 

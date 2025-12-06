@@ -2,10 +2,9 @@ package org.oba.jedis.extra.utils.collections;
 
 import org.oba.jedis.extra.utils.iterators.HScanIterator;
 import org.oba.jedis.extra.utils.utils.Named;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.AbstractTransaction;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -16,7 +15,7 @@ import java.util.stream.Collectors;
 
 public class JedisMap implements Map<String, String>, Named {
 
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final String name;
 
     /**
@@ -24,11 +23,11 @@ public class JedisMap implements Map<String, String>, Named {
      * This constructor doesn't affect the redis server
      * So really, creating here a list does not generate new data on Redis; the list on the server will
      *   exists when data is inserted
-     * @param jedisPool Jedis pool connection
+     * @param jedisPooled Jedis pool connection
      * @param name Name of list on server
      */
-    public JedisMap(JedisPool jedisPool, String name){
-        this.jedisPool = jedisPool;
+    public JedisMap(JedisPooled jedisPooled, String name){
+        this.jedisPooled = jedisPooled;
         this.name = name;
     }
 
@@ -36,12 +35,12 @@ public class JedisMap implements Map<String, String>, Named {
      * Creates a new map in jedis with given name, or references an existing one
      * If the map doesn't exists, the 'from' data is stored,
      * if the map already exists, the 'from' data is added to the map
-     * @param jedisPool Jedis pool connection
+     * @param jedisPooled Jedis pool connection
      * @param name Name of list on server
      * @param from Data to add to the map
      */
-    public JedisMap(JedisPool jedisPool, String name, Map<String, String> from){
-        this(jedisPool, name);
+    public JedisMap(JedisPooled jedisPooled, String name, Map<String, String> from){
+        this(jedisPooled, name);
         putAll(from);
     }
 
@@ -59,9 +58,7 @@ public class JedisMap implements Map<String, String>, Named {
      * @return true if there is a reference in redis namespace, false otherwise
      */
     public boolean exists() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.exists(name);
-        }
+        return jedisPooled.exists(name);
     }
 
     /**
@@ -92,10 +89,8 @@ public class JedisMap implements Map<String, String>, Named {
 
     @Override
     public int size() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            long value = jedis.hlen(name);
-            return Long.valueOf(value).intValue();
-        }
+        long value = jedisPooled.hlen(name);
+        return Long.valueOf(value).intValue();
     }
 
     @Override
@@ -105,9 +100,7 @@ public class JedisMap implements Map<String, String>, Named {
 
     @Override
     public boolean containsKey(Object key) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.hexists(name, (String) key);
-        }
+        return jedisPooled.hexists(name, (String) key);
     }
 
     @Override
@@ -118,32 +111,25 @@ public class JedisMap implements Map<String, String>, Named {
 
     @Override
     public String get(Object key) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.hget(name, (String) key);
-        }
+        return jedisPooled.hget(name, (String) key);
     }
 
     @Override
     public String put(String key, String value) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Transaction t = jedis.multi();
-            Response<String> previous = t.hget(name, key);
-            t.hset(name, key, value);
-            t.exec();
-            return previous.get();
-        }
-
+        AbstractTransaction t = jedisPooled.multi();
+        Response<String> previous = t.hget(name, key);
+        t.hset(name, key, value);
+        t.exec();
+        return previous.get();
     }
 
     @Override
     public String remove(Object key) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Transaction t = jedis.multi();
-            Response<String> previous = t.hget(name, (String) key);
-            t.hdel(name, (String) key);
-            t.exec();
-            return previous.get();
-        }
+        AbstractTransaction t = jedisPooled.multi();
+        Response<String> previous = t.hget(name, (String) key);
+        t.hdel(name, (String) key);
+        t.exec();
+        return previous.get();
     }
 
     @Override
@@ -153,24 +139,20 @@ public class JedisMap implements Map<String, String>, Named {
 //            put(data.getKey(), data.getValue());
 //        }
         // better way
-        try (Jedis jedis = jedisPool.getResource()) {
-            final Transaction t = jedis.multi();
-            for(Entry<? extends String, ? extends String> entry : m.entrySet()){
-                t.hset(name, entry.getKey(), entry.getValue());
-            }
+        final AbstractTransaction t = jedisPooled.multi();
+        for(Entry<? extends String, ? extends String> entry : m.entrySet()){
+            t.hset(name, entry.getKey(), entry.getValue());
+        }
 //            m.entrySet().
 //                    forEach( entry ->
 //                            t.hset(name, entry.getKey(), entry.getValue())
 //                    );
-            t.exec();
-        }
+        t.exec();
     }
 
     @Override
     public void clear() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.del(name);
-        }
+        jedisPooled.del(name);
     }
 
     @Override
@@ -200,7 +182,7 @@ public class JedisMap implements Map<String, String>, Named {
 
     private Set<Entry<String, String>> doHscan() {
         Set<Entry<String, String>> keyValues = new HashSet<>();
-        HScanIterator hScanIterator = new HScanIterator(jedisPool, name);
+        HScanIterator hScanIterator = new HScanIterator(jedisPooled, name);
         while (hScanIterator.hasNext()){
             keyValues.add(hScanIterator.next());
         }

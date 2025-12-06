@@ -5,13 +5,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MockOfJedisTest {
 
@@ -33,35 +36,24 @@ public class MockOfJedisTest {
 
     @Test
     public void testExists() {
-        boolean exists1 = mockOfJedis.getJedis().exists("test");
+        boolean exists1 = mockOfJedis.getJedisPooled().exists("test");
         Map<String,String> m = new HashMap<>();
         m.put("a","1");
-        mockOfJedis.getJedis().hset("test", m);
-        boolean exists2 = mockOfJedis.getJedis().exists("test");
+        mockOfJedis.getJedisPooled().hset("test", m);
+        boolean exists2 = mockOfJedis.getJedisPooled().exists("test");
         assertFalse(exists1);
         assertTrue(exists2);
     }
 
     @Test
-    public void testTime() {
-        long t0 =  System.currentTimeMillis();
-        List<String> listTime = mockOfJedis.getJedis().time();
-        long t = Long.parseLong(listTime.get(0)) * 1000;
-        long t1 =  System.currentTimeMillis();
-        assertEquals("0", listTime.get(1));
-        assertTrue((t + 999) >= t0);
-        assertTrue(t <= t1);
-    }
-
-    @Test
     public void testDelete() {
-        boolean exists1 = mockOfJedis.getJedis().exists("test");
+        boolean exists1 = mockOfJedis.getJedisPooled().exists("test");
         Map<String,String> m = new HashMap<>();
         m.put("a","1");
-        mockOfJedis.getJedis().hset("test", m);
-        boolean exists2 = mockOfJedis.getJedis().exists("test");
-        mockOfJedis.getJedis().del("test");
-        boolean exists3 = mockOfJedis.getJedis().exists("test");
+        mockOfJedis.getJedisPooled().hset("test", m);
+        boolean exists2 = mockOfJedis.getJedisPooled().exists("test");
+        mockOfJedis.getJedisPooled().del("test");
+        boolean exists3 = mockOfJedis.getJedisPooled().exists("test");
         assertFalse(exists1);
         assertTrue(exists2);
         assertFalse(exists3);
@@ -71,17 +63,16 @@ public class MockOfJedisTest {
     public void testHset() {
         Map<String,String> m = new HashMap<>();
         m.put("a","1");
-        mockOfJedis.getJedis().hset("test", m);
-        mockOfJedis.getJedis().hset("test", "b" , "2");
+        mockOfJedis.getJedisPooled().hset("test", m);
+        mockOfJedis.getJedisPooled().hset("test", "b" , "2");
         assertEquals(2, mockOfJedis.getData("test").size());
         assertEquals("1", mockOfJedis.getData("test").get("a"));
         assertEquals("2", mockOfJedis.getData("test").get("b"));
     }
 
-
     @Test
     public void testScriptLoad() {
-        String sha = mockOfJedis.getJedis().scriptLoad("script");
+        String sha = mockOfJedis.getJedisPooled().scriptLoad("script");
         assertEquals(ScriptEvalSha1.sha1("script"), sha);
     }
 
@@ -98,10 +89,17 @@ public class MockOfJedisTest {
             assertEquals("2" + l, v.get(1));
             return Boolean.TRUE;
         });
-        Object result = mockOfJedis.getJedis().evalsha("sha1", Arrays.asList("a","b"), Arrays.asList("1","2" + l));
+        Object result = mockOfJedis.getJedisPooled().evalsha("sha1", Arrays.asList("a","b"), Arrays.asList("1","2" + l));
         assertEquals(Boolean.TRUE, result);
     }
 
+    @Test
+    public void testMockScriptEvalTime() {
+        List<String> result = mockOfJedis.mockScriptEvalTime();
+        assertEquals(2, result.size());
+        assertTrue( new BigInteger(result.get(0)).compareTo(BigInteger.ZERO) > 0 );
+        assertTrue( new BigInteger(result.get(1)).compareTo(BigInteger.ZERO) > 0 );
+    }
 
 
 

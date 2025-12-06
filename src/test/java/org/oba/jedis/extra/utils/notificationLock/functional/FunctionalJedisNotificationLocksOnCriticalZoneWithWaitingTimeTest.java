@@ -5,11 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +31,7 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneWithWaitingTimeTest {
     private final AtomicBoolean otherError = new AtomicBoolean(false);
 
     private String lockName;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private final List<NotificationLock> lockList = new ArrayList<>();
 
 
@@ -42,15 +40,15 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneWithWaitingTimeTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(lockName);
+            jedisPooled.close();
         }
     }
 
@@ -82,8 +80,7 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneWithWaitingTimeTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            Jedis jedis = jtfTest.createJedisClient();
-            NotificationLock jedisLock = new NotificationLock(jedisPool, lockName);
+            NotificationLock jedisLock = new NotificationLock(jedisPooled, lockName);
             lockList.add(jedisLock);
             try {
                 boolean locked = jedisLock.tryLockForAWhile(3, TimeUnit.SECONDS);
@@ -94,7 +91,6 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneWithWaitingTimeTest {
             } catch (InterruptedException e) {
                 // NOOP
             }
-            jedis.close();
         } catch (Exception e) {
             LOGGER.error("Other error", e);
             otherError.set(true);

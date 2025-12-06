@@ -5,11 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.iterators.ScanUtil;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,39 +23,35 @@ public class FunctionalScanUtilTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String varName;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
         varName = "scan:" + this.getClass().getName() + ":" + System.currentTimeMillis() + "_";
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, varName + "a");
-            WithJedisPoolDelete.doDelete(jedisPool, varName + "b");
-            WithJedisPoolDelete.doDelete(jedisPool, varName + "c");
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(varName + "a");
+            jedisPooled.del(varName + "b");
+            jedisPooled.del(varName + "c");
+            jedisPooled.close();
         }
     }
 
     @Test
     public void retrieveListOfKeys1Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(varName + "a","1");
-            jedis.set(varName + "b","2");
-            jedis.set(varName + "c","3");
-        }
+        jedisPooled.set(varName + "a","1");
+        jedisPooled.set(varName + "b","2");
+        jedisPooled.set(varName + "c","3");
         List<String> keys;
-        try (Jedis jedis = jedisPool.getResource()) {
-            keys = ScanUtil.retrieveListOfKeys(jedis, varName + "*");
-        }
+        keys = ScanUtil.retrieveListOfKeys(jedisPooled, varName + "*");
         assertEquals(3, keys.size());
         assertTrue(keys.contains(varName + "a"));
         assertTrue(keys.contains(varName + "b"));
@@ -67,12 +61,10 @@ public class FunctionalScanUtilTest {
 
     @Test
     public void retrieveListOfKeys2Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(varName + "a","1");
-            jedis.set(varName + "b","2");
-            jedis.set(varName + "c","3");
-        }
-        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPool, varName + "*");
+        jedisPooled.set(varName + "a","1");
+        jedisPooled.set(varName + "b","2");
+        jedisPooled.set(varName + "c","3");
+        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPooled, varName + "*");
         assertEquals(3, keys.size());
         assertTrue(keys.contains(varName + "a"));
         assertTrue(keys.contains(varName + "b"));
@@ -81,31 +73,25 @@ public class FunctionalScanUtilTest {
 
     @Test
     public void retrieveListOfKeys3Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(varName + "a","1");
-            jedis.set(varName + "b","2");
-            jedis.set(varName + "c","3");
-        }
-        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPool, varName + "a*");
+        jedisPooled.set(varName + "a","1");
+        jedisPooled.set(varName + "b","2");
+        jedisPooled.set(varName + "c","3");
+        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPooled, varName + "a*");
         assertEquals(1, keys.size());
         assertTrue(keys.contains(varName + "a"));
     }
 
     @Test
     public void useListOfKeys1Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(varName + "a","1");
-            jedis.set(varName + "b","2");
-            jedis.set(varName + "c","3");
-        }
+        jedisPooled.set(varName + "a","1");
+        jedisPooled.set(varName + "b","2");
+        jedisPooled.set(varName + "c","3");
         List<String> keys = new ArrayList<>();
-        try (Jedis jedis = jedisPool.getResource()) {
-            ScanUtil.useListOfKeys(jedis, varName + "*", k -> {
-                if ( k != null && !k.isEmpty()) {
-                    keys.add(k);
-                }
-            });
-        }
+        ScanUtil.useListOfKeys(jedisPooled, varName + "*", k -> {
+            if ( k != null && !k.isEmpty()) {
+                keys.add(k);
+            }
+        });
         assertEquals(3, keys.size());
         assertTrue(keys.contains(varName + "a"));
         assertTrue(keys.contains(varName + "b"));
@@ -114,13 +100,11 @@ public class FunctionalScanUtilTest {
 
     @Test
     public void useListOfKeys2Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(varName + "a","1");
-            jedis.set(varName + "b","2");
-            jedis.set(varName + "c","3");
-        }
+        jedisPooled.set(varName + "a","1");
+        jedisPooled.set(varName + "b","2");
+        jedisPooled.set(varName + "c","3");
         List<String> keys = new ArrayList<>();
-        ScanUtil.useListOfKeys(jedisPool, varName + "*", k -> {
+        ScanUtil.useListOfKeys(jedisPooled, varName + "*", k -> {
             if ( k != null && !k.isEmpty()) {
                 keys.add(k);
             }
@@ -133,13 +117,11 @@ public class FunctionalScanUtilTest {
 
     @Test
     public void useListOfKeys3Test() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(varName + "a","1");
-            jedis.set(varName + "b","2");
-            jedis.set(varName + "c","3");
-        }
+        jedisPooled.set(varName + "a","1");
+        jedisPooled.set(varName + "b","2");
+        jedisPooled.set(varName + "c","3");
         List<String> keys = new ArrayList<>();
-        ScanUtil.useListOfKeys(jedisPool, varName + "c*", k -> {
+        ScanUtil.useListOfKeys(jedisPooled, varName + "c*", k -> {
             if ( k != null && !k.isEmpty()) {
                 keys.add(k);
             }

@@ -5,11 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,39 +25,39 @@ public class FunctionalJedisListTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String listName;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         listName = "list:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, listName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(listName);
+            jedisPooled.close();
         }
     }
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
 
     @Test
     public void getNameTest() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         assertEquals(listName, jedisList.getName());
     }
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         jedisList.checkExists();
     }
 
@@ -79,7 +77,7 @@ public class FunctionalJedisListTest {
 
         @Test
     public void basicTest() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         assertFalse(jedisList.exists());
         assertTrue(jedisList.isEmpty());
         assertEquals(0L, jedisList.size());
@@ -154,7 +152,7 @@ public class FunctionalJedisListTest {
 
     @Test
     public void containsIndexOf(){
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(jedisPooled, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c", "a", "d"));
         assertTrue(jedisList.contains("a"));
         assertEquals(0, jedisList.indexOf("a"));
@@ -218,14 +216,12 @@ public class FunctionalJedisListTest {
         assertEquals(2, jedisList3.size());
         assertEquals("b", jedisList3.get(0));
         assertEquals("c", jedisList3.get(1));
-        JedisList jedisList4 = new JedisList(jedisPool, listName2);
+        JedisList jedisList4 = new JedisList(jedisPooled, listName2);
         assertTrue(jedisList4.exists());
         assertEquals(2, jedisList4.size());
         assertEquals("b", jedisList4.get(0));
         assertEquals("c", jedisList4.get(1));
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.del(listName2);
-        }
+        jedisPooled.del(listName2);
     }
 
 }

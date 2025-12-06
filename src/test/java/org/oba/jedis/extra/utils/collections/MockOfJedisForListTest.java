@@ -7,7 +7,6 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
-
 import redis.clients.jedis.args.ListPosition;
 import redis.clients.jedis.params.SetParams;
 
@@ -16,7 +15,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.CLIENT_RESPONSE_KO;
 import static org.oba.jedis.extra.utils.collections.MockOfJedisForList.CLIENT_RESPONSE_OK;
 
@@ -42,17 +45,17 @@ public class MockOfJedisForListTest {
 
     @Test
     public void testDataInsertion() throws InterruptedException {
-        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("a", "A2", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A2", new SetParams());
         assertEquals("A2", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("b", "B1", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("b", "B1", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedis().set("b", "B2", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("b", "B2", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedis().set("c", "C1", new SetParams().nx().px(500));
+        mockOfJedis.getJedisPooled().set("c", "C1", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
-        mockOfJedis.getJedis().set("c", "C2", new SetParams().nx().px(500));
+        mockOfJedis.getJedisPooled().set("c", "C2", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
         Thread.sleep(1000);
         assertNull(mockOfJedis.getCurrentData().get("c"));
@@ -60,12 +63,12 @@ public class MockOfJedisForListTest {
 
     @Test
     public void testDataGetSetDel() {
-        mockOfJedis.getJedis().set("a", "5", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("a", "5", new SetParams().nx());
         assertEquals("5", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("a", "7", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("a", "7", new SetParams().nx());
         assertEquals("5", mockOfJedis.getCurrentData().get("a"));
-        assertEquals("5", mockOfJedis.getJedis().get("a"));
-        assertTrue(1L == mockOfJedis.getJedis().del("a"));
+        assertEquals("5", mockOfJedis.getJedisPooled().get("a"));
+        assertTrue(1L == mockOfJedis.getJedisPooled().del("a"));
         assertNull(mockOfJedis.getCurrentData().get("a"));
     }
 

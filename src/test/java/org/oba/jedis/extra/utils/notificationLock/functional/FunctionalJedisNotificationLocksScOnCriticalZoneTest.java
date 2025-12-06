@@ -6,12 +6,15 @@ import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.functional.JedisTestFactoryLocks;
 import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,7 +31,7 @@ public class FunctionalJedisNotificationLocksScOnCriticalZoneTest {
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean otherError = new AtomicBoolean(false);
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String lockName;
     private final List<NotificationLock> lockList = new ArrayList<>();
 
@@ -40,7 +43,7 @@ public class FunctionalJedisNotificationLocksScOnCriticalZoneTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled(24, 8);
     }
 
     @After
@@ -54,9 +57,9 @@ public class FunctionalJedisNotificationLocksScOnCriticalZoneTest {
                     }
                     il.unlock();
         });
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(lockName);
+            jedisPooled.close();
         }
     }
 
@@ -89,7 +92,7 @@ public class FunctionalJedisNotificationLocksScOnCriticalZoneTest {
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
             //JedisPool jedisPool = createJedisPoolAdapter();
-            NotificationLock jedisLock = new NotificationLock(jedisPool, lockName);
+            NotificationLock jedisLock = new NotificationLock(jedisPooled, lockName);
             lockList.add(jedisLock);
             jedisLock.lock();
             JedisTestFactoryLocks.checkLock(jedisLock);

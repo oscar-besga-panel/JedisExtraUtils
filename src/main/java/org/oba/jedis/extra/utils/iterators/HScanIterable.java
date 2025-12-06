@@ -1,10 +1,9 @@
 package org.oba.jedis.extra.utils.iterators;
 
-import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Listable;
 import org.oba.jedis.extra.utils.utils.Mapeable;
 import org.oba.jedis.extra.utils.utils.Named;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.List;
 import java.util.Map;
@@ -21,60 +20,56 @@ import java.util.Map;
  * Can return duplicated results, but is rare
  */
 public class HScanIterable implements Iterable<Map.Entry<String,String>>,
-        Listable<Map.Entry<String,String>>, Mapeable<String, String>, Named, JedisPoolUser {
+        Listable<Map.Entry<String,String>>, Mapeable<String, String>, Named {
 
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final String name;
     private final String pattern;
     private final int resultsPerScan;
 
     /**
      * Iterable for hmap entries
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the hmap
      */
-    public HScanIterable(JedisPool jedisPool, String name){
-        this(jedisPool, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public HScanIterable(JedisPooled jedisPooled, String name){
+        this(jedisPooled, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterable for hmap entries
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the hmap
      * @param pattern Pattern to be matched on the responses
      */
-    public HScanIterable(JedisPool jedisPool, String name, String pattern){
-        this(jedisPool, name, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public HScanIterable(JedisPooled jedisPooled, String name, String pattern){
+        this(jedisPooled, name, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterable for hmap entries
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the hmap
      * @param resultsPerScan results per call to redis
      */
-    public HScanIterable(JedisPool jedisPool, String name, int resultsPerScan){
-        this(jedisPool, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    public HScanIterable(JedisPooled jedisPooled, String name, int resultsPerScan){
+        this(jedisPooled, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, resultsPerScan);
     }
 
     /**
      * Iterable for hmap entries
-     * @param jedisPool Jedis connection pool
+     * @param jedisPooled Jedis connection pool
      * @param name Name of the hmap
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */
-    public HScanIterable(JedisPool jedisPool, String name, String pattern, int resultsPerScan){
-        this.jedisPool = jedisPool;
+    public HScanIterable(JedisPooled jedisPooled, String name, String pattern, int resultsPerScan){
+        this.jedisPooled = jedisPooled;
         this.name = name;
         this.pattern = pattern;
         this.resultsPerScan = resultsPerScan;
     }
 
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
-    }
 
     @Override
     public String getName() {
@@ -83,7 +78,7 @@ public class HScanIterable implements Iterable<Map.Entry<String,String>>,
 
     @Override
     public HScanIterator iterator() {
-        return new HScanIterator(jedisPool, name, pattern, resultsPerScan);
+        return new HScanIterator(jedisPooled, name, pattern, resultsPerScan);
     }
 
     @Override

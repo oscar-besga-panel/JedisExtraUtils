@@ -8,13 +8,22 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.oba.jedis.extra.utils.cache.SimpleCache;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.SimpleEntry;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FunctionalSimpleCacheTest {
@@ -24,20 +33,20 @@ public class FunctionalSimpleCacheTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
     @Before
     public void setup() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After
     public void tearDown() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, listNameKeysToDelete);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            listNameKeysToDelete.forEach( k -> jedisPooled.del(k));
+            jedisPooled.close();
         }
     }
 
@@ -48,14 +57,12 @@ public class FunctionalSimpleCacheTest {
     SimpleCache createNewCache(long timeOut) {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         listNameKeysToDelete.add(name);
-        return new SimpleCache(jedisPool, name, timeOut);
+        return new SimpleCache(jedisPooled, name, timeOut);
     }
 
 
     private String jedisGet(String key) {
-        try(Jedis jedis = jedisPool.getResource()){
-            return jedis.get(key);
-        }
+        return jedisPooled.get(key);
     }
 
     private boolean jedisExists(String key) {
@@ -305,10 +312,10 @@ public class FunctionalSimpleCacheTest {
         simpleCache.put("a", "A1");
         simpleCache.put("b", "B1");
         simpleCache.put("c", "C1");
-        Iterator<Map.Entry<String,String>> meit = simpleCache.iterator();
-        assertNotNull(meit);
-        while (meit.hasNext()) {
-            Map.Entry<String,String> me = meit.next();
+        Iterator<Map.Entry<String,String>> iterator = simpleCache.iterator();
+        assertNotNull(iterator);
+        while (iterator.hasNext()) {
+            Map.Entry<String,String> me = iterator.next();
             assertTrue(Arrays.asList("a","b","c").contains(me.getKey()));
             assertTrue(Arrays.asList("A1","B1","C1").contains(me.getValue()));
         }

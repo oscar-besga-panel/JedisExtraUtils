@@ -7,15 +7,19 @@ import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
 public class MockOfJedisTest {
-
 
     private MockOfJedis mockOfJedis;
 
@@ -57,26 +61,26 @@ public class MockOfJedisTest {
 
     @Test
     public void testExists() {
-        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
         assertNull(mockOfJedis.getCurrentData().get("b"));
-        assertTrue( mockOfJedis.getJedis().exists("a"));
-        assertFalse( mockOfJedis.getJedis().exists("b"));
+        assertTrue( mockOfJedis.getJedisPooled().exists("a"));
+        assertFalse( mockOfJedis.getJedisPooled().exists("b"));
     }
 
     @Test
     public void testDataInsertion() throws InterruptedException {
-        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("a", "A2", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A2", new SetParams());
         assertEquals("A2", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("b", "B1", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("b", "B1", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedis().set("b", "B2", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("b", "B2", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedis().set("c", "C1", new SetParams().nx().px(500));
+        mockOfJedis.getJedisPooled().set("c", "C1", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
-        mockOfJedis.getJedis().set("c", "C2", new SetParams().nx().px(500));
+        mockOfJedis.getJedisPooled().set("c", "C2", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
         Thread.sleep(1000);
         assertNull(mockOfJedis.getCurrentData().get("c"));
@@ -84,31 +88,31 @@ public class MockOfJedisTest {
 
     @Test
     public void testDataGetSetIncrDel() {
-        mockOfJedis.getJedis().set("a", "5", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("a", "5", new SetParams().nx());
         assertEquals("5", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("a", "7", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("a", "7", new SetParams().nx());
         assertEquals("5", mockOfJedis.getCurrentData().get("a"));
-        assertEquals("5", mockOfJedis.getJedis().get("a"));
-        assertEquals(1L, mockOfJedis.getJedis().del("a"));
+        assertEquals("5", mockOfJedis.getJedisPooled().get("a"));
+        assertEquals(1L, mockOfJedis.getJedisPooled().del("a"));
         assertNull(mockOfJedis.getCurrentData().get("a"));
     }
 
     @Test
     public void testDataScan() throws InterruptedException {
-        mockOfJedis.getJedis().set("a", "A1", new SetParams());
-        mockOfJedis.getJedis().set("a", "A2", new SetParams());
-        mockOfJedis.getJedis().set("b", "B1", new SetParams().nx());
-        mockOfJedis.getJedis().set("c", "C1", new SetParams().nx().px(500));
+        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A2", new SetParams());
+        mockOfJedis.getJedisPooled().set("b", "B1", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("c", "C1", new SetParams().nx().px(500));
         ScanParams scanParams = new ScanParams();
         scanParams.match("*");
-        ScanResult<String> scanResult1 =  mockOfJedis.getJedis().scan("0",scanParams);
+        ScanResult<String> scanResult1 =  mockOfJedis.getJedisPooled().scan("0",scanParams);
         assertEquals(3, scanResult1.getResult().size());
         assertTrue(scanResult1.getResult().contains("a"));
         assertTrue(scanResult1.getResult().contains("b"));
         assertTrue(scanResult1.getResult().contains("c"));
         Thread.sleep(1000);
         assertNull(mockOfJedis.getCurrentData().get("c"));
-        ScanResult<String> scanResult2 =  mockOfJedis.getJedis().scan("0",scanParams);
+        ScanResult<String> scanResult2 =  mockOfJedis.getJedisPooled().scan("0",scanParams);
         assertEquals(2, scanResult2.getResult().size());
         assertTrue(scanResult2.getResult().contains("a"));
         assertTrue(scanResult2.getResult().contains("b"));
@@ -126,8 +130,12 @@ public class MockOfJedisTest {
         assertEquals("13830a510bd451927a72d44de40b9a85266af06d", sha1);
     }
 
-
-
-
+    @Test
+    public void testMockScriptEvalTime() {
+        List<String> result = mockOfJedis.mockScriptEvalTime();
+        assertEquals(2, result.size());
+        assertTrue( new BigInteger(result.get(0)).compareTo(BigInteger.ZERO) > 0 );
+        assertTrue( new BigInteger(result.get(1)).compareTo(BigInteger.ZERO) > 0 );
+    }
 
 }

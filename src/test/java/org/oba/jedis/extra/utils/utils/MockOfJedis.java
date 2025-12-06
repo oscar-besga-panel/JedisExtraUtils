@@ -4,21 +4,27 @@ import org.mockito.Mockito;
 import org.oba.jedis.extra.utils.test.TTL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.JedisPubSub;
-import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
@@ -28,6 +34,9 @@ import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 public final class MockOfJedis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedis.class);
+
+    public static final long NANOS_PER_SECOND = 1_000_000_000L;
+    public static final long NANOS_PER_MICRO = 1_000L;
 
     public static final String CLIENT_RESPONSE_OK = "OK";
     public static final String CLIENT_RESPONSE_KO = "KO";
@@ -42,11 +51,10 @@ public final class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private final JedisPool jedisPool;
-    private final JedisSentinelPool jedisSentinelPool;
-    private final Jedis jedis;
+    private final JedisPooled jedisPooled;
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
+    private final AtomicLong givenTimestamp = new AtomicLong(-1);
 
     private final BlockingQueue<SimpleEntry> messageQueue = new LinkedBlockingQueue<>();
     private final Map<String, List<JedisPubSub>> channelsMap = new HashMap<>();
@@ -58,47 +66,43 @@ public final class MockOfJedis {
         messageThread.start();
         timer = new Timer();
 
-        jedis = Mockito.mock(Jedis.class);
-        jedisPool = Mockito.mock(JedisPool.class);
-        Mockito.when(jedisPool.getResource()).thenReturn(jedis);
-        jedisSentinelPool = Mockito.mock(JedisSentinelPool.class);
-        Mockito.when(jedisSentinelPool.getResource()).thenReturn(jedis);
+        jedisPooled = Mockito.mock(JedisPooled.class);
 
-        Mockito.when(jedis.exists(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExist(key);
         });
-        Mockito.when(jedis.get(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);
         });
-        Mockito.when(jedis.set(anyString(), anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.set(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             return mockSet(key, value, null);
 
         });
-        Mockito.when(jedis.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+        when(jedisPooled.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = ioc.getArgument(2);
             return mockSet(key, value, setParams);
         });
-        Mockito.when(jedis.del(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
-        Mockito.when(jedis.scan(anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        when(jedisPooled.scan(anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String cursor = ioc.getArgument(0);
             ScanParams scanParams = ioc.getArgument(1);
             return mockScan(cursor, scanParams);
         });
-        Mockito.when(jedis.publish(anyString(), anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.publish(anyString(), anyString())).thenAnswer(ioc -> {
             String channel = ioc.getArgument(0, String.class);
             String message = ioc.getArgument(1, String.class);
             return mockPublish(channel, message);
         });
-        Mockito.when(jedis.ping()).thenAnswer(ioc -> Long.toString(System.currentTimeMillis()));
+        when(jedisPooled.ping()).thenAnswer(ioc -> Long.toString(System.currentTimeMillis()));
         Mockito.doAnswer( ioc -> {
             JedisPubSub jedisPubSub = ioc.getArgument(0, JedisPubSub.class);
             Object ochannels = ioc.getArgument(1);
@@ -110,20 +114,25 @@ public final class MockOfJedis {
                 mockSubscribe(jedisPubSub, ((List<String>) ochannels).toArray(new String[]{}));
             }
             return null;
-        }).when(jedis).subscribe(any(JedisPubSub.class), any());
-        Mockito.when(jedis.scriptLoad(anyString())).thenAnswer(ioc -> {
+        }).when(jedisPooled).subscribe(any(JedisPubSub.class), any());
+        when(jedisPooled.scriptLoad(anyString())).thenAnswer(ioc -> {
             String script = ioc.getArgument(0, String.class);
             return mockScriptLoad(script);
         });
-        Mockito.when(jedis.evalsha(anyString(), any(List.class), any(List.class) )).thenAnswer(ioc -> {
+        when(jedisPooled.evalsha(anyString(), any(List.class), any(List.class) )).thenAnswer(ioc -> {
             String sha = ioc.getArgument(0, String.class);
             List<String> keys = (List<String>) ioc.getArgument(1, List.class);
             List<String> args = (List<String>) ioc.getArgument(2, List.class);
             return mockScriptEvalSha(sha, keys, args);
         });
-
+        when(jedisPooled.eval(anyString() )).thenAnswer(ioc -> {
+            if (ioc.getArgument(0, String.class).contains("TIME")) {
+                return mockScriptEvalTime();
+            } else {
+                throw new IllegalStateException("Unsupported script");
+            }
+        });
     }
-
 
 
     private boolean mockExist(String key) {
@@ -209,28 +218,39 @@ public final class MockOfJedis {
                 toString();
     }
 
+    public List<String> mockScriptEvalTime() {
+        long currentNanos;
+        if (givenTimestamp.get() >= 0) {
+            currentNanos = givenTimestamp.get();
+        } else {
+            currentNanos = System.nanoTime();
+        }
+        LOGGER.debug("mockScriptEvalTime nanos {} ", currentNanos);
+        long seconds = currentNanos / NANOS_PER_SECOND;
+        long micros = (currentNanos % NANOS_PER_SECOND) / NANOS_PER_MICRO;
+        return Arrays.asList(Long.toString(seconds), Long.toString(micros));
+    }
+
+
     public static String mockScriptLoad(String script) {
         return ScriptEvalSha1.sha1(script);
     }
 
-    public Jedis getJedis(){
-        return jedis;
-    }
-
-    public JedisPool getJedisPool(){
-        return jedisPool;
-    }
-
-    public JedisSentinelPool getJedisSentinelPool(){
-        return jedisSentinelPool;
+    public JedisPooled getJedisPooled(){
+        return jedisPooled;
     }
 
     public synchronized void clearData(){
+        givenTimestamp.set(-1);
         data.clear();
     }
 
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);
+    }
+
+    public void setGivenTimestamp(long timestamp) {
+        this.givenTimestamp.set(timestamp);
     }
 
     public static String extractPatternFromScanParams(ScanParams scanParams) {

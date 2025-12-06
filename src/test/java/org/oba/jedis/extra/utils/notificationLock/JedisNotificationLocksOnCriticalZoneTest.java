@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Transaction;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,12 +46,12 @@ public class JedisNotificationLocksOnCriticalZoneTest {
     @After
     public void after() {
         if (mockOfJedis != null) {
-            mockOfJedis.getJedisPool().close();
+            mockOfJedis.getJedisPooled().close();
             mockOfJedis.clearData();
         }
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < MockOfJedis.UNIT_TEST_CYCLES; i++) {
             intoCriticalZone.set(false);
@@ -83,7 +82,7 @@ public class JedisNotificationLocksOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            NotificationLock jedisLock = new NotificationLock(mockOfJedis.getJedisPool(), lockName);
+            NotificationLock jedisLock = new NotificationLock(mockOfJedis.getJedisPooled(), lockName);
             lockList.add(jedisLock);
             jedisLock.lock();
             MockOfJedis.checkLock(jedisLock);

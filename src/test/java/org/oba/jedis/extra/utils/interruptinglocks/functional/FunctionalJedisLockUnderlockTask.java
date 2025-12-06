@@ -7,9 +7,7 @@ import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockBas
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLockUtils;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -20,7 +18,7 @@ public class FunctionalJedisLockUnderlockTask {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String keyName;
 
 
@@ -28,7 +26,7 @@ public class FunctionalJedisLockUnderlockTask {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
         keyName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
@@ -36,9 +34,9 @@ public class FunctionalJedisLockUnderlockTask {
     @After
     public void tearDown() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, keyName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(keyName);
+            jedisPooled.close();
         }
     }
 
@@ -46,8 +44,8 @@ public class FunctionalJedisLockUnderlockTask {
     @Test
     public void underLockTask() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        JedisLockUtils.underLockTask(jedisPool, keyName, () -> result1.set(true) );
-        boolean result2 = JedisLockUtils.underLockTask(jedisPool, keyName, () -> true);
+        JedisLockUtils.underLockTask(jedisPooled, keyName, () -> result1.set(true) );
+        boolean result2 = JedisLockUtils.underLockTask(jedisPooled, keyName, () -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }
@@ -55,14 +53,10 @@ public class FunctionalJedisLockUnderlockTask {
     @Test
     public void underLockTaskSc() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        try (Jedis jedis1 = jedisPool.getResource()) {
-            JedisLockUtils.underLockTask(jedis1, keyName, () -> result1.set(true) );
-        }
+        JedisLockUtils.underLockTask(jedisPooled, keyName, () -> result1.set(true) );
         AtomicBoolean result2 = new AtomicBoolean(false);
-        try (Jedis jedis2 = jedisPool.getResource()) {
-            boolean result2tmp = JedisLockUtils.underLockTask(jedis2, keyName, () -> true);
-            result2.set(result2tmp);
-        }
+        boolean result2tmp = JedisLockUtils.underLockTask(jedisPooled, keyName, () -> true);
+        result2.set(result2tmp);
         assertTrue(result1.get());
         assertTrue(result2.get());
     }
@@ -70,9 +64,9 @@ public class FunctionalJedisLockUnderlockTask {
     @Test
     public void underLock() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        JedisLock jedisLock1 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock1 = new JedisLock(jedisPooled, keyName);
         jedisLock1.underLock(() -> result1.set(true) );
-        JedisLock jedisLock2 = new JedisLock(jedisPool, keyName);
+        JedisLock jedisLock2 = new JedisLock(jedisPooled, keyName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
@@ -81,9 +75,9 @@ public class FunctionalJedisLockUnderlockTask {
     @Test
     public void underLockWithInterrupted() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPool, keyName, 1, TimeUnit.SECONDS);
+        InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(jedisPooled, keyName, 1, TimeUnit.SECONDS);
         jedisLock1.underLock(() -> result1.set(true));
-        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(jedisPool, keyName, 1, TimeUnit.SECONDS);
+        InterruptingJedisJedisLockBase jedisLock2 = new InterruptingJedisJedisLockBase(jedisPooled, keyName, 1, TimeUnit.SECONDS);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);

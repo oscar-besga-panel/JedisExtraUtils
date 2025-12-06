@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +30,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean otherError = new AtomicBoolean(false);
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
     private String lockName;
     private final List<JedisLock> lockList = new ArrayList<>();
 
@@ -40,16 +39,16 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled(24, 8);
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(lockName);
+            jedisPooled.close();
         }
     }
 
@@ -80,7 +79,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime) {
-        JedisLock jedisLock = new JedisLock(jedisPool,lockName);
+        JedisLock jedisLock = new JedisLock(jedisPooled,lockName);
         lockList.add(jedisLock);
         jedisLock.lock();
         JedisTestFactoryLocks.checkLock(jedisLock);

@@ -8,7 +8,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
 
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +36,7 @@ public class JedisSetStreamTest {
     private static final List<String> initialData = Collections.unmodifiableList(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
 
     JedisSet createABCDEFGSet() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPool(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
         jedisSet.addAll(initialData);
         return jedisSet;
     }

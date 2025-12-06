@@ -26,14 +26,17 @@ public class JedisSemaphoreNumberPermitsTest {
 
     @After
     public void after() {
-        if (mockOfJedis != null) mockOfJedis.clearData();
+        if (mockOfJedis != null) {
+            mockOfJedis.clearData();
+            mockOfJedis.getJedisPooled().close();
+        }
     }
 
 
 
     @Test
     public void testNumOfPermits(){
-        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedisPool(),semaphoreName,3);
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedisPooled(),semaphoreName,3);
         assertEquals(3, jedisSemaphore.availablePermits());
         assertFalse( jedisSemaphore.tryAcquire(5));
         assertEquals(3, jedisSemaphore.availablePermits());
@@ -53,18 +56,18 @@ public class JedisSemaphoreNumberPermitsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testNumOfPermitsErrorAcquire(){
-        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedisPool(),semaphoreName,0);
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedisPooled(),semaphoreName,0);
         jedisSemaphore.tryAcquire(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNumOfPermitsErrorRelease(){
-        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedisPool(),semaphoreName,0);
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedisPooled(),semaphoreName,0);
         jedisSemaphore.release(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNumOfPermitsErrorOnCreation(){
-        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedisPool(),semaphoreName,-1);
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(mockOfJedis.getJedisPooled(),semaphoreName,-1);
     }
 }

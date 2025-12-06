@@ -2,13 +2,13 @@ package org.oba.jedis.extra.utils.collections.functional;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisMap;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -29,7 +29,7 @@ public class FunctionalJedisMapTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String mapName, mapName2;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
     @Before
     public void before() {
@@ -37,21 +37,20 @@ public class FunctionalJedisMapTest {
         if (!jtfTest.functionalTestEnabled()) return;
         mapName = "map:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mapName2 = "map2:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, mapName);
-            WithJedisPoolDelete.doDelete(jedisPool, mapName2);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(mapName);
+            jedisPooled.del(mapName2);
+            jedisPooled.close();
         }
     }
 
-
     JedisMap createABCMap() {
-        JedisMap jedisMap = new JedisMap(jedisPool, mapName);
+        JedisMap jedisMap = new JedisMap(jedisPooled, mapName);
         jedisMap.put("a","1");
         jedisMap.put("b","2");
         jedisMap.put("c","3");
@@ -68,7 +67,7 @@ public class FunctionalJedisMapTest {
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisMap jedisMap = new JedisMap(jedisPool, mapName);
+        JedisMap jedisMap = new JedisMap(jedisPooled, mapName);
         jedisMap.checkExists();
     }
 
@@ -86,14 +85,14 @@ public class FunctionalJedisMapTest {
         assertFalse(jedisMap.containsKey("d"));
     }
 
-
+    //TODO Map wtf
     @Test
     public void basicTestSize() {
         JedisMap jedisMap = createABCMap();
         int size1 = jedisMap.size();
         jedisMap.put("d","4");
         int size2 = jedisMap.size();
-        JedisMap jedisMap2 = new JedisMap(jedisPool, mapName2);
+        JedisMap jedisMap2 = new JedisMap(jedisPooled, mapName2);
         assertEquals(3, size1);
         assertEquals(4, size2);
         assertFalse(jedisMap.isEmpty());

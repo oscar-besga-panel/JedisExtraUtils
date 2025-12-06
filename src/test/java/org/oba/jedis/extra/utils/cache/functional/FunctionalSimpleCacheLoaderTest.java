@@ -8,15 +8,23 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.oba.jedis.extra.utils.cache.CacheLoader;
 import org.oba.jedis.extra.utils.cache.SimpleCache;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FunctionalSimpleCacheLoaderTest {
@@ -28,20 +36,20 @@ public class FunctionalSimpleCacheLoaderTest {
 
     private final TestingCacheLoader testingCacheLoader = new TestingCacheLoader();
 
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
     @Before
     public void setup() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After
     public void tearDown() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, listNameKeysToDelete);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            listNameKeysToDelete.forEach(k -> jedisPooled.del(k));
+            jedisPooled.close();
         }
     }
 
@@ -51,7 +59,7 @@ public class FunctionalSimpleCacheLoaderTest {
     SimpleCache createNewCache(CacheLoader cacheLoader) {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         listNameKeysToDelete.add(name);
-        return new SimpleCache(jedisPool, name, 3_600_000).
+        return new SimpleCache(jedisPooled, name, 3_600_000).
                 withCacheLoader(cacheLoader);
     }
 

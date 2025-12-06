@@ -5,18 +5,19 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.iterators.SScanIterable;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class FunctionalSscanIterableTest {
 
@@ -30,7 +31,7 @@ public class FunctionalSscanIterableTest {
 
     private String sscanitName;
     private List<String> letters;
-    private JedisPool jedisPool;
+    private JedisPooled jedisPooled;
 
 
     @Before
@@ -38,31 +39,29 @@ public class FunctionalSscanIterableTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         sscanitName = "scanIterable:" + this.getClass().getName() + ":" + System.currentTimeMillis() + ":" + count.incrementAndGet();
-        jedisPool = jtfTest.createJedisPool();
+        jedisPooled = jtfTest.createJedisPooled();
         letters = jtfTest.randomSizedListOfChars();
         LOGGER.debug("before count {} for name {} with letters {}", count.get(), sscanitName, letters );
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, sscanitName);
-            jedisPool.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(sscanitName);
+            jedisPooled.close();
         }
     }
 
     void createABCData() {
-        try(Jedis jedis = jedisPool.getResource()) {
-            letters.forEach( letter -> {
-                jedis.sadd(sscanitName, letter);
-            });
-        }
+        letters.forEach( letter -> {
+            jedisPooled.sadd(sscanitName, letter);
+        });
     }
 
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
-        SScanIterable sscanIterable = new SScanIterable(jedisPool,sscanitName,  "*");
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled,sscanitName,  "*");
         Iterator<String> iterator =  sscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -72,20 +71,19 @@ public class FunctionalSscanIterableTest {
         assertNotNull(iterator);
         assertTrue(sb.length() == 0);
         assertTrue(num == 0);
-        assertNotNull(sscanIterable.getJedisPool());
         assertEquals(sscanitName, sscanIterable.getName());
     }
 
     @Test
     public void iteratorEmpty2Test() {
-        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName, 20);
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled, sscanitName, 20);
         List<String> data = sscanIterable.asList();
         assertTrue(data.isEmpty());
     }
 
     @Test
     public void iteratorEmpty3Test() {
-        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName, 20);
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled, sscanitName, 20);
         List<String> data = sscanIterable.asList();
         assertTrue(data.isEmpty());
     }
@@ -94,7 +92,7 @@ public class FunctionalSscanIterableTest {
     public void iteratorWithResultsTest() {
         int num = 0;
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(jedisPool,sscanitName,  "*");
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled,sscanitName,  "*");
         Iterator<String> iterator =  sscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -112,13 +110,11 @@ public class FunctionalSscanIterableTest {
     @Test
     public void iteratorWithResultKeysTest() {
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled, sscanitName, "*");
         Iterator<String> iterator =  sscanIterable.iterator();
         while(iterator.hasNext()) {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertTrue( jedis.exists(sscanitName));
-                assertTrue( jedis.sismember(sscanitName, iterator.next()));
-            }
+            assertTrue( jedisPooled.exists(sscanitName));
+            assertTrue( jedisPooled.sismember(sscanitName, iterator.next()));
         }
     }
 
@@ -127,7 +123,7 @@ public class FunctionalSscanIterableTest {
         AtomicInteger num = new AtomicInteger(0);
         StringBuilder sb = new StringBuilder();
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled, sscanitName, "*");
         sscanIterable.forEach( key -> {
             num.incrementAndGet();
             sb.append(key);
@@ -142,12 +138,10 @@ public class FunctionalSscanIterableTest {
     @Test
     public void iteratorWithResultKeysForEachTest() {
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled, sscanitName, "*");
         sscanIterable.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertTrue( jedis.exists(sscanitName));
-                assertTrue( jedis.sismember(sscanitName, key));
-            }
+            assertTrue( jedisPooled.exists(sscanitName));
+            assertTrue( jedisPooled.sismember(sscanitName, key));
         });
     }
 
@@ -155,20 +149,16 @@ public class FunctionalSscanIterableTest {
     @Test
     public void iteratorRemoveForEach1Test() {
         createABCData();
-        try(Jedis jedis = jedisPool.getResource()) {
-            jedis.sadd(sscanitName, "extra");
-        }
+        jedisPooled.sadd(sscanitName, "extra");
         List<String> deleted = new ArrayList<>();
-        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled, sscanitName, "*");
         Iterator<String> iterator = sscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertFalse( jedis.sismember(sscanitName, key));
-            }
+            assertFalse( jedisPooled.sismember(sscanitName, key));
         });
     }
 
@@ -176,23 +166,21 @@ public class FunctionalSscanIterableTest {
     public void iteratorRemoveForEach2Test() {
         createABCData();
         List<String> deleted = new ArrayList<>();
-        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled, sscanitName, "*");
         Iterator<String> iterator = sscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertFalse( jedis.sismember(sscanitName, key));
-            }
+            assertFalse( jedisPooled.sismember(sscanitName, key));
         });
     }
 
     @Test
     public void asListTest() {
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName);
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled, sscanitName);
         List<String> data = sscanIterable.asList();
         letters.forEach( letter -> {
             assertTrue(data.contains(letter));
@@ -202,7 +190,7 @@ public class FunctionalSscanIterableTest {
 
     @Test(expected = IllegalStateException.class)
     public void errorInDeleteTest() {
-        SScanIterable sscanIterable = new SScanIterable(jedisPool, sscanitName, 20);
+        SScanIterable sscanIterable = new SScanIterable(jedisPooled, sscanitName, 20);
         Iterator<String> iterator = sscanIterable.iterator();
         iterator.remove();
     }

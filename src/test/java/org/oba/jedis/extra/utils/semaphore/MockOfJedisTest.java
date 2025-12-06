@@ -55,17 +55,17 @@ public class MockOfJedisTest {
 
     @Test
     public void testDataInsertion() throws InterruptedException {
-        mockOfJedis.getJedis().set("a", "A1", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("a", "A2", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "A2", new SetParams());
         assertEquals("A2", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("b", "B1", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("b", "B1", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedis().set("b", "B2", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("b", "B2", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedis().set("c", "C1", new SetParams().nx().px(500));
+        mockOfJedis.getJedisPooled().set("c", "C1", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
-        mockOfJedis.getJedis().set("c", "C2", new SetParams().nx().px(500));
+        mockOfJedis.getJedisPooled().set("c", "C2", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
         Thread.sleep(1000);
         assertNull(mockOfJedis.getCurrentData().get("c"));
@@ -73,14 +73,14 @@ public class MockOfJedisTest {
 
     @Test
     public void testDataGetSetIncrDel() throws InterruptedException {
-        mockOfJedis.getJedis().set("a", "5", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("a", "5", new SetParams().nx());
         assertEquals("5", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedis().set("a", "7", new SetParams().nx());
+        mockOfJedis.getJedisPooled().set("a", "7", new SetParams().nx());
         assertEquals("5", mockOfJedis.getCurrentData().get("a"));
-        assertEquals("5", mockOfJedis.getJedis().get("a"));
-        assertTrue(8L == mockOfJedis.getJedis().incrBy("a",3));
-        assertEquals("8", mockOfJedis.getJedis().get("a"));
-        assertTrue(1L == mockOfJedis.getJedis().del("a"));
+        assertEquals("5", mockOfJedis.getJedisPooled().get("a"));
+        assertTrue(8L == mockOfJedis.getJedisPooled().incrBy("a",3));
+        assertEquals("8", mockOfJedis.getJedisPooled().get("a"));
+        assertTrue(1L == mockOfJedis.getJedisPooled().del("a"));
         assertNull(mockOfJedis.getCurrentData().get("a"));
     }
 
@@ -90,11 +90,11 @@ public class MockOfJedisTest {
      */
     @Test
     public void testEval1() {
-        mockOfJedis.getJedis().set("a", "3", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "3", new SetParams());
         assertEquals("3", mockOfJedis.getCurrentData().get("a"));
         List<String> keys = Arrays.asList("a");
         List<String> values = Arrays.asList("3");
-        Object response = mockOfJedis.getJedis().evalsha("sha1", keys, values);
+        Object response = mockOfJedis.getJedisPooled().evalsha("sha1", keys, values);
         assertEquals("0", mockOfJedis.getCurrentData().get("a"));
         assertEquals("true",response);
     }
@@ -104,11 +104,11 @@ public class MockOfJedisTest {
      */
     @Test
     public void testEval2() {
-        mockOfJedis.getJedis().set("a", "3", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "3", new SetParams());
         assertEquals("3", mockOfJedis.getCurrentData().get("a"));
         List<String> keys = Arrays.asList("a");
         List<String> values = Arrays.asList("2");
-        Object response = mockOfJedis.getJedis().evalsha("sha1", keys, values);
+        Object response = mockOfJedis.getJedisPooled().evalsha("sha1", keys, values);
         assertEquals("1", mockOfJedis.getCurrentData().get("a"));
         assertEquals("true",response);
     }
@@ -118,11 +118,11 @@ public class MockOfJedisTest {
      */
     @Test
     public void testEval3() {
-        mockOfJedis.getJedis().set("a", "3", new SetParams());
+        mockOfJedis.getJedisPooled().set("a", "3", new SetParams());
         assertEquals("3", mockOfJedis.getCurrentData().get("a"));
         List<String> keys = Arrays.asList("a");
         List<String> values = Arrays.asList("4");
-        Object response = mockOfJedis.getJedis().evalsha("sha1", keys, values);
+        Object response = mockOfJedis.getJedisPooled().evalsha("sha1", keys, values);
         assertEquals("3", mockOfJedis.getCurrentData().get("a"));
         assertEquals("false",response);
     }

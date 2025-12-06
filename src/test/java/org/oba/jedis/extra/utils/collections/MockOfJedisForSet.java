@@ -4,13 +4,10 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.oba.jedis.extra.utils.test.TransactionOrder;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Transaction;
-
+import redis.clients.jedis.AbstractTransaction;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -33,26 +30,23 @@ public class MockOfJedisForSet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedisForList.class);
 
-    private final Jedis jedis;
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
 
     public MockOfJedisForSet() {
 
 
 
-        jedis = Mockito.mock(Jedis.class);
-        jedisPool = Mockito.mock(JedisPool.class);
-        when(jedisPool.getResource()).thenReturn(jedis);
+        jedisPooled = Mockito.mock(JedisPooled.class);
 
-        Transaction transaction = PowerMockito.mock(Transaction.class);
+        AbstractTransaction transaction = PowerMockito.mock(AbstractTransaction.class);
 
-        when(jedis.multi()).thenReturn(transaction);
-        when(jedis.exists(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.multi()).thenReturn(transaction);
+        when(jedisPooled.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExists(key);
         });
-        when(jedis.del(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
@@ -60,20 +54,20 @@ public class MockOfJedisForSet {
             String key = ioc.getArgument(0);
             return TransactionOrder.quickReponseExecuted(mockDel(key));
         });
-        when(jedis.sadd(anyString(), any())).thenAnswer(this::iocSadd);
+        when(jedisPooled.sadd(anyString(), any())).thenAnswer(this::iocSadd);
         when(transaction.sadd(anyString(), any())).thenAnswer( ioc ->
                 TransactionOrder.quickReponseExecuted(iocSadd(ioc))
         );
-        when(jedis.sismember(anyString(), anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.sismember(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             return mockSismember(key, value);
         });
-        when(jedis.scard(anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.scard(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockScard(key);
         });
-        when(jedis.srem(anyString(), any())).thenAnswer(ioc -> {
+        when(jedisPooled.srem(anyString(), any())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             Object value;
             if (ioc.getArguments().length > 2) {
@@ -90,13 +84,13 @@ public class MockOfJedisForSet {
             return mockSrem(key, value);
         });
 
-        when(jedis.sscan(anyString(), anyString())).thenAnswer(ioc -> {
+        when(jedisPooled.sscan(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String cursor = ioc.getArgument(1);
             ScanParams scanParams = new ScanParams();
             return mockSscan(key, cursor, scanParams);
         });
-        when(jedis.sscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        when(jedisPooled.sscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String cursor = ioc.getArgument(1);
             ScanParams scanParams = ioc.getArgument(2);
@@ -124,12 +118,9 @@ public class MockOfJedisForSet {
     }
 
 
-    Jedis getJedis(){
-        return jedis;
-    }
 
-    JedisPool getJedisPool() {
-        return jedisPool;
+    JedisPooled getJedisPooled() {
+        return jedisPooled;
     }
 
     synchronized void clearData(){

@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.semaphore.JedisSemaphore;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,7 +41,7 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
         //NOOP
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
             intoCriticalZone.set(false);
@@ -68,12 +68,12 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPool jedisPool = jtfTest.createJedisPool();
-            JedisSemaphore semaphore = new JedisSemaphore(jedisPool, semaphoreName, 1);
+            JedisPooled jedisPooled = jtfTest.createJedisPooled();
+            JedisSemaphore semaphore = new JedisSemaphore(jedisPooled, semaphoreName, 1);
             semaphore.acquire();
             accessCriticalZone(sleepTime);
             semaphore.release();
-            jedisPool.close();
+            jedisPooled.close();
         }catch (Exception e) {
             LOGGER.error("Other error ", e);
             otherError.set(true);

@@ -8,9 +8,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Transaction;
-
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +48,7 @@ public class InterruptingLocksOnCriticalZoneBaseTest {
     @After
     public void after() {
         if (mockOfJedis!= null) {
-            mockOfJedis.getJedisPool().close();
+            mockOfJedis.getJedisPooled().close();
             mockOfJedis.clearData();
         }
         interruptingLockBaseList.stream().
@@ -62,7 +61,7 @@ public class InterruptingLocksOnCriticalZoneBaseTest {
         });
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for (int i = 0; i < MockOfJedis.UNIT_TEST_CYCLES; i ++) {
             errorInCriticalZone.set(false);
@@ -88,8 +87,8 @@ public class InterruptingLocksOnCriticalZoneBaseTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime){
-        JedisPool jedisPool = mockOfJedis.getJedisPool();
-        InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5, TimeUnit.SECONDS);
+        JedisPooled jedisPooled = mockOfJedis.getJedisPooled();
+        InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(jedisPooled, lockName, 5, TimeUnit.SECONDS);
         interruptingLockBaseList.add(interruptingJedisJedisLockBase);
         interruptingJedisJedisLockBase.lock();
         boolean c = MockOfJedis.checkLock(interruptingJedisJedisLockBase);

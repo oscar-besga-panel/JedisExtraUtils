@@ -1,13 +1,12 @@
 package org.oba.jedis.extra.utils.rateLimiter;
 
-import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Named;
+import org.oba.jedis.extra.utils.utils.RedisTime;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -15,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.fromRedisTimestampAsMicros;
 import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.scriptResultAsBoolean;
 import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.toRedisMicros;
 
@@ -25,7 +23,7 @@ import static org.oba.jedis.extra.utils.rateLimiter.CommonRateLimiter.toRedisMic
  * * https://vbukhtoyarov-java.blogspot.com/2021/11/non-formal-overview-of-token-bucket.html
  *
  */
-public class BucketRateLimiter implements JedisPoolUser, Named {
+public class BucketRateLimiter implements Named {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BucketRateLimiter.class);
 
@@ -42,29 +40,25 @@ public class BucketRateLimiter implements JedisPoolUser, Named {
     public final static String MODE = "mode";
     public final static String LAST_REFILL_MICROS = "last_refill_micros";
 
-    private final JedisPool jedisPool;
+    private final JedisPooled jedisPooled;
     private final String name;
     private final ScriptEvalSha1 script;
 
-    public BucketRateLimiter(JedisPool jedisPool, String name) {
-        this.jedisPool = jedisPool;
+    public BucketRateLimiter(JedisPooled jedisPooled, String name) {
+        this.jedisPooled = jedisPooled;
         this.name = name;
-        this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
+        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
-    }
-
     public boolean exists() {
-        return withResourceGet(jedis -> jedis.exists(name));
+        return jedisPooled.exists(name);
     }
 
     public BucketRateLimiter createIfNotExists(long capacity, Mode mode, long timeToRefillMillis) {
@@ -89,26 +83,21 @@ public class BucketRateLimiter implements JedisPoolUser, Named {
     }
 
     public BucketRateLimiter create(long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
-        withResource(jedis ->
-            createWithJedis(jedis, capacity, mode, timeToRefill, timeUnit)
-        );
-        return this;
-    }
-
-    private void createWithJedis(Jedis jedis, long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
-        if (!jedis.exists(name)) {
+        if (!jedisPooled.exists(name)) {
+            RedisTime redisTime = new RedisTime(jedisPooled);
             BigInteger timeToRefillMicros = toRedisMicros(timeToRefill, timeUnit);
-            BigInteger redisTimestampMicros = fromRedisTimestampAsMicros(jedis);
+            BigInteger redisTimestampMicros = redisTime.callTimeInMicros();
             Map<String, String> internalData = new HashMap<>();
             internalData.put(CAPACITY, Long.toString(capacity));
             internalData.put(AVAILABLE, Long.toString(capacity));
             internalData.put(REFILL_MICROS, timeToRefillMicros.toString());
             internalData.put(MODE, mode.name().toLowerCase());
             internalData.put(LAST_REFILL_MICROS, redisTimestampMicros.toString());
-            jedis.hset(name, internalData);
+            jedisPooled.hset(name, internalData);
             LOGGER.debug("created with capacity {} mode {} timeToRefill {} timeUnit {} in redisTimestampMicros {}",
                     capacity, mode, timeToRefill, timeUnit, redisTimestampMicros);
         }
+        return this;
     }
 
     public boolean acquire() {
@@ -122,9 +111,7 @@ public class BucketRateLimiter implements JedisPoolUser, Named {
     }
 
     public void delete() {
-        withResource(jedis ->
-                jedis.del(name)
-        );
+        jedisPooled.del(name);
     }
 
 }
