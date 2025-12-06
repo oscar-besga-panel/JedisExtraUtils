@@ -30,9 +30,9 @@ public class FunctionalJedisLocksScOnCriticalZoneTest {
     private final AtomicBoolean errorInCriticalZone = new AtomicBoolean(false);
     private final AtomicBoolean otherError = new AtomicBoolean(false);
 
-    private final List<JedisPooled> jedisPooledList = new ArrayList<>();
     private String lockName;
     private final List<JedisLock> lockList = new ArrayList<>();
+    private JedisPooled jedisPooled;
 
 
 
@@ -41,6 +41,7 @@ public class FunctionalJedisLocksScOnCriticalZoneTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
+        jedisPooled = jtfTest.createJedisPooled();
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
@@ -55,10 +56,10 @@ public class FunctionalJedisLocksScOnCriticalZoneTest {
                     }
                     il.unlock();
         });
-        jedisPooledList.forEach( jedisPooled -> {
+        if (jedisPooled != null) {
             jedisPooled.del(lockName);
             jedisPooled.close();
-        });
+        }
     }
 
     @Test
@@ -89,8 +90,6 @@ public class FunctionalJedisLocksScOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPooled jedisPooled = jtfTest.createJedisPooled();
-            jedisPooledList.add(jedisPooled);
             JedisLock jedisLock = new JedisLock(jedisPooled, lockName);
             lockList.add(jedisLock);
             jedisLock.lock();

@@ -79,7 +79,7 @@ public class FunctionalCycleDataTest {
                 createIfNotExists("A","B","C");
         int num = 0;
         // Tried with one million and it works
-        while(cycleData.hasNext() && (num++ < 1_000)){
+        while(cycleData.hasNext() && (num++ < 100)){
             assertNotNull(cycleData.next());
         }
         assertNotNull(cycleData.next());

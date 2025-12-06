@@ -110,8 +110,6 @@ public class FunctionalJedisMapTest {
         assertNull(jedisMap.get("d"));
     }
 
-    //TODO Map wtf
-    @Ignore
     @Test
     public void basicTestPut() {
         JedisMap jedisMap = createABCMap();
@@ -126,7 +124,6 @@ public class FunctionalJedisMapTest {
         assertNull(jedisMap.get("e"));
     }
 
-    @Ignore
     @Test
     public void basicTestDel() {
         JedisMap jedisMap = createABCMap();

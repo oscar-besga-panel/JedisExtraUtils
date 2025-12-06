@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.rateLimiter.ThrottlingRateLimiter;
+import org.oba.jedis.extra.utils.test.FixedDaemonThreadPool;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,7 +102,7 @@ public class FunctionalThrottlingRateLimiterTest {
         SortedMap<Integer, Map.Entry<Long,Boolean>> resultMap = new TreeMap<>();
         ThrottlingRateLimiter rateLimiter = new ThrottlingRateLimiter(jedisPooled, throttlingName).
                 create(495, TimeUnit.MILLISECONDS);
-        ExecutorService executor = Executors.newFixedThreadPool(50);
+        ExecutorService executor = new FixedDaemonThreadPool(50, 120, TimeUnit.SECONDS);
         List<Future<Boolean>> futureList = new ArrayList<>();
         CountDownLatch countDownLatch = new CountDownLatch(1);
         for(int i= 0; i < 50; i++) {

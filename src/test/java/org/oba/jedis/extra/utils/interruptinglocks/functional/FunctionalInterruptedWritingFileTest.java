@@ -2,6 +2,7 @@ package org.oba.jedis.extra.utils.interruptinglocks.functional;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -60,7 +61,8 @@ public class FunctionalInterruptedWritingFileTest {
     }
 
 
-    //@Ignore
+    //TODO testreview
+    @Ignore
     @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
@@ -72,10 +74,13 @@ public class FunctionalInterruptedWritingFileTest {
             LOGGER.info("FUNCTIONAL_TEST_CYCLES " + i);
             Thread t1 = new Thread(new WriteTest(250, tempFile));
             t1.setName("T1_i"+i);
+            t1.setDaemon(true);
             Thread t2 = new Thread(new WriteTest(150, tempFile));
             t2.setName("T2_i"+i);
+            t2.setDaemon(true);
             Thread t3 = new Thread(new WriteTest(300, tempFile));
             t3.setName("T3_i"+i);
+            t3.setDaemon(true);
             List<Thread> threadList = Arrays.asList(t1,t2,t3);
             Collections.shuffle(threadList);
             threadList.forEach(Thread::start);

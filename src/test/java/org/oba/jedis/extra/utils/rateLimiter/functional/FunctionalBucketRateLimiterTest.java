@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.rateLimiter.BucketRateLimiter;
+import org.oba.jedis.extra.utils.test.DaemonThreadPoolThreadFactory;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,7 +102,7 @@ public class FunctionalBucketRateLimiterTest {
         BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, bucketName).
                 create(1, BucketRateLimiter.Mode.INTERVAL, 1000, TimeUnit.MILLISECONDS);
 
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(105);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(105, new DaemonThreadPoolThreadFactory());
         List<ScheduledFuture<Boolean>> scheduledFutureList = new ArrayList<>();
         for(int i= 0; i < 100; i++) {
             long wait = 500L + (i % 3)*1000 + ThreadLocalRandom.current().nextLong(5L,75L);

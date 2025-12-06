@@ -2,6 +2,7 @@ package org.oba.jedis.extra.utils.notificationLock.functional;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.functional.JedisTestFactoryLocks;
 import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
@@ -41,7 +42,7 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled();
+        jedisPooled = jtfTest.createJedisPooled(15,7);
     }
 
     @After
@@ -60,7 +61,6 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneTest {
             jedisPooled.close();
         }
     }
-
 
     @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {

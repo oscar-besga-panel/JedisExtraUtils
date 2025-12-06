@@ -39,7 +39,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
+        jedisPooled = jtfTest.createJedisPooled(24, 8);
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 

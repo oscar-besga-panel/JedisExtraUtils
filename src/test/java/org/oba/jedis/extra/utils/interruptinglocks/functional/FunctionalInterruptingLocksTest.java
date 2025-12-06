@@ -44,7 +44,7 @@ public class FunctionalInterruptingLocksTest {
         }
     }
 
-    @Test
+    @Test(timeout = 45000)
     public void testIfInterruptedFor5SecondsLock() {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
             LOGGER.info("_\n");

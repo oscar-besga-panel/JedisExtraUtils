@@ -14,6 +14,7 @@ import redis.clients.jedis.params.SetParams;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -140,7 +141,15 @@ public class JedisTestFactory {
         }
     }
 
+    public JedisPooled createJedisPooled(int maxConns, int minIdleConns) {
+        return createJedisPooledClassic(maxConns, minIdleConns);
+    }
+
     public JedisPooled createJedisPooledClassic() {
+        return createJedisPooledClassic(7,3);
+    }
+
+    public JedisPooled createJedisPooledClassic(int maxConns, int minIdleConns) {
         DefaultJedisClientConfig.Builder configBuilder = DefaultJedisClientConfig.builder();
         if (user != null && !user.trim().isEmpty()) {
             configBuilder.user(user);
@@ -154,9 +163,10 @@ public class JedisTestFactory {
         JedisClientConfig config = configBuilder.build();
         HostAndPort address = new HostAndPort(host, port);
         ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
-        poolConfig.setMaxTotal(5);
+        poolConfig.setMaxTotal(maxConns);
+        poolConfig.setMaxWait(Duration.ofSeconds(30));
         poolConfig.setTestOnReturn(true);
-        poolConfig.setMinIdle(1);
+        poolConfig.setMinIdle(minIdleConns);
         return new JedisPooled(poolConfig, address, config);
     }
 
@@ -204,7 +214,7 @@ public class JedisTestFactory {
         LOGGER.debug("main ini >>>> ");
         JedisTestFactory jedisTestFactory = JedisTestFactory.get();
         jedisTestFactory.testConnection();
-        JedisPooled jedisPooled = jedisTestFactory.createJedisPooled();
+        JedisPooled jedisPooled = jedisTestFactory.createJedisPooled(15,5);
         ScanIterable scanIterable = new ScanIterable(jedisPooled);
         scanIterable.forEach(rkey -> LOGGER.debug("KEY: {} - TYPE {} ", rkey, jedisPooled.type(rkey)));
         LOGGER.debug("main fin <<<< ");

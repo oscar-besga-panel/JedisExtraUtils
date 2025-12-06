@@ -32,21 +32,23 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
 
     private String lockName;
     private final List<JedisLock> lockList = new ArrayList<>();
-
+    private JedisPooled jedisPooled;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
+        jedisPooled = jtfTest.createJedisPooled(24, 8);
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        JedisPooled jedisPooled = jtfTest.createJedisPooled();
-        jedisPooled.del(lockName);
-        jedisPooled.close();
+        if (jedisPooled != null) {
+            jedisPooled.del(lockName);
+            jedisPooled.close();
+        }
     }
 
     @Test
@@ -77,7 +79,6 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPooled jedisPooled = jtfTest.createJedisPooled();
             JedisLock jedisLock = new JedisLock(jedisPooled, lockName);
             lockList.add(jedisLock);
             try {

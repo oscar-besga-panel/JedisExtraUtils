@@ -2,6 +2,7 @@ package org.oba.jedis.extra.utils.notificationLock.functional;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.functional.JedisTestFactoryLocks;
 import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
@@ -42,7 +43,7 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneUnderlockTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled();
+        jedisPooled = jtfTest.createJedisPooled(24, 8);
     }
 
     @After
@@ -71,11 +72,14 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneUnderlockTest {
             LOGGER.info("_\n");
             LOGGER.info("i {}", i);
             Thread t1 = new Thread(() -> accesLockOfCriticalZone(1));
+            t1.setDaemon(true);
             t1.setName("prueba_t1");
             Thread t2 = new Thread(() -> accesLockOfCriticalZone(7));
             t2.setName("prueba_t2");
+            t2.setDaemon(true);
             Thread t3 = new Thread(() -> accesLockOfCriticalZone(3));
             t3.setName("prueba_t3");
+            t3.setDaemon(true);
             List<Thread> threadList = Arrays.asList(t1,t2,t3);
             Collections.shuffle(threadList);
             threadList.forEach(Thread::start);

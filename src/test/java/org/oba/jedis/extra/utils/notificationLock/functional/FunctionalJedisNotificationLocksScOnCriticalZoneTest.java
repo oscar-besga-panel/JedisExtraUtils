@@ -43,7 +43,7 @@ public class FunctionalJedisNotificationLocksScOnCriticalZoneTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled();
+        jedisPooled = jtfTest.createJedisPooled(24, 8);
     }
 
     @After
