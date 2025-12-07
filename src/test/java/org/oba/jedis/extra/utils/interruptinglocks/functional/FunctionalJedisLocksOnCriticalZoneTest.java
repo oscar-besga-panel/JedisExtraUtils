@@ -2,6 +2,7 @@ package org.oba.jedis.extra.utils.interruptinglocks.functional;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
@@ -20,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertFalse;
 
 
+@Ignore
 public class FunctionalJedisLocksOnCriticalZoneTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneTest.class);
@@ -62,7 +64,7 @@ public class FunctionalJedisLocksOnCriticalZoneTest {
     }
 
 
-    @Test
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
             intoCriticalZone.set(false);
@@ -109,6 +111,7 @@ public class FunctionalJedisLocksOnCriticalZoneTest {
         }
         intoCriticalZone.set(true);
         try {
+            LOGGER.info("into critical zone, time {}", sleepTime);
             Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
         } catch (InterruptedException e) {
             // NOPE

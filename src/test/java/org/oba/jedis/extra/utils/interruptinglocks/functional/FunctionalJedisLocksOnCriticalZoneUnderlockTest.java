@@ -41,7 +41,7 @@ public class FunctionalJedisLocksOnCriticalZoneUnderlockTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled(24, 8);
+        jedisPooled = jtfTest.createJedisPooled();
     }
 
     @After

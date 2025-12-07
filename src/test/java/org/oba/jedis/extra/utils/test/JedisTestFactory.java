@@ -146,7 +146,7 @@ public class JedisTestFactory {
     }
 
     public JedisPooled createJedisPooledClassic() {
-        return createJedisPooledClassic(7,3);
+        return createJedisPooledClassic(24,8);
     }
 
     public JedisPooled createJedisPooledClassic(int maxConns, int minIdleConns) {
@@ -164,8 +164,14 @@ public class JedisTestFactory {
         HostAndPort address = new HostAndPort(host, port);
         ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
         poolConfig.setMaxTotal(maxConns);
-        poolConfig.setMaxWait(Duration.ofSeconds(30));
+        //poolConfig.setMaxWait(Duration.ofSeconds(60)); //TODO TEST
         poolConfig.setTestOnReturn(true);
+        poolConfig.setTestOnBorrow(true);
+        poolConfig.setTestWhileIdle(true);
+        poolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(30).toMillis());
+        poolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(10).toMillis());
+        poolConfig.setNumTestsPerEvictionRun(1);
+        poolConfig.setBlockWhenExhausted(true);
         poolConfig.setMinIdle(minIdleConns);
         return new JedisPooled(poolConfig, address, config);
     }
