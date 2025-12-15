@@ -73,7 +73,8 @@ public class NotificationLock implements IJedisLock, MessageListener {
 
     @Override
     public void close() {
-        unlock();
+        // Or call unlock
+        IJedisLock.super.close();
         streamMessageSystem.close();
     }
 
@@ -162,6 +163,22 @@ public class NotificationLock implements IJedisLock, MessageListener {
             nl.lock();
             return task.get();
         }
+    }
+
+    /**
+     * NOT IMPLEMENTED
+     */
+    public boolean addMoreExpireTimeToCurrentLock(Long addExpireTimeMillis) {
+        LOGGER.warn("Not implemented");
+        return false;
+    }
+
+    /**
+     * NOT IMPLEMENTED
+     */
+    public long timeToLiveMillis() {
+        LOGGER.warn("Not implemented");
+        return -1L;
     }
 
     /**

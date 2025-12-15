@@ -11,12 +11,14 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.args.ExpiryOption;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateUniqueTokenValue;
@@ -47,12 +49,12 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
     private final String name;
     private final String uniqueToken;
     private final JedisPool jedisPool;
-    private final ScriptEvalSha1 script;
+    private final ScriptEvalSha1 unlockScript;
 
     private long leaseMoment = -1L;
     private long timeLimit = -1L;
 
-    private long waitCylce = 300L;
+    private long waitCycle = 300L;
 
 
     /**
@@ -85,7 +87,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
             this.timeUnit = null;
         }
         this.uniqueToken = generateUniqueTokenValue(name);
-        this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
+        this.unlockScript = new ScriptEvalSha1(jedisPool, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
     }
@@ -98,7 +100,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
     }
 
     public void setWaitCylce(int time, TimeUnit timeUnit){
-        this.waitCylce = timeUnit.toMillis(time);
+        this.waitCycle = timeUnit.toMillis(time);
     }
 
     @Override
@@ -136,7 +138,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
         final TimeLimit timeLimit = new TimeLimit(time,unit);
         boolean locked = redisLock();
         while (!locked && timeLimit.checkInLimit()) {
-            Thread.sleep(waitCylce);
+            Thread.sleep(waitCycle);
             locked = redisLock();
         }
         return locked;
@@ -147,7 +149,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
         boolean locked = redisLock();
         while (!locked) {
             try {
-                Thread.sleep(waitCylce);
+                Thread.sleep(waitCycle);
                 locked = redisLock();
             } catch (InterruptedException ie) {
                 LOGGER.debug("interrupted", ie);
@@ -160,7 +162,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
     public void lockInterruptibly() throws InterruptedException {
         boolean locked = redisLock();
         while (!locked) {
-            Thread.sleep(waitCylce);
+            Thread.sleep(waitCycle);
             locked = redisLock();
         }
     }
@@ -188,6 +190,36 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
         try (JedisLock jl = this){
             jl.lock();
             return task.get();
+        }
+    }
+
+    public boolean addMoreExpireTimeToCurrentLock(Long addExpireTimeMillis) {
+        if (addExpireTimeMillis <= 0L) {
+            throw new IllegalArgumentException("moreLeaseTime can not be zero nor bellow");
+        }
+        AtomicBoolean result = new AtomicBoolean(false);
+        if (leaseTime != null && redisCheckLock()) {
+            withResource(jedis -> {
+                long millisLeft = timeLimit - System.currentTimeMillis();
+                long timeToSet = addExpireTimeMillis + millisLeft;
+                LOGGER.debug("timetoset {} for lock {}", timeToSet, name);
+                long response = jedis.pexpire(name, timeToSet, ExpiryOption.XX);
+                if (response == 1L) {
+                    this.timeLimit = System.currentTimeMillis() +  timeToSet;
+                    result.set(true);
+                } else {
+                    LOGGER.warn("expire not correct for lock {}", name);
+                }
+            });
+        }
+        return result.get();
+    }
+
+    public long timeToLiveMillis() {
+        if (leaseTime != null && redisCheckLock()) {
+            return timeLimit - System.currentTimeMillis();
+        } else {
+            return -1L;
         }
     }
 
@@ -234,7 +266,7 @@ public class JedisLock implements IJedisLock, JedisPoolUser {
         if (!redisCheckLock()) return;
         List<String> keys = Collections.singletonList(name);
         List<String> values = Collections.singletonList(uniqueToken);
-        Object response = script.evalSha(keys, values);
+        Object response = unlockScript.evalSha(keys, values);
         int num = 0;
         if (response != null) {
             LOGGER.debug("response {}", response);

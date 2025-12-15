@@ -6,17 +6,16 @@ import org.oba.jedis.extra.utils.test.TTL;
 import org.oba.jedis.extra.utils.test.TransactionOrder;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.*;
+import redis.clients.jedis.args.ExpiryOption;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 
@@ -50,6 +49,7 @@ public class MockOfJedis {
     private final JedisPool jedisPool;
     private final List<TransactionOrder<String>> transactionActions = new ArrayList<>();
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, TimerTaskWithMoment> dataTimerTask = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
     public MockOfJedis() {
@@ -83,6 +83,12 @@ public class MockOfJedis {
             List<String> args = ioc.getArgument(2, List.class);
             return mockEvalsha(keys, args);
         });
+        Mockito.when(jedis.pexpire(anyString(), anyLong(), any(ExpiryOption.class))).thenAnswer( ioc -> {
+            String name = ioc.getArgument(0, String.class);
+            long time = ioc.getArgument(1, Long.class);
+            ExpiryOption expiryOption = ioc.getArgument(2, ExpiryOption.class);
+            return mockEvalPExpire(name, time, expiryOption);
+        });
         Mockito.when(jedis.multi()).thenReturn(transaction);
         Mockito.when(transaction.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
@@ -97,15 +103,41 @@ public class MockOfJedis {
         Mockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
     }
 
+    //TODO correct ?
+    private Object mockEvalPExpire(String name, long timeInMillis, ExpiryOption expiryOption) {
+        long response = 0L;
+        if (data.get(name) != null) {
+            TimerTaskWithMoment timerTask = dataTimerTask.get(name);
+            if (timerTask != null) {
+                timerTask.cancelTask();
+                long newTime = timerTask.addTime(timeInMillis);
+                timer.schedule(timerTask.createTask(), newTime);
+                response = 1L;
+            } else {
+                LOGGER.warn("no timertask for {}", name);
+            }
+        } else {
+            LOGGER.debug("no value for {}", name);
+        }
+        return response;
+    }
+
     private synchronized String mockGet(String key) {
         return data.get(key);
     }
 
     private synchronized Object mockEvalsha(List<String> keys, List<String> values) {
-        Object response = null;
-        if (values.get(0).equalsIgnoreCase(data.get(keys.get(0))) ){
-            String removed = data.remove(keys.get(0));
-            response = removed != null ? 1 : 0;
+        long response = 0L;
+        String key = keys.get(0);
+        if (values.get(0).equalsIgnoreCase(data.get(key)) ){
+            String removed = data.remove(key);
+            if (removed != null) {
+                response = 1L;
+                TimerTaskWithMoment timerTask = dataTimerTask.remove(key);
+                if (timerTask != null) {
+                    timerTask.cancelTask();
+                }
+            }
         }
         return response;
     }
@@ -119,7 +151,9 @@ public class MockOfJedis {
             data.put(key, value);
             Long expireTime = extractSetParamsExpireTimePX(setParams);
             if (expireTime != null){
-                timer.schedule(TTL.wrapTTL(() -> data.remove(key)),expireTime);
+                TimerTaskWithMoment timerTask = new TimerTaskWithMoment(expireTime, () -> data.remove(key));
+                timer.schedule(timerTask.createTask(), expireTime);
+                dataTimerTask.put(key, timerTask);
             }
             return  CLIENT_RESPONSE_OK;
         } else {
@@ -159,11 +193,41 @@ public class MockOfJedis {
 
     public synchronized void clearData(){
         data.clear();
+        dataTimerTask.values().forEach(TimerTaskWithMoment::cancelTask);
+        dataTimerTask.clear();
         transactionActions.clear();
     }
 
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);
+    }
+
+    static class TimerTaskWithMoment {
+        private long expireTime;
+        private final Runnable runnable;
+        private TimerTask timerTask;
+
+        TimerTaskWithMoment(long time, Runnable runnable){
+            this.expireTime = time + System.currentTimeMillis();
+            this.runnable = runnable;
+        }
+
+        TimerTask createTask() {
+            timerTask = TTL.wrapTTL(runnable);
+            return timerTask;
+        }
+
+        void cancelTask() {
+            timerTask.cancel();
+            timerTask = null;
+        }
+
+        long addTime(long addedTimeMillis) {
+            long restTime = expireTime - System.currentTimeMillis();
+            long newTime = addedTimeMillis + restTime;
+            expireTime = newTime + System.currentTimeMillis();
+            return newTime;
+        }
     }
 
     static boolean checkLock(IJedisLock jedisLock){

@@ -12,6 +12,7 @@ import redis.clients.jedis.Transaction;
 
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -162,7 +163,7 @@ public class JedisLockWithMockTest {
         jedisLock1.unlock();
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testOneLockWithLeaseTime() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
         String lockname = getUniqueName();
         JedisLock jedisLock1 = new JedisLock(jedisPool, lockname, 5L, TimeUnit.SECONDS);
@@ -176,7 +177,7 @@ public class JedisLockWithMockTest {
         assertFalse(jedisLock1.isLocked());
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testLocksWithLeaseTime() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
         String lockname = getUniqueName();
         JedisLock jedisLock1 = new JedisLock(jedisPool, lockname,5L, TimeUnit.SECONDS);
@@ -198,6 +199,76 @@ public class JedisLockWithMockTest {
         assertFalse(jedisLock1.isLocked());
         jedisLock1.unlock();
         jedisLock3.unlock();
+    }
+
+    @Test(timeout = 35000)
+    public void testLockWithUpdatedTime() throws InterruptedException {
+        String lockname = getUniqueName();
+        JedisLock jedisLock1 = new JedisLock(jedisPool, lockname,2L, TimeUnit.SECONDS);
+        boolean result1 = jedisLock1.tryLock();
+        assertTrue(jedisLock1.isLocked());
+        assertTrue(result1);
+        assertEquals(jedisLock1.getUniqueToken(), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
+        JedisLock jedisLock2 = new JedisLock(jedisPool, lockname);
+        boolean result2 = jedisLock2.tryLockForAWhile(1L, TimeUnit.SECONDS);
+        assertFalse(jedisLock2.isLocked());
+        assertFalse(result2);
+        jedisLock1.addMoreExpireTimeToCurrentLock(2L, TimeUnit.SECONDS);
+        Thread.sleep(2500);
+        assertTrue(jedisLock1.isLocked());
+        Thread.sleep(2500);
+        assertFalse(jedisLock1.isLocked());
+    }
+
+    @Test(timeout = 35000)
+    public void testMantainLockWithoutUpdatedTime() throws InterruptedException {
+        String lockname = getUniqueName();
+        Semaphore sem2 = new Semaphore(0);
+        JedisLock jedisLock1 = new JedisLock(jedisPool, lockname, 2L, TimeUnit.SECONDS);
+        boolean lockResult1 = jedisLock1.tryLock();
+        AtomicBoolean lockResult2 = new AtomicBoolean(false);
+        Thread backgroundLock = new Thread(() -> {
+            try {
+                JedisLock jedisLock2 = new JedisLock(jedisPool, lockname, 2L, TimeUnit.SECONDS);
+                boolean result = jedisLock2.tryLockForAWhile(3L, TimeUnit.SECONDS);
+                lockResult2.set(result);
+                sem2.release();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        backgroundLock.start();
+        sem2.acquire();
+        assertTrue(lockResult1);
+        assertTrue(lockResult2.get());
+    }
+
+
+    @Test(timeout = 35000)
+    public void testMantainLockWithUpdatedTime() throws InterruptedException {
+        String lockname = getUniqueName();
+        Semaphore sem1 = new Semaphore(0);
+        Semaphore sem2 = new Semaphore(0);
+        JedisLock jedisLock1 = new JedisLock(jedisPool, lockname, 2L, TimeUnit.SECONDS);
+        boolean lockResult1 = jedisLock1.tryLock();
+        AtomicBoolean lockResult2 = new AtomicBoolean(false);
+        Thread backgroundLock  = new Thread(() -> {
+            try {
+                JedisLock jedisLock2 = new JedisLock(jedisPool, lockname, 2L, TimeUnit.SECONDS);
+                sem1.release();
+                boolean result = jedisLock2.tryLockForAWhile(3L, TimeUnit.SECONDS);
+                lockResult2.set(result);
+                sem2.release();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        backgroundLock.start();
+        sem1.acquire();
+        jedisLock1.addMoreExpireTimeToCurrentLock(1800L);
+        sem2.acquire();
+        assertTrue(lockResult1);
+        assertFalse(lockResult2.get());
     }
 
     @Test

@@ -15,6 +15,7 @@ public interface IJedisLock extends AutoCloseable, Named, JedisPoolUser {
     /**
      * Lease time of the lock, null if none
      * If null, lock is locked until manually unlocked
+p     * It gives the configured time, not the expire time if locked
      * @return leaseTime
      */
     Long getLeaseTime();
@@ -64,6 +65,40 @@ public interface IJedisLock extends AutoCloseable, Named, JedisPoolUser {
      * Attempts to unlock the lock
      */
     void unlock();
+
+
+    /**
+     * Adds more lease time to the current lock
+     * Only if the lock is currently locked by this object at the current time, if not it doesn't affect
+     * Only applies if the lock was given a lease time to begin with
+     * It doesn't affect the original lease time that is given to the lock in the constructor
+     * @param addExpireTimeMillis Time to add to the lock situation
+     * @return true if the lock has more time added
+     */
+    boolean addMoreExpireTimeToCurrentLock(Long addExpireTimeMillis);
+
+
+    /**
+     * Adds more lease time to the current lock. See method above
+     * @param addExpireTime Time to add to the lock situation
+     * @param timeUnit timeUnit of the time
+     * @return true if the lock has more time added
+     */
+    default boolean addMoreExpireTimeToCurrentLock(Long addExpireTime, TimeUnit timeUnit) {
+        return addMoreExpireTimeToCurrentLock(timeUnit.toMillis(addExpireTime));
+    }
+
+
+    /**
+     * Returns the current time to live that has the current lock until if expires
+     * Only if the lock is currently locked by this object at the current time, if not it doesn't affect
+     * Only applies if the lock was given a lease time to begin with.
+     * If not, it returns -1L
+     * In milliseconds
+     * @return time to live currently or -1L
+     */
+    long timeToLiveMillis();
+
 
     // Closing the resource is the same as unlocking the lock
     default void close() {
