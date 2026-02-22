@@ -3,15 +3,10 @@ package org.oba.jedis.extra.utils.collections;
 import org.oba.jedis.extra.utils.iterators.HScanIterator;
 import org.oba.jedis.extra.utils.utils.Named;
 import redis.clients.jedis.AbstractTransaction;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.UnifiedJedis;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class JedisMap implements Map<String, String>, Named {

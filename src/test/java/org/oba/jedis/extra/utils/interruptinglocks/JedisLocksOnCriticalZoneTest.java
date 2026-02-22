@@ -46,7 +46,7 @@ public class JedisLocksOnCriticalZoneTest {
     @After
     public void after() {
         if (mockOfJedis != null) {
-            mockOfJedis.getJedisPooled().close();
+            mockOfJedis.getRedisClient().close();
             mockOfJedis.clearData();
         }
     }
@@ -78,7 +78,7 @@ public class JedisLocksOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisLock jedisLock = new JedisLock(mockOfJedis.getJedisPooled(), lockName);
+            JedisLock jedisLock = new JedisLock(mockOfJedis.getRedisClient(), lockName);
             lockList.add(jedisLock);
             jedisLock.lock();
             MockOfJedis.checkLock(jedisLock);

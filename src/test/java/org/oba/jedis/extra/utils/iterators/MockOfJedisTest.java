@@ -87,7 +87,7 @@ public class MockOfJedisTest {
         mockOfJedis.getRedisClient().set("a", "A1", new SetParams());
         mockOfJedis.getRedisClient().set("b", "B1", new SetParams());
         mockOfJedis.getRedisClient().set("c", "C1", new SetParams());
-        //ScanResult<String> result = mockOfJedis.getJedisPooled().scan("", new ScanParams().match("*"));
+        //ScanResult<String> result = mockOfJedis.getRedisClient().scan("", new ScanParams().match("*"));
         ScanResult<String> result = mockOfJedis.getRedisClient().scan("");
         assertEquals(ScanParams.SCAN_POINTER_START, result.getCursor());
         assertTrue( result.getResult().contains("a"));

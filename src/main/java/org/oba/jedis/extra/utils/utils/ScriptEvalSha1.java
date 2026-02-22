@@ -2,7 +2,6 @@ package org.oba.jedis.extra.utils.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 
 import java.math.BigInteger;

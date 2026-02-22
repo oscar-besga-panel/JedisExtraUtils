@@ -10,7 +10,7 @@ import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -31,7 +31,7 @@ public class FunctionalWritingFileTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
     private String lockName;
     private final List<IJedisLock> lockList = new ArrayList<>();
     private final AtomicBoolean otherError = new AtomicBoolean(false);
@@ -47,7 +47,7 @@ public class FunctionalWritingFileTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
 
     }
@@ -56,9 +56,9 @@ public class FunctionalWritingFileTest {
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPooled != null) {
-            jedisPooled.del(lockName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(lockName);
+            redisClient.close();
         }
     }
 
@@ -105,7 +105,7 @@ public class FunctionalWritingFileTest {
         public void run() {
             //try (Jedis jedis = authJedis(jedisPool.getResource())) {
             try {
-                jedisLock = new JedisLock(jedisPooled, lockName, milis, TimeUnit.MILLISECONDS);
+                jedisLock = new JedisLock(redisClient, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
                 JedisTestFactoryLocks.checkLock(jedisLock);

@@ -4,7 +4,6 @@ import org.mockito.Mockito;
 import org.oba.jedis.extra.utils.test.TTL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 

@@ -4,20 +4,13 @@ import org.mockito.Mockito;
 import org.oba.jedis.extra.utils.test.TTL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,7 +60,7 @@ public final class MockOfJedis {
         messageThread.start();
         timer = new Timer();
 
-        redisClient = Mockito.mock(JedisPooled.class);
+        redisClient = Mockito.mock(UnifiedJedis.class);
 
         when(redisClient.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);

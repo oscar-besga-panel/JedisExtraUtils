@@ -1,7 +1,5 @@
 package org.oba.jedis.extra.utils.rateLimiter;
 
-import redis.clients.jedis.JedisPooled;
-
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 

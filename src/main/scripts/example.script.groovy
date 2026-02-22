@@ -11,8 +11,7 @@ import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisClientConfig;
-import redis.clients.jedis.JedisPooled;
-import org.oba.jedis.extra.utils.iterators.ScanIterator
+import redis.clients.jedis.RedisClient
 
 
 host = "localhost"
@@ -37,8 +36,12 @@ ConnectionPoolConfig poolConfig = new ConnectionPoolConfig()
 poolConfig.setMaxTotal(5)
 poolConfig.setTestOnReturn(true)
 poolConfig.setMinIdle(1)
-JedisPooled jedisPooled = new JedisPooled(poolConfig, address, config)
 
-ScanIterable scanIterable = new ScanIterable(jedisPooled);
-scanIterable.forEach(rkey -> println "KEY ${rkey} - VALUE ${jedisPooled.type(rkey)}");
+RedisClient redisClient = RedisClient.Builder().
+        poolConfig(poolConfig).
+        hostAndPort(host, port).
+        build()
+
+ScanIterable scanIterable = new ScanIterable(redisClient)
+scanIterable.forEach(rkey -> println "KEY ${rkey} - VALUE ${redisClient.type(rkey)}");
 

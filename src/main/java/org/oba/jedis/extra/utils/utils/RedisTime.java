@@ -1,6 +1,5 @@
 package org.oba.jedis.extra.utils.utils;
 
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 
 import java.math.BigInteger;

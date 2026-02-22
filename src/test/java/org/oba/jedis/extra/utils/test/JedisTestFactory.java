@@ -1,11 +1,11 @@
 package org.oba.jedis.extra.utils.test;
 
-import org.junit.Test;
 import org.oba.jedis.extra.utils.iterators.ScanIterable;
-import org.oba.jedis.extra.utils.iterators.ScanIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.*;
+import redis.clients.jedis.ConnectionPoolConfig;
+import redis.clients.jedis.RedisClient;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
 import java.io.FileInputStream;
@@ -129,31 +129,36 @@ public class JedisTestFactory {
         return functionalTestCycles;
     }
 
-
-    @Deprecated
-    public JedisPooled createJedisPooled() {
-        if (enableSentinel) {
-            throw new UnsupportedOperationException("no sentinel available for JedisPooled");
-        } else {
-            return createJedisPooledClassic();
-        }
-    }
-
     public RedisClient createRedisClient() {
         return new RedisClient.Builder().
                 hostAndPort(host, port).
                 build();
     }
 
-    public JedisPooled createJedisPooled(int maxConns, int minIdleConns) {
-        return createJedisPooledClassic(maxConns, minIdleConns);
+    public RedisClient createPooledRedisClient() {
+        return createPooledRedisClient(12,5);
     }
 
-    public JedisPooled createJedisPooledClassic() {
-        return createJedisPooledClassic(24,8);
+    public RedisClient createPooledRedisClient(int maxConns, int minIdleConns) {
+        ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
+        poolConfig.setMaxTotal(maxConns);
+        //poolConfig.setMaxWait(Duration.ofSeconds(60)); //TODO TEST
+        poolConfig.setTestOnReturn(true);
+        poolConfig.setTestOnBorrow(true);
+        poolConfig.setTestWhileIdle(true);
+        poolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(30).toMillis());
+        poolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(10).toMillis());
+        poolConfig.setNumTestsPerEvictionRun(1);
+        poolConfig.setBlockWhenExhausted(true);
+        poolConfig.setMinIdle(minIdleConns);
+
+        return new RedisClient.Builder().
+                poolConfig(poolConfig).
+                hostAndPort(host, port).
+                build();
     }
 
-    public JedisPooled createJedisPooledClassic(int maxConns, int minIdleConns) {
+/*
         DefaultJedisClientConfig.Builder configBuilder = DefaultJedisClientConfig.builder();
         if (user != null && !user.trim().isEmpty()) {
             configBuilder.user(user);
@@ -177,8 +182,7 @@ public class JedisTestFactory {
         poolConfig.setNumTestsPerEvictionRun(1);
         poolConfig.setBlockWhenExhausted(true);
         poolConfig.setMinIdle(minIdleConns);
-        return new JedisPooled(poolConfig, address, config);
-    }
+ */
 
     public void testConnection() {
         try (UnifiedJedis redisClient = createRedisClient()) {

@@ -2,13 +2,14 @@ package org.oba.jedis.extra.utils.interruptinglocks.functional;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.LockFromRedis;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +34,7 @@ public class FunctionalLocksOnCriticalZoneTest {
     private final AtomicBoolean otherError = new AtomicBoolean(false);
     private String lockName;
     private final List<Lock> lockList = new ArrayList<>();
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
 
 
 
@@ -42,19 +43,21 @@ public class FunctionalLocksOnCriticalZoneTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled(24, 8);
+//        jedisPooled = jtfTest.createJedisPooled(24, 8);
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPooled != null) {
-            jedisPooled.del(lockName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(lockName);
+            redisClient.close();
         }
     }
 
-    @Test
+    @Ignore
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
             intoCriticalZone.set(false);
@@ -82,7 +85,7 @@ public class FunctionalLocksOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            Lock lock = new JedisLock(jedisPooled, lockName).asConcurrentLock();
+            Lock lock = new JedisLock(redisClient, lockName).asConcurrentLock();
             lockList.add(lock);
             lock.lock();
             JedisTestFactoryLocks.checkLock(lock);

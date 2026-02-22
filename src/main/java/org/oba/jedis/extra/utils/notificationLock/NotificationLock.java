@@ -10,8 +10,8 @@ import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.AbstractTransaction;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
@@ -38,21 +38,21 @@ public class NotificationLock implements IJedisLock, MessageListener {
     public static final String NOTIFICATION_LOCK_STREAM = "NOTIFICATIONLOCKSTREAM";
     public static final String CLIENT_RESPONSE_OK = "OK";
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final String name;
     private final String uniqueToken;
     private final ScriptEvalSha1 script;
     private final StreamMessageSystem streamMessageSystem;
     private final Semaphore semaphore;
 
-    public NotificationLock(JedisPooled jedisPooled, String name) {
-        this.jedisPooled = jedisPooled;
+    public NotificationLock(UnifiedJedis redisClient, String name) {
+        this.redisClient = redisClient;
         this.name = name;
         this.uniqueToken = generateUniqueTokenValue(name);
-        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
+        this.script = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
-        this.streamMessageSystem = new StreamMessageSystem(NOTIFICATION_LOCK_STREAM, jedisPooled, this);
+        this.streamMessageSystem = new StreamMessageSystem(NOTIFICATION_LOCK_STREAM, redisClient, this);
         this.semaphore = new Semaphore(0);
     }
 
@@ -165,7 +165,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * @return true if the lock is remotely held
      */
     private boolean redisCheckLock() {
-        String currentValueRedis = jedisPooled.get(name);
+        String currentValueRedis = redisClient.get(name);
         boolean check = uniqueToken.equals(currentValueRedis);
         LOGGER.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {} check {}",
                 uniqueToken, currentValueRedis, check);
@@ -181,7 +181,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
     private boolean redisLock() {
         LOGGER.debug("redisLockUnderPool");
         SetParams setParams = new SetParams().nx();
-        AbstractTransaction t = jedisPooled.multi();
+        AbstractTransaction t = redisClient.multi();
         Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken,setParams);
         Response<String> responseCurrentValueRedis = t.get(name);
         t.exec();
@@ -229,12 +229,12 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * Helper method that creates the lock for simpler use
      * The steps are: create lock - obtain lock - execute task - free lock
      * A simple lock without time limit and interrumpiblity is used
-     * @param jedisPooled Jedis pool client
+     * @param redisClient Jedis pool client
      * @param name Name of the lock
      * @param task Task to execute
      */
-    public static <T> T underLockTask(JedisPooled jedisPooled, String name, Supplier<T> task) {
-        JedisLock jedisLock = new JedisLock(jedisPooled, name);
+    public static <T> T underLockTask(UnifiedJedis redisClient, String name, Supplier<T> task) {
+        JedisLock jedisLock = new JedisLock(redisClient, name);
         return jedisLock.underLock(task);
     }
 
@@ -243,12 +243,12 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * Helper method that creates the lock for simpler use
      * The steps are: obtain lock - execute task - free lock - return result
      * A simple lock without time limit and interruptibility is used
-     * @param jedisPooled Jedis pool client
+     * @param redisClient Jedis pool client
      * @param name Name of the lock
      * @param task Task to execute with return type
      */
-    public static void underLockTask(JedisPooled jedisPooled, String name, Runnable task) {
-        JedisLock jedisLock = new JedisLock(jedisPooled, name);
+    public static void underLockTask(UnifiedJedis redisClient, String name, Runnable task) {
+        JedisLock jedisLock = new JedisLock(redisClient, name);
         jedisLock.underLock(task);
     }
 

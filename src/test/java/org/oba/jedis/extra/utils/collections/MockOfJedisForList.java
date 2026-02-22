@@ -8,7 +8,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.AbstractTransaction;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.args.ListPosition;
 import redis.clients.jedis.params.SetParams;
@@ -42,7 +41,7 @@ public class MockOfJedisForList {
 
         timer = new Timer();
 
-        redisClient = Mockito.mock(JedisPooled.class);
+        redisClient = Mockito.mock(UnifiedJedis.class);
 
         AbstractTransaction transaction = PowerMockito.mock(AbstractTransaction.class);
 

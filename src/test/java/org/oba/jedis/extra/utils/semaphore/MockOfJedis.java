@@ -5,19 +5,12 @@ import org.oba.jedis.extra.utils.test.TTL;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.oba.jedis.extra.utils.test.TestingUtils.extractSetParamsExpireTimePX;
 import static org.oba.jedis.extra.utils.test.TestingUtils.isSetParamsNX;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -49,7 +42,7 @@ public class MockOfJedis {
     public MockOfJedis() {
         timer = new Timer();
 
-        redisClient = Mockito.mock(JedisPooled.class);
+        redisClient = Mockito.mock(UnifiedJedis.class);
         Mockito.when(redisClient.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);

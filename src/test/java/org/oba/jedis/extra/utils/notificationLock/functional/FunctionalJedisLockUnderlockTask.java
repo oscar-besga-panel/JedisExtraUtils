@@ -9,8 +9,8 @@ import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -23,31 +23,31 @@ public class FunctionalJedisLockUnderlockTask {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
     private String lockName;
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPooled != null) {
-            jedisPooled.del(lockName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(lockName);
+            redisClient.close();
         }
     }
     @Test
     public void underLockTask() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock.underLockTask(jedisPooled, lockName,() ->
+        NotificationLock.underLockTask(redisClient, lockName,() ->
                 result1.set(true)
         );
-        boolean result2 = NotificationLock.underLockTask(jedisPooled, lockName,() -> true);
+        boolean result2 = NotificationLock.underLockTask(redisClient, lockName,() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }
@@ -55,9 +55,9 @@ public class FunctionalJedisLockUnderlockTask {
     @Test
     public void underLock() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock jedisLock1 = new NotificationLock(jedisPooled, lockName);
+        NotificationLock jedisLock1 = new NotificationLock(redisClient, lockName);
         jedisLock1.underLock(() -> result1.set(true));
-        NotificationLock jedisLock2 = new NotificationLock(jedisPooled, lockName);
+        NotificationLock jedisLock2 = new NotificationLock(redisClient, lockName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);

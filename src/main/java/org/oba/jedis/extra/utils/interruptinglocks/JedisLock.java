@@ -7,8 +7,8 @@ import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.AbstractTransaction;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
@@ -44,7 +44,7 @@ public class JedisLock implements IJedisLock {
     private final TimeUnit timeUnit;
     private final String name;
     private final String uniqueToken;
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final ScriptEvalSha1 script;
 
     private long leaseMoment = -1L;
@@ -56,24 +56,24 @@ public class JedisLock implements IJedisLock {
     /**
      * Creates a Redis lock with a name
      * This constructor makes the lock with no time limitations
-     * @param jedisPooled Jedis is Java Redis connection and operations pool
+     * @param redisClient Jedis is Java Redis connection and operations pool
      * @param name Unique name of the lock, shared with all distributed lock
      */
-    public JedisLock(JedisPooled jedisPooled, String name){
-        this(jedisPooled, name, null, null);
+    public JedisLock(UnifiedJedis redisClient, String name){
+        this(redisClient, name, null, null);
     }
 
     /**
      * Creates a Redis lock with a name
-     * @param jedisPooled Jedis is Java Redis connection and operations pool
+     * @param redisClient Jedis is Java Redis connection and operations pool
      * @param name Unique name of the lock, shared with all distributed lock
      * @param leaseTime Amount of time in unit that the lock should live
      * @param timeUnit Unit of leaseTime
      */
-    public JedisLock(JedisPooled jedisPooled, String name, Long leaseTime, TimeUnit timeUnit) {
-        if (jedisPooled == null) throw new IllegalArgumentException("JedisPool can not be null");
+    public JedisLock(UnifiedJedis redisClient, String name, Long leaseTime, TimeUnit timeUnit) {
+        if (redisClient == null) throw new IllegalArgumentException("JedisPool can not be null");
         if (name == null || name.trim().isEmpty()) throw new IllegalArgumentException("Name can not be null nor empty nor whitespace");
-        this.jedisPooled = jedisPooled;
+        this.redisClient = redisClient;
         this.name = name;
         if (leaseTime != null && leaseTime > 0) {
             this.leaseTime = leaseTime;
@@ -83,7 +83,7 @@ public class JedisLock implements IJedisLock {
             this.timeUnit = null;
         }
         this.uniqueToken = generateUniqueTokenValue(name);
-        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
+        this.script = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
     }
@@ -194,7 +194,7 @@ public class JedisLock implements IJedisLock {
         if (leaseTime != null) {
             setParams.px(timeUnit.toMillis(leaseTime));
         }
-        AbstractTransaction t = jedisPooled.multi();
+        AbstractTransaction t = redisClient.multi();
         Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken,setParams);
         Response<String> responseCurrentValueRedis = t.get(name);
         t.exec();
@@ -242,7 +242,7 @@ public class JedisLock implements IJedisLock {
         boolean check = false;
         LOGGER.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
         if ((leaseTime == null) || (timeLimit > System.currentTimeMillis())) {
-            String currentValueRedis = jedisPooled.get(name);
+            String currentValueRedis = redisClient.get(name);
             LOGGER.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", uniqueToken, currentValueRedis);
             check = uniqueToken.equals(currentValueRedis);
         }

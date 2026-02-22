@@ -10,7 +10,7 @@ import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -31,7 +31,7 @@ public class FunctionalWritingFileScTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private final List<JedisPooled> jedisPooledList = new ArrayList<>();
+    private final List<UnifiedJedis> redisClientList = new ArrayList<>();
     private String lockName;
     private final List<IJedisLock> lockList = new ArrayList<>();
     private final AtomicBoolean otherError = new AtomicBoolean(false);
@@ -53,13 +53,13 @@ public class FunctionalWritingFileScTest {
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooledList.forEach( this::doCloseJedisPool);
+        redisClientList.forEach( this::doCloseJedisPool);
     }
 
-    void doCloseJedisPool(JedisPooled jedisPooled) {
-        if (jedisPooled != null) {
-            jedisPooled.del(lockName);
-            jedisPooled.close();
+    void doCloseJedisPool(UnifiedJedis redisClient) {
+        if (redisClient != null) {
+            redisClient.del(lockName);
+            redisClient.close();
         }
     }
 
@@ -105,9 +105,9 @@ public class FunctionalWritingFileScTest {
         @Override
         public void run() {
             try  {
-                JedisPooled jedisPooled = jtfTest.createJedisPooled();
-                jedisPooledList.add(jedisPooled);
-                jedisLock = new JedisLock(jedisPooled, lockName, milis, TimeUnit.MILLISECONDS);
+                UnifiedJedis redisClient = jtfTest.createRedisClient();
+                redisClientList.add(redisClient);
+                jedisLock = new JedisLock(redisClient, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
                 JedisTestFactoryLocks.checkLock(jedisLock);

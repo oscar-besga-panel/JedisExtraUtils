@@ -38,10 +38,10 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLockTask() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock.underLockTask(mockOfJedis.getJedisPooled(), lockName,() ->
+        NotificationLock.underLockTask(mockOfJedis.getRedisClient(), lockName,() ->
                 result1.set(true)
         );
-        boolean result2 = NotificationLock.underLockTask(mockOfJedis.getJedisPooled(), lockName,() -> true);
+        boolean result2 = NotificationLock.underLockTask(mockOfJedis.getRedisClient(), lockName,() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }
@@ -49,9 +49,9 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLock() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock jedisLock1 = new NotificationLock(mockOfJedis.getJedisPooled(), lockName);
+        NotificationLock jedisLock1 = new NotificationLock(mockOfJedis.getRedisClient(), lockName);
         jedisLock1.underLock(() -> result1.set(true));
-        NotificationLock jedisLock2 = new NotificationLock(mockOfJedis.getJedisPooled(), lockName);
+        NotificationLock jedisLock2 = new NotificationLock(mockOfJedis.getRedisClient(), lockName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
@@ -60,9 +60,9 @@ public class JedisLockUnderlockTask {
     @Test
     public void underLockSc() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock jedisLock1 = new NotificationLock(mockOfJedis.getJedisPooled(), lockName);
+        NotificationLock jedisLock1 = new NotificationLock(mockOfJedis.getRedisClient(), lockName);
         jedisLock1.underLock(() -> result1.set(true));
-        NotificationLock jedisLock2 = new NotificationLock(mockOfJedis.getJedisPooled(), lockName);
+        NotificationLock jedisLock2 = new NotificationLock(mockOfJedis.getRedisClient(), lockName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);

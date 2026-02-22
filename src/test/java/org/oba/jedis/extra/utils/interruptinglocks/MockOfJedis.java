@@ -9,16 +9,11 @@ import org.powermock.api.mockito.PowerMockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.AbstractTransaction;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -52,39 +47,39 @@ public class MockOfJedis {
 
 
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final List<TransactionOrder<String>> transactionActions = new ArrayList<>();
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
     public MockOfJedis() {
         timer = new Timer();
-        jedisPooled = Mockito.mock(JedisPooled.class);
+        redisClient = Mockito.mock(UnifiedJedis.class);
         AbstractTransaction transaction = PowerMockito.mock(AbstractTransaction.class);
 
 
-        Mockito.when(jedisPooled.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+        Mockito.when(redisClient.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = ioc.getArgument(2);
             return mockSet(key, value, setParams);
 
         });
-        Mockito.when(jedisPooled.get(anyString())).thenAnswer(ioc -> {
+        Mockito.when(redisClient.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);
         });
-        Mockito.when(jedisPooled.scriptLoad(anyString())).thenAnswer( ioc -> {
+        Mockito.when(redisClient.scriptLoad(anyString())).thenAnswer(ioc -> {
             String script = ioc.getArgument(0, String.class);
             return ScriptEvalSha1.sha1(script);
         });
-        Mockito.when(jedisPooled.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
+        Mockito.when(redisClient.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer(ioc -> {
             String name = ioc.getArgument(0, String.class);
             List<String> keys = ioc.getArgument(1, List.class);
             List<String> args = ioc.getArgument(2, List.class);
             return mockEvalsha(keys, args);
         });
-        Mockito.when(jedisPooled.multi()).thenReturn(transaction);
+        Mockito.when(redisClient.multi()).thenReturn(transaction);
         Mockito.when(transaction.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockTransactionGet(key);
@@ -149,8 +144,8 @@ public class MockOfJedis {
         return responses;
     }
 
-    public JedisPooled getJedisPooled(){
-        return jedisPooled;
+    public UnifiedJedis getRedisClient(){
+        return redisClient;
     }
 
     public synchronized void clearData(){

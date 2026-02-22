@@ -6,7 +6,7 @@ import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 public class JedisTestFactoryLocks {
 
@@ -50,13 +50,13 @@ public class JedisTestFactoryLocks {
     public static void main(String[] args) {
         LOGGER.debug("main ini >>>> ");
         JedisTestFactory jtfTest = JedisTestFactory.get();
-        JedisPooled jedisPooled = jtfTest.createJedisPooled();
+        UnifiedJedis redisClient = jtfTest.createRedisClient();
         jtfTest.testConnection();
-        LockFromRedis jedisLockFromRedis = new JedisLock(jedisPooled,"jedisLockSc").asConcurrentLock();
+        LockFromRedis jedisLockFromRedis = new JedisLock(redisClient,"jedisLockSc").asConcurrentLock();
         boolean locked = jedisLockFromRedis.tryLock();
         boolean reallyLocked = jedisLockFromRedis.isLocked();
         jedisLockFromRedis.unlock();
-        jedisPooled.close();
+        redisClient.close();
         System.out.println("JEDISLOCK " + locked + " " + reallyLocked);
 
 //        jtfTest.testPoolConnection();

@@ -26,7 +26,7 @@ public class FunctionalSemaphoreNumberPermitsTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        redisClient = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
         semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
