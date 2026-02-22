@@ -5,6 +5,7 @@ import org.oba.jedis.extra.utils.test.TTL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
@@ -37,7 +38,7 @@ public class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
@@ -45,22 +46,22 @@ public class MockOfJedis {
         timer = new Timer();
 
 
-        jedisPooled = Mockito.mock(JedisPooled.class);
-        Mockito.when(jedisPooled.get(anyString())).thenAnswer(ioc -> {
+        redisClient = Mockito.mock(UnifiedJedis.class);
+        Mockito.when(redisClient.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);
         });
-        Mockito.when(jedisPooled.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+        Mockito.when(redisClient.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = ioc.getArgument(2);
             return mockSet(key, value, setParams);
         });
-        Mockito.when(jedisPooled.del(anyString())).thenAnswer(ioc -> {
+        Mockito.when(redisClient.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
-        Mockito.when(jedisPooled.decr(anyString())).thenAnswer(ioc -> {
+        Mockito.when(redisClient.decr(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDecr(key);
         });
@@ -110,8 +111,8 @@ public class MockOfJedis {
         }
     }
 
-    public JedisPooled getJedisPooled() {
-        return jedisPooled;
+    public UnifiedJedis getRedisClient() {
+        return redisClient;
     }
 
     public synchronized void clearData(){

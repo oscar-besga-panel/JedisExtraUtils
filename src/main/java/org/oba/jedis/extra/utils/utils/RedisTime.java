@@ -1,10 +1,10 @@
 package org.oba.jedis.extra.utils.utils;
 
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Utility class to call Redis TIME command via Lua script
@@ -12,14 +12,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class RedisTime {
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
 
-    public RedisTime (JedisPooled jedisPooled) {
-        this.jedisPooled = jedisPooled;
+    public RedisTime (UnifiedJedis redisClient) {
+        this.redisClient = redisClient;
     }
 
     public List<String> callTime() {
-        Object result = jedisPooled.eval("return redis.call('TIME')");
+        Object result = redisClient.eval("return redis.call('TIME')");
         if (result instanceof List && ((List<String>) result).size() == 2) {
             return  (List<String>) result;
         } else {

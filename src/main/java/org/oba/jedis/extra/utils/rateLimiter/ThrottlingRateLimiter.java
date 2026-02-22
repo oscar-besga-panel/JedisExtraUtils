@@ -6,7 +6,7 @@ import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -30,15 +30,15 @@ public class ThrottlingRateLimiter implements Named {
     public final static String LAST_ALLOW_MICROS = "last_allow_micros";
     public final static String ALLOW_MICROS = "allow_micros";
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final String name;
     private final ScriptEvalSha1 script;
 
 
-    public ThrottlingRateLimiter(JedisPooled jedisPooled, String name) {
-        this.jedisPooled = jedisPooled;
+    public ThrottlingRateLimiter(UnifiedJedis redisClient, String name) {
+        this.redisClient = redisClient;
         this.name = name;
-        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
+        this.script = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
     }
@@ -49,7 +49,7 @@ public class ThrottlingRateLimiter implements Named {
     }
 
     public boolean exists() {
-        return jedisPooled.exists(name);
+        return redisClient.exists(name);
     }
 
     public ThrottlingRateLimiter createIfNotExists(long timeToAllowMillis) {
@@ -77,14 +77,14 @@ public class ThrottlingRateLimiter implements Named {
     }
 
     private ThrottlingRateLimiter createWithJedis(long timeToAllow, TimeUnit timeUnit) {
-        if (!jedisPooled.exists(name)) {
-            RedisTime redisTime = new RedisTime(jedisPooled);
+        if (!redisClient.exists(name)) {
+            RedisTime redisTime = new RedisTime(redisClient);
             BigInteger timeToAllowMicros = toRedisMicros(timeToAllow, timeUnit);
             BigInteger redisTimestampMicros = redisTime.callTimeInMicros();
             Map<String, String> internalData = new HashMap<>();
             internalData.put(ALLOW_MICROS, timeToAllowMicros.toString());
             internalData.put(LAST_ALLOW_MICROS, redisTimestampMicros.toString());
-            jedisPooled.hset(name, internalData);
+            redisClient.hset(name, internalData);
             LOGGER.debug("created with timeToAllow {} timeUnit {} in redisTimestampMicros {}",
                     timeToAllow, timeUnit, redisTimestampMicros);
         }
@@ -98,7 +98,7 @@ public class ThrottlingRateLimiter implements Named {
     }
 
     public void delete() {
-        jedisPooled.del(name);
+        redisClient.del(name);
     }
 
 }

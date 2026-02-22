@@ -6,7 +6,7 @@ import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -40,14 +40,14 @@ public class BucketRateLimiter implements Named {
     public final static String MODE = "mode";
     public final static String LAST_REFILL_MICROS = "last_refill_micros";
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final String name;
     private final ScriptEvalSha1 script;
 
-    public BucketRateLimiter(JedisPooled jedisPooled, String name) {
-        this.jedisPooled = jedisPooled;
+    public BucketRateLimiter(UnifiedJedis redisClient, String name) {
+        this.redisClient = redisClient;
         this.name = name;
-        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
+        this.script = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
     }
@@ -58,7 +58,7 @@ public class BucketRateLimiter implements Named {
     }
 
     public boolean exists() {
-        return jedisPooled.exists(name);
+        return redisClient.exists(name);
     }
 
     public BucketRateLimiter createIfNotExists(long capacity, Mode mode, long timeToRefillMillis) {
@@ -83,8 +83,8 @@ public class BucketRateLimiter implements Named {
     }
 
     public BucketRateLimiter create(long capacity, Mode mode, long timeToRefill, TimeUnit timeUnit) {
-        if (!jedisPooled.exists(name)) {
-            RedisTime redisTime = new RedisTime(jedisPooled);
+        if (!redisClient.exists(name)) {
+            RedisTime redisTime = new RedisTime(redisClient);
             BigInteger timeToRefillMicros = toRedisMicros(timeToRefill, timeUnit);
             BigInteger redisTimestampMicros = redisTime.callTimeInMicros();
             Map<String, String> internalData = new HashMap<>();
@@ -93,7 +93,7 @@ public class BucketRateLimiter implements Named {
             internalData.put(REFILL_MICROS, timeToRefillMicros.toString());
             internalData.put(MODE, mode.name().toLowerCase());
             internalData.put(LAST_REFILL_MICROS, redisTimestampMicros.toString());
-            jedisPooled.hset(name, internalData);
+            redisClient.hset(name, internalData);
             LOGGER.debug("created with capacity {} mode {} timeToRefill {} timeUnit {} in redisTimestampMicros {}",
                     capacity, mode, timeToRefill, timeUnit, redisTimestampMicros);
         }
@@ -111,7 +111,7 @@ public class BucketRateLimiter implements Named {
     }
 
     public void delete() {
-        jedisPooled.del(name);
+        redisClient.del(name);
     }
 
 }

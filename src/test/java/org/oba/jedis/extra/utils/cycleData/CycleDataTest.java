@@ -4,7 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.cycle.CycleData;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,7 +20,7 @@ import static junit.framework.TestCase.assertTrue;
 public class CycleDataTest {
 
     private MockOfJedis mockOfJedis;
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
     private String cycleDataName;
 
     @Before
@@ -29,13 +29,13 @@ public class CycleDataTest {
         if (!MockOfJedis.unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
         mockOfJedis.setDoWithEvalSha((r,k,p) -> cycleDataExecution(k,p));
-        jedisPooled = mockOfJedis.getJedisPooled();
+        redisClient = mockOfJedis.getRedisClient();
         cycleDataName = "cycleDataName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
-        jedisPooled.close();
+        redisClient.close();
         mockOfJedis.clearData();
     }
 
@@ -54,7 +54,7 @@ public class CycleDataTest {
 
     @Test
     public void cycleDataBasicTest() throws InterruptedException {
-        CycleData cycleData = new CycleData(jedisPooled, cycleDataName).
+        CycleData cycleData = new CycleData(redisClient, cycleDataName).
                 create("A","B","C");
         List<String> results = new ArrayList<>();
         for(int i = 0; i < 10; i++) {
@@ -69,7 +69,7 @@ public class CycleDataTest {
 
     @Test
     public void createBasicTest() throws InterruptedException {
-        CycleData cycleData = new CycleData(jedisPooled, cycleDataName).
+        CycleData cycleData = new CycleData(redisClient, cycleDataName).
                 createIfNotExists("A","B","C");
         assertTrue(cycleData.exists());
         cycleData.delete();
@@ -82,7 +82,7 @@ public class CycleDataTest {
 
     @Test
     public void iteratorTest() {
-        CycleData cycleData = new CycleData(jedisPooled, cycleDataName).
+        CycleData cycleData = new CycleData(redisClient, cycleDataName).
                 createIfNotExists("A","B","C");
         int num = 0;
         // Tried with one million and it works

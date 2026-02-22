@@ -8,6 +8,7 @@ import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,12 +69,12 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPooled jedisPooled = jtfTest.createJedisPooled();
-            JedisSemaphore semaphore = new JedisSemaphore(jedisPooled, semaphoreName, 1);
+            UnifiedJedis redisClient = jtfTest.createRedisClient();
+            JedisSemaphore semaphore = new JedisSemaphore(redisClient, semaphoreName, 1);
             semaphore.acquire();
             accessCriticalZone(sleepTime);
             semaphore.release();
-            jedisPooled.close();
+            redisClient.close();
         }catch (Exception e) {
             LOGGER.error("Other error ", e);
             otherError.set(true);

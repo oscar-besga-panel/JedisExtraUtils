@@ -5,7 +5,7 @@ import org.oba.jedis.extra.utils.utils.Named;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.ScriptHolder;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
@@ -38,30 +38,30 @@ public class JedisSemaphore implements Named {
     public static final String SCRIPT_NAME = "semaphore.lua";
     public static final String FILE_PATH = "./src/main/resources/semaphore.lua";
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final String name;
     private final ScriptEvalSha1 script;
     private long waitingMilis = 150;
 
     /**
      * Creates a semaphore with one initial permit
-     * @param jedisPooled Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the semaphore
      */
-    public JedisSemaphore(JedisPooled jedisPooled, String name) {
-        this(jedisPooled, name, 1);
+    public JedisSemaphore(UnifiedJedis redisClient, String name) {
+        this(redisClient, name, 1);
     }
 
     /**
      * Creates a semaphore with one permit
-     * @param jedisPooled Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the semaphore
      * @param initialPermits Initial permits of the semaphore
      */
-    public JedisSemaphore(JedisPooled jedisPooled, String name, int initialPermits) {
-        this.jedisPooled = jedisPooled;
+    public JedisSemaphore(UnifiedJedis redisClient, String name, int initialPermits) {
+        this.redisClient = redisClient;
         this.name = name;
-        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
+        this.script = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
         init(initialPermits);
@@ -85,7 +85,7 @@ public class JedisSemaphore implements Named {
      * @param initialPermits Initial permits of the semaphore
      */
     public JedisSemaphore(ScriptHolder scriptHolder, String name, int initialPermits) {
-        this.jedisPooled = scriptHolder.getJedisPooled();
+        this.redisClient = scriptHolder.getJedisPooled();
         this.name = name;
         this.script = scriptHolder.getScript(SCRIPT_NAME);
         init(initialPermits);
@@ -109,7 +109,7 @@ public class JedisSemaphore implements Named {
         if (initialPermits < 0) {
             throw new IllegalArgumentException("initial permit on semaphore must be always equal or more than zero");
         }
-        jedisPooled.set(name, String.valueOf(initialPermits), new SetParams().nx());
+        redisClient.set(name, String.valueOf(initialPermits), new SetParams().nx());
     }
 
     /**
@@ -212,7 +212,7 @@ public class JedisSemaphore implements Named {
         if (permits <= 0) {
             throw new IllegalArgumentException("permit to release on semaphore must be always more than zero");
         }
-        jedisPooled.incrBy(name, permits);
+        redisClient.incrBy(name, permits);
     }
 
     /**
@@ -221,7 +221,7 @@ public class JedisSemaphore implements Named {
      * @return number of permits
      */
     public int availablePermits() {
-        String permits = jedisPooled.get(name);
+        String permits = redisClient.get(name);
         if (permits == null || permits.isEmpty()) {
             return -1;
         } else {
@@ -235,7 +235,7 @@ public class JedisSemaphore implements Named {
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
     public void destroy() {
-        jedisPooled.del(name);
+        redisClient.del(name);
     }
 
 }

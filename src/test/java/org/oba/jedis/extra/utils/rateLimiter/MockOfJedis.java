@@ -6,6 +6,7 @@ import org.oba.jedis.extra.utils.utils.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,7 +40,7 @@ public class MockOfJedis {
         return UNIT_TEST_CYCLES > 0;
     }
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final Map<String, Map<String,String>> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
 
@@ -48,37 +49,37 @@ public class MockOfJedis {
     public MockOfJedis() {
         timer = new Timer();
 
-        jedisPooled = Mockito.mock(JedisPooled.class);
-        when(jedisPooled.exists(anyString())).thenAnswer( ioc -> {
+        redisClient = Mockito.mock(UnifiedJedis.class);
+        when(redisClient.exists(anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0, String.class);
             return exists(name);
         });
-        when(jedisPooled.del(anyString())).thenAnswer( ioc -> {
+        when(redisClient.del(anyString())).thenAnswer(ioc -> {
             String name = ioc.getArgument(0, String.class);
             return delete(name);
         });
-        when(jedisPooled.hset(anyString(), any(Map.class))).thenAnswer( ioc ->  {
+        when(redisClient.hset(anyString(), any(Map.class))).thenAnswer(ioc ->  {
             String name = ioc.getArgument(0, String.class);
             Map<String, String> map = ioc.getArgument(1, Map.class);
             return hset(name, map);
         });
-        when(jedisPooled.hset(anyString(), anyString(), anyString())).thenAnswer( ioc ->  {
+        when(redisClient.hset(anyString(), anyString(), anyString())).thenAnswer(ioc ->  {
             String name = ioc.getArgument(0, String.class);
             String key = ioc.getArgument(1, String.class);
             String value = ioc.getArgument(2, String.class);
             return hset(name, key, value);
         });
-        when(jedisPooled.scriptLoad(anyString())).thenAnswer( ioc -> {
+        when(redisClient.scriptLoad(anyString())).thenAnswer(ioc -> {
             String script = ioc.getArgument(0, String.class);
             return ScriptEvalSha1.sha1(script);
         });
-        when(jedisPooled.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer( ioc -> {
+        when(redisClient.evalsha(anyString(), any(List.class), any(List.class))).thenAnswer(ioc -> {
             String name = ioc.getArgument(0, String.class);
             List<String> keys = ioc.getArgument(1, List.class);
             List<String> args = ioc.getArgument(2, List.class);
             return executeSha(name, keys, args);
         });
-        when(jedisPooled.eval(anyString() )).thenAnswer(ioc -> {
+        when(redisClient.eval(anyString() )).thenAnswer(ioc -> {
             if (ioc.getArgument(0, String.class).contains("TIME")) {
                 return mockScriptEvalTime();
             } else {
@@ -129,8 +130,8 @@ public class MockOfJedis {
         return Arrays.asList(Long.toString(seconds), Long.toString(micros));
     }
 
-    public JedisPooled getJedisPooled(){
-        return jedisPooled;
+    public UnifiedJedis getRedisClient(){
+        return redisClient;
     }
 
     public synchronized void clearData(){

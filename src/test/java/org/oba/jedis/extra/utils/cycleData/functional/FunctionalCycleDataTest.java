@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.cycle.CycleData;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,29 +25,29 @@ public class FunctionalCycleDataTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
     private String cycleDataName;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
         cycleDataName = "cycleDataName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPooled != null) {
-            jedisPooled.del(cycleDataName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(cycleDataName);
+            redisClient.close();
         }
     }
 
     @Test
     public void cycleDataBasicTest() throws InterruptedException {
-        CycleData cycleData = new CycleData(jedisPooled, cycleDataName).
+        CycleData cycleData = new CycleData(redisClient, cycleDataName).
                 create("A","B","C");
         List<String> results = new ArrayList<>();
         for(int i = 0; i < 10; i++) {
@@ -62,7 +62,7 @@ public class FunctionalCycleDataTest {
 
     @Test
     public void createBasicTest() throws InterruptedException {
-        CycleData cycleData = new CycleData(jedisPooled, cycleDataName).
+        CycleData cycleData = new CycleData(redisClient, cycleDataName).
                 createIfNotExists("A","B","C");
         assertTrue(cycleData.exists());
         cycleData.delete();
@@ -75,7 +75,7 @@ public class FunctionalCycleDataTest {
 
     @Test
     public void iteratorTest() {
-        CycleData cycleData = new CycleData(jedisPooled, cycleDataName).
+        CycleData cycleData = new CycleData(redisClient, cycleDataName).
                 createIfNotExists("A","B","C");
         int num = 0;
         // Tried with one million and it works

@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,7 +44,7 @@ public class JedisSemaphoresOnCriticalZoneTest {
     public void after() {
         if (mockOfJedis != null) {
             mockOfJedis.clearData();
-            mockOfJedis.getJedisPooled().close();
+            mockOfJedis.getRedisClient().close();
         }
     }
 
@@ -73,8 +74,8 @@ public class JedisSemaphoresOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPooled jedisPooled = mockOfJedis.getJedisPooled();
-            JedisSemaphore jedisSemaphore = new JedisSemaphore(jedisPooled, semaphoreName, 1);
+            UnifiedJedis redisClient = mockOfJedis.getRedisClient();
+            JedisSemaphore jedisSemaphore = new JedisSemaphore(redisClient, semaphoreName, 1);
             jedisSemaphore.acquire();
             accessCriticalZone(sleepTime);
             jedisSemaphore.release();

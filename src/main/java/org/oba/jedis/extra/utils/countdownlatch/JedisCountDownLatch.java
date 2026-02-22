@@ -3,7 +3,7 @@ package org.oba.jedis.extra.utils.countdownlatch;
 import org.oba.jedis.extra.utils.utils.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.concurrent.TimeUnit;
@@ -26,19 +26,19 @@ public class JedisCountDownLatch implements Named {
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisCountDownLatch.class);
     private static final Long LONG_NULL_VALUE = -1L;
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final String name;
     private int waitTimeMilis = 150;
 
 
     /**
      * Creates a new shared CountDownLatch
-     * @param jedisPooled Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Shared name
      * @param count Initial count
      */
-    public JedisCountDownLatch(JedisPooled jedisPooled, String name, long count) {
-        this.jedisPooled = jedisPooled;
+    public JedisCountDownLatch(UnifiedJedis redisClient, String name, long count) {
+        this.redisClient = redisClient;
         this.name = name;
         init(count);
     }
@@ -62,7 +62,7 @@ public class JedisCountDownLatch implements Named {
         if (count <= 0) {
             throw new IllegalArgumentException("initial count on countdownlatch must be always more than zero");
         }
-        jedisPooled.set(name, String.valueOf(count), new SetParams().nx());
+        redisClient.set(name, String.valueOf(count), new SetParams().nx());
     }
 
     @Override
@@ -104,7 +104,7 @@ public class JedisCountDownLatch implements Named {
      * @return the current value, after operation
      */
     public long countDown() {
-        long value = jedisPooled.decr(name);
+        long value = redisClient.decr(name);
         LOGGER.debug("countDown name {} value {}", name, value);
         return value;
     }
@@ -118,7 +118,7 @@ public class JedisCountDownLatch implements Named {
      * @return current value
      */
     public long getCount() {
-        String value = jedisPooled.get(name);
+        String value = redisClient.get(name);
         LOGGER.debug("getCount name {} value {}", name, value);
         if (value != null && !value.isEmpty()) {
             return Long.parseLong(value);
@@ -133,7 +133,7 @@ public class JedisCountDownLatch implements Named {
      * USE AT YOUR OWN RISK WHEN ALL POSSIBLE OPERATIONS ARE FINISHED
      */
     public void destroy() {
-        jedisPooled.del(name);
+        redisClient.del(name);
     }
 
 

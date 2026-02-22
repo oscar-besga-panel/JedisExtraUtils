@@ -3,8 +3,8 @@ package org.oba.jedis.extra.utils.streamMessageSystem;
 import org.oba.jedis.extra.utils.utils.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.StreamEntryID;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.XAddParams;
 import redis.clients.jedis.params.XReadParams;
 import redis.clients.jedis.resps.StreamEntry;
@@ -34,7 +34,7 @@ public final class StreamMessageSystem implements Named, AutoCloseable {
 
     private final String name;
     private final MessageListener messageListener;
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final int blockMillis;
 
     private final Thread messagesThread;
@@ -46,24 +46,24 @@ public final class StreamMessageSystem implements Named, AutoCloseable {
     /**
      * Creates new
      * @param name Name of the stream
-     * @param jedisPooled Pool of connections
+     * @param redisClient Pool of connections
      * @param messageListener Listener to messages
      */
-    public StreamMessageSystem(String name, JedisPooled jedisPooled, MessageListener messageListener) {
-        this(name, jedisPooled, XREADPARAMS_BLOCK, messageListener);
+    public StreamMessageSystem(String name, UnifiedJedis redisClient, MessageListener messageListener) {
+        this(name, redisClient, XREADPARAMS_BLOCK, messageListener);
     }
 
     /**
      * Creates new
      * @param name Name of the stream
-     * @param jedisPooled Pool of connections
+     * @param redisClient Pool of connections
      * @param blockMillis Time to block connection
      * @param messageListener Listener to messages
      */
-    public StreamMessageSystem(String name, JedisPooled jedisPooled, int blockMillis, MessageListener messageListener) {
+    public StreamMessageSystem(String name, UnifiedJedis redisClient, int blockMillis, MessageListener messageListener) {
         this.name = name;
         this.messageListener = messageListener;
-        this.jedisPooled = jedisPooled;
+        this.redisClient = redisClient;
         this.blockMillis = blockMillis;
         this.messagesThread = new Thread(this::listenMessages);
         this.messagesThread.setDaemon(true);
@@ -105,7 +105,7 @@ public final class StreamMessageSystem implements Named, AutoCloseable {
             // LOGGER.debug("listenMessages begin {} with streamdata {}", name, streamData);
             List<Map.Entry<String, List<StreamEntry>>> streamedEntries = null;
             if (active.get()) {
-                streamedEntries = jedisPooled.xread(newXReadParams(), streamData);
+                streamedEntries = redisClient.xread(newXReadParams(), streamData);
             }
             if (active.get() && streamedEntries != null && !streamedEntries.isEmpty()) {
                 streamedEntries.stream().
@@ -171,7 +171,7 @@ public final class StreamMessageSystem implements Named, AutoCloseable {
         XAddParams addParams = new XAddParams();
         Map<String, String> data = Map.of(MESSAGE, message);
         lastMessageSent = data;
-        lastStreamEntryIDSent = jedisPooled.xadd(name, addParams, data);
+        lastStreamEntryIDSent = redisClient.xadd(name, addParams, data);
         LOGGER.debug("sendMessage message {} with lastStreamEntryIDSent {}", message, lastStreamEntryIDSent);
     }
 

@@ -5,7 +5,7 @@ import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,14 +32,14 @@ public class CycleData implements Named, Iterator<String> {
     public static final String CURRENT = "current";
     public static final String CURRENT_VALUE = "0"; // Use 0 based index
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final String name;
     private final ScriptEvalSha1 script;
 
-    public CycleData(JedisPooled jedisPooled, String name) {
-        this.jedisPooled = jedisPooled;
+    public CycleData(UnifiedJedis redisClient, String name) {
+        this.redisClient = redisClient;
         this.name = name;
-        this.script = new ScriptEvalSha1(jedisPooled, new UniversalReader().
+        this.script = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
     }
@@ -58,7 +58,7 @@ public class CycleData implements Named, Iterator<String> {
         for (int i = 0; i < data.length; i++) {
             dataMap.put(Integer.toString(i), data[i]);
         }
-        jedisPooled.hset(name, dataMap);
+        redisClient.hset(name, dataMap);
         return this;
     }
 
@@ -67,7 +67,7 @@ public class CycleData implements Named, Iterator<String> {
     }
 
     public boolean exists() {
-        return jedisPooled.exists(name);
+        return redisClient.exists(name);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class CycleData implements Named, Iterator<String> {
     }
 
     public void delete() {
-        jedisPooled.del(name);
+        redisClient.del(name);
     }
 
 }

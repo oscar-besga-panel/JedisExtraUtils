@@ -8,7 +8,7 @@ import org.oba.jedis.extra.utils.test.DaemonThreadPoolThreadFactory;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,29 +31,29 @@ public class FunctionalBucketRateLimiterTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
     private String bucketName;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
         bucketName = "bucketName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPooled != null) {
-            jedisPooled.del(bucketName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(bucketName);
+            redisClient.close();
         }
     }
 
     @Test
     public void create0Test() {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(10, BucketRateLimiter.Mode.INTERVAL, 1 , TimeUnit.SECONDS);
         assertTrue(bucketRateLimiter.exists());
         bucketRateLimiter.delete();
@@ -64,12 +64,12 @@ public class FunctionalBucketRateLimiterTest {
         bucketRateLimiter.
                 createIfNotExists(20, BucketRateLimiter.Mode.INTERVAL, 2 , TimeUnit.SECONDS);
         assertTrue(bucketRateLimiter.exists());
-        assertEquals("10", jedisPooled.hget(bucketName, "capacity"));
+        assertEquals("10", redisClient.hget(bucketName, "capacity"));
     }
 
     @Test
     public void bucketBasic01Test() throws InterruptedException {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(1, BucketRateLimiter.Mode.INTERVAL, 500, TimeUnit.MILLISECONDS);
         boolean result1 = bucketRateLimiter.acquire();
         Thread.sleep(200);
@@ -84,7 +84,7 @@ public class FunctionalBucketRateLimiterTest {
 
     @Test
     public void bucketBasic03Test() throws InterruptedException {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(1, BucketRateLimiter.Mode.GREEDY, 500, TimeUnit.MILLISECONDS);
         boolean result1 = bucketRateLimiter.acquire();
         Thread.sleep(200);
@@ -99,7 +99,7 @@ public class FunctionalBucketRateLimiterTest {
 
     @Test
     public void bucketAdvanced01Test() {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(1, BucketRateLimiter.Mode.INTERVAL, 1000, TimeUnit.MILLISECONDS);
 
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(105, new DaemonThreadPoolThreadFactory());
@@ -119,7 +119,7 @@ public class FunctionalBucketRateLimiterTest {
     @Test
     public void bucketAdvanced02Test() {
         
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPooled, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(1, BucketRateLimiter.Mode.GREEDY, 1000, TimeUnit.MILLISECONDS);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(205);
         List<ScheduledFuture<Boolean>> scheduledFutureList = new ArrayList<>();

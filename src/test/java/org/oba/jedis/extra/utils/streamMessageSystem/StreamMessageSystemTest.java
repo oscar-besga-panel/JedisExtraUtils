@@ -9,8 +9,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ public class StreamMessageSystemTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamMessageSystemTest.class);
 
     private MockOfJedis mockOfJedis;
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
     private String factoryName;
     private Semaphore semaphore;
     private List<SimpleEntry> messageList;
@@ -43,7 +43,7 @@ public class StreamMessageSystemTest {
         org.junit.Assume.assumeTrue(MockOfJedis.unitTestEnabled());
         if (!MockOfJedis.unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
-        jedisPooled = mockOfJedis.getJedisPooled();
+        redisClient = mockOfJedis.getRedisClient();
         factoryName = "factoryName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         semaphore = new Semaphore(0);
         messageList = new ArrayList<>();
@@ -63,8 +63,8 @@ public class StreamMessageSystemTest {
         if (!MockOfJedis.unitTestEnabled()) return;
         semaphore.release(1_000);
         messageList.clear();
-        if (jedisPooled != null) {
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.close();
         }
         mockOfJedis.clearData();
     }
@@ -72,7 +72,7 @@ public class StreamMessageSystemTest {
     @Test
     public void createBasic1Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        StreamMessageSystem streamMessageSystem = new StreamMessageSystem("TestStreamMessageSystem", jedisPooled, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
+        StreamMessageSystem streamMessageSystem = new StreamMessageSystem("TestStreamMessageSystem", redisClient, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
         streamMessageSystem.sendMessage(messageHello);
         Thread.sleep(150);
         boolean acquired = semaphore.tryAcquire(500, TimeUnit.MILLISECONDS);
@@ -83,8 +83,8 @@ public class StreamMessageSystemTest {
     @Test
     public void createBasic2Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        StreamMessageSystem streamMessageSystemReciever = new StreamMessageSystem("TestStreamMessageSystem", jedisPooled, StreamMessageSystemTest.this::executeOnMessage); // This will receive messages via mock
-        StreamMessageSystem streamMessageSystemSender = new StreamMessageSystem("TestStreamMessageSystem", jedisPooled, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
+        StreamMessageSystem streamMessageSystemReciever = new StreamMessageSystem("TestStreamMessageSystem", redisClient, StreamMessageSystemTest.this::executeOnMessage); // This will receive messages via mock
+        StreamMessageSystem streamMessageSystemSender = new StreamMessageSystem("TestStreamMessageSystem", redisClient, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
         Thread.sleep(150);
         streamMessageSystemSender.sendMessage(messageHello);
         Thread.sleep(50);
@@ -98,8 +98,8 @@ public class StreamMessageSystemTest {
     @Test
     public void createBasic3Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        StreamMessageSystem streamMessageSystemReciever = new StreamMessageSystem("TestStreamMessageSystem", jedisPooled, StreamMessageSystemTest.this::executeOnMessage); // This will receive messages via mock
-        StreamMessageSystem streamMessageSystemSender = new StreamMessageSystem("TestStreamMessageSystem", jedisPooled, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
+        StreamMessageSystem streamMessageSystemReciever = new StreamMessageSystem("TestStreamMessageSystem", redisClient, StreamMessageSystemTest.this::executeOnMessage); // This will receive messages via mock
+        StreamMessageSystem streamMessageSystemSender = new StreamMessageSystem("TestStreamMessageSystem", redisClient, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
         execurtor.submit(() -> {
             try {
                 Thread.sleep(150);
@@ -119,11 +119,11 @@ public class StreamMessageSystemTest {
     @Test
     public void createBasic4Test() throws InterruptedException {
         String messageHello = "hello_" + System.currentTimeMillis();
-        StreamMessageSystem streamMessageSystemSender = new StreamMessageSystem("TestStreamMessageSystem", jedisPooled, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
+        StreamMessageSystem streamMessageSystemSender = new StreamMessageSystem("TestStreamMessageSystem", redisClient, StreamMessageSystemTest.this::executeOnMessage); // This will not as it receibes what it sends
         streamMessageSystemSender.sendMessage(messageHello);
         execurtor.submit(() -> {
             try {
-                StreamMessageSystem streamMessageSystemReciever = new StreamMessageSystem("TestStreamMessageSystem", jedisPooled, StreamMessageSystemTest.this::executeOnMessage); // This will receive messages via mock
+                StreamMessageSystem streamMessageSystemReciever = new StreamMessageSystem("TestStreamMessageSystem", redisClient, StreamMessageSystemTest.this::executeOnMessage); // This will receive messages via mock
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -136,7 +136,7 @@ public class StreamMessageSystemTest {
 
     @Test
     public void closeTest() throws InterruptedException {
-        StreamMessageSystem streamMessageSystem = new StreamMessageSystem("TestStreamMessageSystem", jedisPooled,300_003, this::executeOnMessage);
+        StreamMessageSystem streamMessageSystem = new StreamMessageSystem("TestStreamMessageSystem", redisClient,300_003, this::executeOnMessage);
         Thread.sleep(500);
         streamMessageSystem.close();
         assertEquals(0, messageList.size());

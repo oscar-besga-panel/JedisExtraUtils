@@ -27,17 +27,17 @@ public class MockOfJedisTest {
 
     @Test
     public void testDataInsertion() throws InterruptedException {
-        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
+        mockOfJedis.getRedisClient().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedisPooled().set("a", "A2", new SetParams());
+        mockOfJedis.getRedisClient().set("a", "A2", new SetParams());
         assertEquals("A2", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedisPooled().set("b", "B1", new SetParams().nx());
+        mockOfJedis.getRedisClient().set("b", "B1", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedisPooled().set("b", "B2", new SetParams().nx());
+        mockOfJedis.getRedisClient().set("b", "B2", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedisPooled().set("c", "C1", new SetParams().nx().px(500));
+        mockOfJedis.getRedisClient().set("c", "C1", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
-        mockOfJedis.getJedisPooled().set("c", "C2", new SetParams().nx().px(500));
+        mockOfJedis.getRedisClient().set("c", "C2", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
         Thread.sleep(1000);
         assertNull(mockOfJedis.getCurrentData().get("c"));
@@ -45,14 +45,14 @@ public class MockOfJedisTest {
 
     @Test
     public void testDataGetSetDecrDel() throws InterruptedException {
-        mockOfJedis.getJedisPooled().set("a", "5", new SetParams().nx());
+        mockOfJedis.getRedisClient().set("a", "5", new SetParams().nx());
         assertEquals("5", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedisPooled().set("a", "7", new SetParams().nx());
+        mockOfJedis.getRedisClient().set("a", "7", new SetParams().nx());
         assertEquals("5", mockOfJedis.getCurrentData().get("a"));
-        assertEquals("5", mockOfJedis.getJedisPooled().get("a"));
-        assertTrue(4L == mockOfJedis.getJedisPooled().decr("a"));
-        assertEquals("4", mockOfJedis.getJedisPooled().get("a"));
-        assertTrue(1L == mockOfJedis.getJedisPooled().del("a"));
+        assertEquals("5", mockOfJedis.getRedisClient().get("a"));
+        assertTrue(4L == mockOfJedis.getRedisClient().decr("a"));
+        assertEquals("4", mockOfJedis.getRedisClient().get("a"));
+        assertTrue(1L == mockOfJedis.getRedisClient().del("a"));
         assertNull(mockOfJedis.getCurrentData().get("a"));
     }
 
