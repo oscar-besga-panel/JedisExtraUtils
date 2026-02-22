@@ -41,7 +41,7 @@ public class FunctionalJedisLockUnderlockTask {
     }
 
 
-    @Test
+    @Test(timeout = 35000)
     public void underLockTask() {
         AtomicBoolean result1 = new AtomicBoolean(false);
         JedisLockUtils.underLockTask(redisClient, keyName, () -> result1.set(true) );
@@ -50,7 +50,7 @@ public class FunctionalJedisLockUnderlockTask {
         assertTrue(result2);
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void underLockTaskSc() {
         AtomicBoolean result1 = new AtomicBoolean(false);
         JedisLockUtils.underLockTask(redisClient, keyName, () -> result1.set(true) );
@@ -61,7 +61,7 @@ public class FunctionalJedisLockUnderlockTask {
         assertTrue(result2.get());
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void underLock() {
         AtomicBoolean result1 = new AtomicBoolean(false);
         JedisLock jedisLock1 = new JedisLock(redisClient, keyName);
@@ -72,7 +72,7 @@ public class FunctionalJedisLockUnderlockTask {
         assertTrue(result2);
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void underLockWithInterrupted() {
         AtomicBoolean result1 = new AtomicBoolean(false);
         InterruptingJedisJedisLockBase jedisLock1 = new InterruptingJedisJedisLockBase(redisClient, keyName, 1, TimeUnit.SECONDS);

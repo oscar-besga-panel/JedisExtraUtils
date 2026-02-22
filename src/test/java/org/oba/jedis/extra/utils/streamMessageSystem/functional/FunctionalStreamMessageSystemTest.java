@@ -40,7 +40,7 @@ public class FunctionalStreamMessageSystemTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        redisClient = jtfTest.createRedisClient();
+        redisClient = jtfTest.createPooledRedisClient();
         factoryName = "factoryName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         semaphore = new Semaphore(0);
         messageList = new ArrayList<>();

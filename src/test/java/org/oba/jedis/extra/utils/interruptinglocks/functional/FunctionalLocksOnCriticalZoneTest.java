@@ -43,8 +43,7 @@ public class FunctionalLocksOnCriticalZoneTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-//        jedisPooled = jtfTest.createJedisPooled(24, 8);
-        redisClient = jtfTest.createRedisClient();
+        redisClient = jtfTest.createPooledRedisClient();
     }
 
     @After

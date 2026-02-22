@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertFalse;
 
 
-@Ignore
+
 public class FunctionalJedisLocksOnCriticalZoneTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneTest.class);
@@ -64,7 +64,7 @@ public class FunctionalJedisLocksOnCriticalZoneTest {
 
     }
 
-
+    @Ignore
     @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {

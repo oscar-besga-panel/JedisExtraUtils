@@ -42,7 +42,7 @@ public class FunctionalJedisLockTest {
         }
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         if (!jtfTest.functionalTestEnabled()) return;
         JedisLock jedisLock = new JedisLock(redisClient, keyName);
@@ -54,7 +54,7 @@ public class FunctionalJedisLockTest {
         assertNull(redisClient.get(jedisLock.getName()));
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testTryLock() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         if (!jtfTest.functionalTestEnabled()) return;
         JedisLock jedisLock1 = new JedisLock(redisClient, keyName);
@@ -70,7 +70,7 @@ public class FunctionalJedisLockTest {
         jedisLock1.unlock();
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testTryLockForAWhile() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
         JedisLock jedisLock1 = new JedisLock(redisClient, keyName);
@@ -84,7 +84,7 @@ public class FunctionalJedisLockTest {
         jedisLock1.unlock();
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testLockInterruptibly() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
         JedisLock jedisLock1 = new JedisLock(redisClient, keyName);
@@ -115,7 +115,7 @@ public class FunctionalJedisLockTest {
     }
 
 
-    @Test
+    @Test(timeout = 35000)
     public void testLockNotInterruptibly() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
         JedisLock jedisLock1 = new JedisLock(redisClient, keyName);
@@ -148,7 +148,7 @@ public class FunctionalJedisLockTest {
 
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testOneLockWithLeaseTime() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
         JedisLock jedisLock1 = new JedisLock(redisClient,  keyName, 5L, TimeUnit.SECONDS);
@@ -159,7 +159,7 @@ public class FunctionalJedisLockTest {
         assertFalse(jedisLock1.isLocked());
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testLocksWithLeaseTime() throws InterruptedException {
         if (!jtfTest.functionalTestEnabled()) return;
         JedisLock jedisLock1 = new JedisLock(redisClient, keyName,5L, TimeUnit.SECONDS);
