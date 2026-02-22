@@ -1,6 +1,6 @@
 package org.oba.jedis.extra.utils.iterators;
 
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -18,48 +18,48 @@ public final class ScanIterator extends AbstractScanIterator<String> {
 
     /**
      * Creates a new only-one-use iterator
-     * @param jedisPooled Connection pool
+     * @param redisClient Connection pool
      */
-    public ScanIterator(JedisPooled jedisPooled) {
-        this(jedisPooled, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public ScanIterator(UnifiedJedis redisClient) {
+        this(redisClient, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Creates a new only-one-use iterator
-     * @param jedisPooled Connection pool
+     * @param redisClient Connection pool
      * @param pattern Patter to be used as filter
      */
-    public ScanIterator(JedisPooled jedisPooled, String pattern) {
-        this(jedisPooled, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public ScanIterator(UnifiedJedis redisClient, String pattern) {
+        this(redisClient, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Creates a new only-one-use iterator
-     * @param jedisPooled Connection pool
+     * @param redisClient Connection pool
      * @param resultsPerScan Result that will return in each scan (hopefully)
      */
-    public ScanIterator(JedisPooled jedisPooled, int resultsPerScan) {
-        this(jedisPooled, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    public ScanIterator(UnifiedJedis redisClient, int resultsPerScan) {
+        this(redisClient, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
     }
 
     /**
      * Creates a new only-one-use iterator
-     * @param jedisPooled Connection pool
+     * @param redisClient Connection pool
      * @param pattern Patter to be used as filter
      * @param resultsPerScan Result that will return in each scan (hopefully)
      */
-    public ScanIterator(JedisPooled jedisPooled, String pattern, int resultsPerScan) {
-        super(jedisPooled, pattern, resultsPerScan);
+    public ScanIterator(UnifiedJedis redisClient, String pattern, int resultsPerScan) {
+        super(redisClient, pattern, resultsPerScan);
     }
 
 
     @Override
-    ScanResult<String> doScan(JedisPooled jedisPooled, String currentCursor, ScanParams scanParams) {
-        return jedisPooled.scan(currentCursor, scanParams);
+    ScanResult<String> doScan(UnifiedJedis redisClient, String currentCursor, ScanParams scanParams) {
+        return redisClient.scan(currentCursor, scanParams);
     }
 
     @Override
-    void doRemove(JedisPooled jedisPooled, String next) {
-        jedisPooled.del(next);
+    void doRemove(UnifiedJedis redisClient, String next) {
+        redisClient.del(next);
     }
 }

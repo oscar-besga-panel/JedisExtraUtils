@@ -4,11 +4,7 @@ import org.oba.jedis.extra.utils.iterators.ScanIterable;
 import org.oba.jedis.extra.utils.iterators.ScanIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.ConnectionPoolConfig;
-import redis.clients.jedis.DefaultJedisClientConfig;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.JedisClientConfig;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.SetParams;
 
 import java.io.FileInputStream;
@@ -133,12 +129,19 @@ public class JedisTestFactory {
     }
 
 
+    @Deprecated
     public JedisPooled createJedisPooled() {
         if (enableSentinel) {
             return createJedisPooledSentinel();
         } else {
             return createJedisPooledClassic();
         }
+    }
+
+    public RedisClient createRedisClient() {
+        return new RedisClient.Builder().
+                hostAndPort(host, port).
+                build();
     }
 
     public JedisPooled createJedisPooled(int maxConns, int minIdleConns) {

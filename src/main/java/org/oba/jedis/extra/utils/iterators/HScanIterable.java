@@ -3,7 +3,7 @@ package org.oba.jedis.extra.utils.iterators;
 import org.oba.jedis.extra.utils.utils.Listable;
 import org.oba.jedis.extra.utils.utils.Mapeable;
 import org.oba.jedis.extra.utils.utils.Named;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.List;
 import java.util.Map;
@@ -22,49 +22,49 @@ import java.util.Map;
 public class HScanIterable implements Iterable<Map.Entry<String,String>>,
         Listable<Map.Entry<String,String>>, Mapeable<String, String>, Named {
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final String name;
     private final String pattern;
     private final int resultsPerScan;
 
     /**
      * Iterable for hmap entries
-     * @param jedisPooled Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the hmap
      */
-    public HScanIterable(JedisPooled jedisPooled, String name){
-        this(jedisPooled, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public HScanIterable(UnifiedJedis redisClient, String name){
+        this(redisClient, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterable for hmap entries
-     * @param jedisPooled Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the hmap
      * @param pattern Pattern to be matched on the responses
      */
-    public HScanIterable(JedisPooled jedisPooled, String name, String pattern){
-        this(jedisPooled, name, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public HScanIterable(UnifiedJedis redisClient, String name, String pattern){
+        this(redisClient, name, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterable for hmap entries
-     * @param jedisPooled Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the hmap
      * @param resultsPerScan results per call to redis
      */
-    public HScanIterable(JedisPooled jedisPooled, String name, int resultsPerScan){
-        this(jedisPooled, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    public HScanIterable(UnifiedJedis redisClient, String name, int resultsPerScan){
+        this(redisClient, name, AbstractScanIterator.DEFAULT_PATTERN_ITERATORS, resultsPerScan);
     }
 
     /**
      * Iterable for hmap entries
-     * @param jedisPooled Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the hmap
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */
-    public HScanIterable(JedisPooled jedisPooled, String name, String pattern, int resultsPerScan){
-        this.jedisPooled = jedisPooled;
+    public HScanIterable(UnifiedJedis redisClient, String name, String pattern, int resultsPerScan){
+        this.redisClient = redisClient;
         this.name = name;
         this.pattern = pattern;
         this.resultsPerScan = resultsPerScan;
@@ -78,7 +78,7 @@ public class HScanIterable implements Iterable<Map.Entry<String,String>>,
 
     @Override
     public HScanIterator iterator() {
-        return new HScanIterator(jedisPooled, name, pattern, resultsPerScan);
+        return new HScanIterator(redisClient, name, pattern, resultsPerScan);
     }
 
     @Override

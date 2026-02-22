@@ -52,20 +52,20 @@ public class ZscanIterableTest {
 
     @After
     public void after() {
-        mockOfJedis.getJedisPooled().del(zscanitName);
+        mockOfJedis.getRedisClient().del(zscanitName);
         mockOfJedis.clearData();
     }
 
     void createABCData() {
         letters.forEach( letter -> {
-            mockOfJedis.getJedisPooled().zadd(zscanitName, valueFromChar(letter), letter);
+            mockOfJedis.getRedisClient().zadd(zscanitName, valueFromChar(letter), letter);
         });
     }
 
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName,  "*");
         Iterator<Tuple> iterator =  zscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -81,14 +81,14 @@ public class ZscanIterableTest {
 
     @Test
     public void iteratorEmpty2Test() {
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName,  50);
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName,  50);
         List<Tuple> data = zscanIterable.asList();
         assertTrue(data.isEmpty());
     }
 
     @Test
     public void iteratorEmpty3Test() {
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName);
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName);
         List<Tuple> data = zscanIterable.asList();
         assertTrue(data.isEmpty());
     }
@@ -97,7 +97,7 @@ public class ZscanIterableTest {
     public void iteratorWithResultsTest() {
         int num = 0;
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName,  "*");
         Iterator<Tuple> iterator =  zscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -116,13 +116,13 @@ public class ZscanIterableTest {
     @Test
     public void iteratorWithResultKeysTest() {
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName,  "*");
         Iterator<Tuple> iterator =  zscanIterable.iterator();
         while(iterator.hasNext()) {
-            assertTrue( mockOfJedis.getJedisPooled().exists(zscanitName));
-            assertNotNull( mockOfJedis.getJedisPooled().zscore(zscanitName, iterator.next().getElement()));
+            assertTrue( mockOfJedis.getRedisClient().exists(zscanitName));
+            assertNotNull( mockOfJedis.getRedisClient().zscore(zscanitName, iterator.next().getElement()));
         }
-        assertNull(mockOfJedis.getJedisPooled().zscore(zscanitName, "x0x"));
+        assertNull(mockOfJedis.getRedisClient().zscore(zscanitName, "x0x"));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class ZscanIterableTest {
         AtomicInteger num = new AtomicInteger(0);
         StringBuilder sb = new StringBuilder();
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName,  "*");
         zscanIterable.forEach( element -> {
             num.incrementAndGet();
             sb.append(element.getElement() + ":" + element.getScore());
@@ -145,28 +145,28 @@ public class ZscanIterableTest {
     @Test
     public void iteratorWithResultKeysForEachTest() {
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName,  "*");
         zscanIterable.forEach( key -> {
-            assertTrue( mockOfJedis.getJedisPooled().exists(zscanitName));
-            assertNotNull( mockOfJedis.getJedisPooled().zscore(zscanitName, key.getElement()));
+            assertTrue( mockOfJedis.getRedisClient().exists(zscanitName));
+            assertNotNull( mockOfJedis.getRedisClient().zscore(zscanitName, key.getElement()));
         });
-        assertNull(mockOfJedis.getJedisPooled().zscore(zscanitName, "a0b"));
+        assertNull(mockOfJedis.getRedisClient().zscore(zscanitName, "a0b"));
     }
 
 
     @Test
     public void iteratorRemoveForEach1Test() {
         createABCData();
-        mockOfJedis.getJedisPooled().zadd(zscanitName, 1.1, "extra");
+        mockOfJedis.getRedisClient().zadd(zscanitName, 1.1, "extra");
         List<String> deleted = new ArrayList<>();
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName,  "*");
         Iterator<Tuple> iterator = zscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next().getElement());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            assertNull(mockOfJedis.getJedisPooled().zscore(zscanitName, key));
+            assertNull(mockOfJedis.getRedisClient().zscore(zscanitName, key));
         });
     }
 
@@ -174,21 +174,21 @@ public class ZscanIterableTest {
     public void iteratorRemoveForEach2Test() {
         createABCData();
         List<String> deleted = new ArrayList<>();
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName,  "*");
         Iterator<Tuple> iterator = zscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next().getElement());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            assertNull(mockOfJedis.getJedisPooled().zscore(zscanitName, key));
+            assertNull(mockOfJedis.getRedisClient().zscore(zscanitName, key));
         });
     }
 
     @Test
     public void asListTest() {
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName);
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName);
         List<Tuple> data = zscanIterable.asList();
         data.forEach(  tuple -> {
             assertTrue(letters.contains(tuple.getElement()));
@@ -198,7 +198,7 @@ public class ZscanIterableTest {
 
     @Test(expected = IllegalStateException.class)
     public void errorInDeleteTest() {
-        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getJedisPooled(), zscanitName, 20);
+        ZScanIterable zscanIterable = new ZScanIterable(mockOfJedis.getRedisClient(), zscanitName, 20);
         Iterator<Tuple> iterator = zscanIterable.iterator();
         iterator.remove();
     }

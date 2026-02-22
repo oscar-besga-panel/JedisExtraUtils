@@ -47,7 +47,7 @@ public class SimpleCacheIteratorTest {
 
     SimpleCache createNewCache() {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        return new SimpleCache(mockOfJedisForSimpleCache.getJedisPooled(), name, 3_600_000);
+        return new SimpleCache(mockOfJedisForSimpleCache.getRedisClient(), name, 3_600_000);
     }
 
     @Test

@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.iterators.ScanUtil;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.RedisClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,35 +23,35 @@ public class FunctionalScanUtilTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPooled jedisPooled;
+    private RedisClient redisClient;
     private String varName;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
         varName = "scan:" + this.getClass().getName() + ":" + System.currentTimeMillis() + "_";
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPooled != null) {
-            jedisPooled.del(varName + "a");
-            jedisPooled.del(varName + "b");
-            jedisPooled.del(varName + "c");
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(varName + "a");
+            redisClient.del(varName + "b");
+            redisClient.del(varName + "c");
+            redisClient.close();
         }
     }
 
     @Test
     public void retrieveListOfKeys1Test() {
-        jedisPooled.set(varName + "a","1");
-        jedisPooled.set(varName + "b","2");
-        jedisPooled.set(varName + "c","3");
+        redisClient.set(varName + "a","1");
+        redisClient.set(varName + "b","2");
+        redisClient.set(varName + "c","3");
         List<String> keys;
-        keys = ScanUtil.retrieveListOfKeys(jedisPooled, varName + "*");
+        keys = ScanUtil.retrieveListOfKeys(redisClient, varName + "*");
         assertEquals(3, keys.size());
         assertTrue(keys.contains(varName + "a"));
         assertTrue(keys.contains(varName + "b"));
@@ -61,10 +61,10 @@ public class FunctionalScanUtilTest {
 
     @Test
     public void retrieveListOfKeys2Test() {
-        jedisPooled.set(varName + "a","1");
-        jedisPooled.set(varName + "b","2");
-        jedisPooled.set(varName + "c","3");
-        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPooled, varName + "*");
+        redisClient.set(varName + "a","1");
+        redisClient.set(varName + "b","2");
+        redisClient.set(varName + "c","3");
+        List<String> keys = ScanUtil.retrieveListOfKeys(redisClient, varName + "*");
         assertEquals(3, keys.size());
         assertTrue(keys.contains(varName + "a"));
         assertTrue(keys.contains(varName + "b"));
@@ -73,21 +73,21 @@ public class FunctionalScanUtilTest {
 
     @Test
     public void retrieveListOfKeys3Test() {
-        jedisPooled.set(varName + "a","1");
-        jedisPooled.set(varName + "b","2");
-        jedisPooled.set(varName + "c","3");
-        List<String> keys = ScanUtil.retrieveListOfKeys(jedisPooled, varName + "a*");
+        redisClient.set(varName + "a","1");
+        redisClient.set(varName + "b","2");
+        redisClient.set(varName + "c","3");
+        List<String> keys = ScanUtil.retrieveListOfKeys(redisClient, varName + "a*");
         assertEquals(1, keys.size());
         assertTrue(keys.contains(varName + "a"));
     }
 
     @Test
     public void useListOfKeys1Test() {
-        jedisPooled.set(varName + "a","1");
-        jedisPooled.set(varName + "b","2");
-        jedisPooled.set(varName + "c","3");
+        redisClient.set(varName + "a","1");
+        redisClient.set(varName + "b","2");
+        redisClient.set(varName + "c","3");
         List<String> keys = new ArrayList<>();
-        ScanUtil.useListOfKeys(jedisPooled, varName + "*", k -> {
+        ScanUtil.useListOfKeys(redisClient, varName + "*", k -> {
             if ( k != null && !k.isEmpty()) {
                 keys.add(k);
             }
@@ -100,11 +100,11 @@ public class FunctionalScanUtilTest {
 
     @Test
     public void useListOfKeys2Test() {
-        jedisPooled.set(varName + "a","1");
-        jedisPooled.set(varName + "b","2");
-        jedisPooled.set(varName + "c","3");
+        redisClient.set(varName + "a","1");
+        redisClient.set(varName + "b","2");
+        redisClient.set(varName + "c","3");
         List<String> keys = new ArrayList<>();
-        ScanUtil.useListOfKeys(jedisPooled, varName + "*", k -> {
+        ScanUtil.useListOfKeys(redisClient, varName + "*", k -> {
             if ( k != null && !k.isEmpty()) {
                 keys.add(k);
             }
@@ -117,11 +117,11 @@ public class FunctionalScanUtilTest {
 
     @Test
     public void useListOfKeys3Test() {
-        jedisPooled.set(varName + "a","1");
-        jedisPooled.set(varName + "b","2");
-        jedisPooled.set(varName + "c","3");
+        redisClient.set(varName + "a","1");
+        redisClient.set(varName + "b","2");
+        redisClient.set(varName + "c","3");
         List<String> keys = new ArrayList<>();
-        ScanUtil.useListOfKeys(jedisPooled, varName + "c*", k -> {
+        ScanUtil.useListOfKeys(redisClient, varName + "c*", k -> {
             if ( k != null && !k.isEmpty()) {
                 keys.add(k);
             }

@@ -8,7 +8,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.oba.jedis.extra.utils.cache.SimpleCache;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.SimpleEntry;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.RedisClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,20 +33,20 @@ public class FunctionalSimpleCacheTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPooled jedisPooled;
+    private RedisClient redisClient;
 
     @Before
     public void setup() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void tearDown() {
-        if (jedisPooled != null) {
-            listNameKeysToDelete.forEach( k -> jedisPooled.del(k));
-            jedisPooled.close();
+        if (redisClient != null) {
+            listNameKeysToDelete.forEach( k -> redisClient.del(k));
+            redisClient.close();
         }
     }
 
@@ -57,12 +57,12 @@ public class FunctionalSimpleCacheTest {
     SimpleCache createNewCache(long timeOut) {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         listNameKeysToDelete.add(name);
-        return new SimpleCache(jedisPooled, name, timeOut);
+        return new SimpleCache(redisClient, name, timeOut);
     }
 
 
     private String jedisGet(String key) {
-        return jedisPooled.get(key);
+        return redisClient.get(key);
     }
 
     private boolean jedisExists(String key) {

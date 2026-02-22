@@ -9,7 +9,7 @@ import org.oba.jedis.extra.utils.cache.CacheWriter;
 import org.oba.jedis.extra.utils.cache.SimpleCache;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.SimpleEntry;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.RedisClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,20 +38,20 @@ public class FunctionalSimpleCacheWriterTest {
 
     private final TestingCacheWriter testingCacheWriter = new TestingCacheWriter();
 
-    private JedisPooled jedisPooled;
+    private RedisClient redisClient;
 
     @Before
     public void setup() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void tearDown() {
-        if (jedisPooled != null) {
-            listNameKeysToDelete.forEach(k -> jedisPooled.del(k));
-            jedisPooled.close();
+        if (redisClient != null) {
+            listNameKeysToDelete.forEach(k -> redisClient.del(k));
+            redisClient.close();
         }
     }
 
@@ -62,7 +62,7 @@ public class FunctionalSimpleCacheWriterTest {
     SimpleCache createNewCache(CacheWriter cacheWriter) {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         listNameKeysToDelete.add(name);
-        SimpleCache simpleCache = new SimpleCache(jedisPooled, name, 3_600_000).
+        SimpleCache simpleCache = new SimpleCache(redisClient, name, 3_600_000).
                 withCacheWriter(testingCacheWriter);
         return simpleCache;
     }

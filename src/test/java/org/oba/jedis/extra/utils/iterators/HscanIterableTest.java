@@ -54,7 +54,7 @@ public class HscanIterableTest {
 
     void createABCData() {
         letters.forEach( letter -> {
-            mockOfJedis.getJedisPooled().hset(hscanitName, letter, letter);
+            mockOfJedis.getRedisClient().hset(hscanitName, letter, letter);
         });
     }
 
@@ -62,7 +62,7 @@ public class HscanIterableTest {
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(), hscanitName , "*");
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(), hscanitName , "*");
         Iterator<Map.Entry<String,String>> iterator =  hscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -80,7 +80,7 @@ public class HscanIterableTest {
     public void iteratorWithResultsTest() {
         createABCData();
         int num = 0;
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(), hscanitName , "*");
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(), hscanitName , "*");
         Iterator<Map.Entry<String,String>> iterator =  hscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -98,21 +98,21 @@ public class HscanIterableTest {
 
     @Test
     public void iteratorEmpty2Test() {
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(), hscanitName , 20);
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(), hscanitName , 20);
         List<Map.Entry<String,String>> data = hscanIterable.asList();
         assertTrue(data.isEmpty());
     }
 
     @Test
     public void iteratorEmpty3Test() {
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(), hscanitName);
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(), hscanitName);
         List<Map.Entry<String,String>> data = hscanIterable.asList();
         assertTrue(data.isEmpty());
     }
 
     @Test
     public void iteratorEmpty4Test() {
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(), hscanitName);
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(), hscanitName);
         Map<String, String> data = hscanIterable.asMap();
         assertTrue(data.isEmpty());
     }
@@ -121,11 +121,11 @@ public class HscanIterableTest {
     @Test
     public void iteratorWithResultKeysTest() {
         createABCData();
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(),hscanitName, "*");
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(),hscanitName, "*");
         Iterator<Map.Entry<String,String>> iterator =  hscanIterable.iterator();
         while(iterator.hasNext()) {
             Map.Entry<String,String> entry = iterator.next();
-            assertEquals( entry.getValue(), mockOfJedis.getJedisPooled().hget(hscanitName, entry.getKey()));
+            assertEquals( entry.getValue(), mockOfJedis.getRedisClient().hget(hscanitName, entry.getKey()));
         }
     }
 
@@ -134,7 +134,7 @@ public class HscanIterableTest {
         AtomicInteger num = new AtomicInteger(0);
         StringBuilder sb = new StringBuilder();
         createABCData();
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(),hscanitName,"*");
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(),hscanitName,"*");
         hscanIterable.forEach( entry -> {
             num.incrementAndGet();
             sb.append(entry.getKey() + ":" + entry.getValue());
@@ -149,9 +149,9 @@ public class HscanIterableTest {
     @Test
     public void iteratorWithResultKeysForEachTest() {
         createABCData();
-        HScanIterable scanIterable = new HScanIterable(mockOfJedis.getJedisPooled(),hscanitName, "*");
+        HScanIterable scanIterable = new HScanIterable(mockOfJedis.getRedisClient(),hscanitName, "*");
         scanIterable.forEach( entry -> {
-            assertEquals( entry.getValue(), mockOfJedis.getJedisPooled().hget(hscanitName, entry.getKey()));
+            assertEquals( entry.getValue(), mockOfJedis.getRedisClient().hget(hscanitName, entry.getKey()));
         });
     }
 
@@ -160,21 +160,21 @@ public class HscanIterableTest {
     public void iteratorRemoveForEachTest() {
         createABCData();
         List<String> deletedKeys = new ArrayList<>();
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(),hscanitName, "*");
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(),hscanitName, "*");
         Iterator<Map.Entry<String,String>> iterator = hscanIterable.iterator();
         while (iterator.hasNext()) {
             deletedKeys.add(iterator.next().getKey());
             iterator.remove();
         }
         deletedKeys.forEach( key -> {
-            assertNull( mockOfJedis.getJedisPooled().hget(hscanitName, key));
+            assertNull( mockOfJedis.getRedisClient().hget(hscanitName, key));
         });
     }
 
     @Test
     public void asListTest() {
         createABCData();
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(),hscanitName, "*");
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(),hscanitName, "*");
         List<Map.Entry<String,String>> data = hscanIterable.asList();
         Map<String, String> dataMap = new HashMap<>();
         data.forEach( e -> dataMap.put(e.getKey(), e.getValue()));
@@ -188,7 +188,7 @@ public class HscanIterableTest {
     @Test
     public void asMapTest() {
         createABCData();
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(),hscanitName, "*");
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(),hscanitName, "*");
         Map<String, String> data = hscanIterable.asMap();
         letters.forEach( letter -> {
             assertTrue(data.containsKey(letter));
@@ -199,7 +199,7 @@ public class HscanIterableTest {
 
     @Test(expected = IllegalStateException.class)
     public void errorInDeleteTest() {
-        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getJedisPooled(),hscanitName, 50);
+        HScanIterable hscanIterable = new HScanIterable(mockOfJedis.getRedisClient(),hscanitName, 50);
         Iterator<Map.Entry<String,String>> iterator = hscanIterable.iterator();
         iterator.remove();
     }

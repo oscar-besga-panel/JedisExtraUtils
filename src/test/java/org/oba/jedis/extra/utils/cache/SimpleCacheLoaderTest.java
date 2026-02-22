@@ -52,7 +52,7 @@ public class SimpleCacheLoaderTest {
     }
     SimpleCache createNewCache(CacheLoader cacheLoader) {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        return new SimpleCache(mockOfJedisForsimpleCache.getJedisPooled(), name, 3_600_000).
+        return new SimpleCache(mockOfJedisForsimpleCache.getRedisClient(), name, 3_600_000).
             withCacheLoader(cacheLoader);
     }
 

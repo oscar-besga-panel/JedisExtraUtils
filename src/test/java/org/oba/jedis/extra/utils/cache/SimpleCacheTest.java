@@ -52,7 +52,7 @@ public class SimpleCacheTest {
 
     SimpleCache createNewCache(long timeOut) {
         String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        return new SimpleCache(mockOfJedisForsimpleCache.getJedisPooled(), name, timeOut);
+        return new SimpleCache(mockOfJedisForsimpleCache.getRedisClient(), name, timeOut);
     }
 
 
@@ -62,7 +62,7 @@ public class SimpleCacheTest {
         simpleCache.put("a", "A1");
         String result = simpleCache.get("a");
         assertEquals("A1", result);
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
     }
 
@@ -78,7 +78,7 @@ public class SimpleCacheTest {
         assertEquals("A1", results.get("a"));
         assertEquals("B1", results.get("b"));
         assertEquals("C1", results.get("c"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
     }
 
@@ -88,13 +88,13 @@ public class SimpleCacheTest {
         simpleCache.put("a", "A1");
         simpleCache.put("b", "B1");
         assertTrue(simpleCache.containsKey("a"));
-        assertTrue(mockOfJedisForsimpleCache.getJedisPooled().exists(simpleCache.getName() + ":a"));
+        assertTrue(mockOfJedisForsimpleCache.getRedisClient().exists(simpleCache.getName() + ":a"));
         assertTrue(mockOfJedisForsimpleCache.getCurrentData().containsKey(simpleCache.getName() + ":a"));
         assertTrue(simpleCache.containsKey("b"));
-        assertTrue(mockOfJedisForsimpleCache.getJedisPooled().exists(simpleCache.getName() + ":b"));
+        assertTrue(mockOfJedisForsimpleCache.getRedisClient().exists(simpleCache.getName() + ":b"));
         assertTrue(mockOfJedisForsimpleCache.getCurrentData().containsKey(simpleCache.getName() + ":b"));
         assertFalse(simpleCache.containsKey("c"));
-        assertFalse(mockOfJedisForsimpleCache.getJedisPooled().exists(simpleCache.getName() + ":c"));
+        assertFalse(mockOfJedisForsimpleCache.getRedisClient().exists(simpleCache.getName() + ":c"));
         assertFalse(mockOfJedisForsimpleCache.getCurrentData().containsKey(simpleCache.getName() + ":c"));
     }
 
@@ -107,7 +107,7 @@ public class SimpleCacheTest {
         assertEquals(1, results.size());
         assertEquals("A1", simpleCache.get("a"));
         assertEquals("A1", results.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
     }
 
@@ -129,7 +129,7 @@ public class SimpleCacheTest {
         String previous = simpleCache.getAndPut("a", "A2");
         assertEquals("A1", previous);
         assertEquals("A2", simpleCache.get("a"));
-        assertEquals("A2", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A2", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A2", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
     }
 
@@ -141,10 +141,10 @@ public class SimpleCacheTest {
         data.put("b", "B1");
         simpleCache.putAll(data);
         assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         assertEquals("B1", simpleCache.get("b"));
-        assertEquals("B1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":b"));
+        assertEquals("B1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":b"));
         assertEquals("B1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":b"));
     }
 
@@ -154,13 +154,13 @@ public class SimpleCacheTest {
         boolean result1 = simpleCache.putIfAbsent("a", "A1");
         boolean result2 = simpleCache.putIfAbsent("a", "A2");
         assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         assertTrue(result1);
         assertFalse(result2);
         simpleCache.put("a", "A2");
         assertEquals("A2", simpleCache.get("a"));
-        assertEquals("A2", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A2", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A2", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
     }
 
@@ -169,11 +169,11 @@ public class SimpleCacheTest {
         SimpleCache simpleCache = createNewCache();
         simpleCache.put("a", "A1");
         assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         simpleCache.remove("a");
         assertNull(simpleCache.get("a"));
-        assertNull(mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertNull(mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertNull(mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
     }
 
@@ -182,15 +182,15 @@ public class SimpleCacheTest {
         SimpleCache simpleCache = createNewCache();
         simpleCache.put("a", "A1");
         assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         simpleCache.remove("a", "A2");
         assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         simpleCache.remove("a", "A1");
         assertNull(simpleCache.get("a"));
-        assertNull(mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertNull(mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertNull(mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
     }
 
@@ -199,11 +199,11 @@ public class SimpleCacheTest {
         SimpleCache simpleCache = createNewCache();
         simpleCache.put("a", "A1");
         assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         String removed = simpleCache.getAndRemove("a");
         assertNull(simpleCache.get("a"));
-        assertNull(mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertNull(mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertNull(mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         assertEquals("A1", removed);
     }
@@ -213,16 +213,16 @@ public class SimpleCacheTest {
         SimpleCache simpleCache = createNewCache();
         simpleCache.put("a", "A1");
         assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         boolean replaced1 = simpleCache.replace("a", "A1", "A2");
         assertEquals("A2", simpleCache.get("a"));
-        assertEquals("A2", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A2", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A2", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         assertTrue(replaced1);
         boolean replaced2 = simpleCache.replace("a", "A3", "A4");
         assertEquals("A2", simpleCache.get("a"));
-        assertEquals("A2", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A2", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A2", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         assertFalse(replaced2);
     }
@@ -232,16 +232,16 @@ public class SimpleCacheTest {
         SimpleCache simpleCache = createNewCache();
         simpleCache.put("a", "A1");
         assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         boolean replaced1 = simpleCache.replace("a", "A2");
         assertEquals("A2", simpleCache.get("a"));
-        assertEquals("A2", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A2", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A2", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         assertTrue(replaced1);
         boolean replaced2 = simpleCache.replace("b", "B1");
         assertNull(simpleCache.get("b"));
-        assertNull(mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":b"));
+        assertNull(mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":b"));
         assertNull(mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":b"));
         assertFalse(replaced2);
     }
@@ -251,11 +251,11 @@ public class SimpleCacheTest {
         SimpleCache simpleCache = createNewCache();
         simpleCache.put("a", "A1");
         assertEquals("A1", simpleCache.get("a"));
-        assertEquals("A1", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A1", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A1", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         String replaced = simpleCache.getAndReplace("a", "A2");
         assertEquals("A2", simpleCache.get("a"));
-        assertEquals("A2", mockOfJedisForsimpleCache.getJedisPooled().get(simpleCache.getName() + ":a"));
+        assertEquals("A2", mockOfJedisForsimpleCache.getRedisClient().get(simpleCache.getName() + ":a"));
         assertEquals("A2", mockOfJedisForsimpleCache.getCurrentData().get(simpleCache.getName() + ":a"));
         assertEquals("A1", replaced);
     }

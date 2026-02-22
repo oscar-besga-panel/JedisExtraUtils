@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.iterators.ZScanIterable;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.resps.Tuple;
 
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class FunctionalZscanIterableTest {
 
     private String zscanitName;
     private List<String> letters;
-    private JedisPooled jedisPooled;
+    private RedisClient redisClient;
 
 
     static double valueFromChar(String s) {
@@ -49,29 +49,29 @@ public class FunctionalZscanIterableTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         zscanitName = "zscanIterable:" + this.getClass().getName() + ":" + System.currentTimeMillis() + ":" + count.incrementAndGet();
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
         letters = jtfTest.randomSizedListOfChars();
         LOGGER.debug("before count {} for name {} with letters {}", count.get(), zscanitName, letters );
     }
 
     @After
     public void after() {
-        if (jedisPooled != null) {
-            jedisPooled.del(zscanitName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(zscanitName);
+            redisClient.close();
         }
     }
 
     void createABCData() {
         letters.forEach( letter -> {
-            jedisPooled.zadd(zscanitName, valueFromChar(letter), letter);
+            redisClient.zadd(zscanitName, valueFromChar(letter), letter);
         });
     }
 
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName,  "*");
         Iterator<Tuple> iterator =  zscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -87,14 +87,14 @@ public class FunctionalZscanIterableTest {
 
     @Test
     public void iteratorEmpty2Test() {
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName,  50);
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName,  50);
         List<Tuple> data = zscanIterable.asList();
         assertTrue(data.isEmpty());
     }
 
     @Test
     public void iteratorEmpty3Test() {
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName);
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName);
         List<Tuple> data = zscanIterable.asList();
         assertTrue(data.isEmpty());
     }
@@ -103,7 +103,7 @@ public class FunctionalZscanIterableTest {
     public void iteratorWithResultsTest() {
         int num = 0;
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName,  "*");
         Iterator<Tuple> iterator =  zscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -122,13 +122,13 @@ public class FunctionalZscanIterableTest {
     @Test
     public void iteratorWithResultKeysTest() {
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName,  "*");
         Iterator<Tuple> iterator =  zscanIterable.iterator();
         while(iterator.hasNext()) {
-            assertTrue( jedisPooled.exists(zscanitName));
-            assertNotNull( jedisPooled.zscore(zscanitName, iterator.next().getElement()));
+            assertTrue( redisClient.exists(zscanitName));
+            assertNotNull( redisClient.zscore(zscanitName, iterator.next().getElement()));
         }
-        assertNull(jedisPooled.zscore(zscanitName, "x0x"));
+        assertNull(redisClient.zscore(zscanitName, "x0x"));
     }
 
     @Test
@@ -136,7 +136,7 @@ public class FunctionalZscanIterableTest {
         AtomicInteger num = new AtomicInteger(0);
         StringBuilder sb = new StringBuilder();
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName,  "*");
         zscanIterable.forEach( element -> {
             num.incrementAndGet();
             sb.append(element.getElement() + ":" + element.getScore());
@@ -151,28 +151,28 @@ public class FunctionalZscanIterableTest {
     @Test
     public void iteratorWithResultKeysForEachTest() {
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName,  "*");
         zscanIterable.forEach( key -> {
-            assertTrue( jedisPooled.exists(zscanitName));
-            assertNotNull( jedisPooled.zscore(zscanitName, key.getElement()));
+            assertTrue( redisClient.exists(zscanitName));
+            assertNotNull( redisClient.zscore(zscanitName, key.getElement()));
         });
-        assertNull(jedisPooled.zscore(zscanitName, "a0b"));
+        assertNull(redisClient.zscore(zscanitName, "a0b"));
     }
 
 
     @Test
     public void iteratorRemoveForEach1Test() {
         createABCData();
-        jedisPooled.zadd(zscanitName, 1.1, "extra");
+        redisClient.zadd(zscanitName, 1.1, "extra");
         List<String> deleted = new ArrayList<>();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName,  "*");
         Iterator<Tuple> iterator = zscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next().getElement());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            assertNull(jedisPooled.zscore(zscanitName, key));
+            assertNull(redisClient.zscore(zscanitName, key));
         });
     }
 
@@ -180,21 +180,21 @@ public class FunctionalZscanIterableTest {
     public void iteratorRemoveForEach2Test() {
         createABCData();
         List<String> deleted = new ArrayList<>();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName,  "*");
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName,  "*");
         Iterator<Tuple> iterator = zscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next().getElement());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            assertNull(jedisPooled.zscore(zscanitName, key));
+            assertNull(redisClient.zscore(zscanitName, key));
         });
     }
 
     @Test
     public void asListTest() {
         createABCData();
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName);
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName);
         List<Tuple> data = zscanIterable.asList();
         data.forEach(  tuple -> {
             assertTrue(letters.contains(tuple.getElement()));
@@ -204,7 +204,7 @@ public class FunctionalZscanIterableTest {
 
     @Test(expected = IllegalStateException.class)
     public void errorInDeleteTest() {
-        ZScanIterable zscanIterable = new ZScanIterable(jedisPooled, zscanitName, 20);
+        ZScanIterable zscanIterable = new ZScanIterable(redisClient, zscanitName, 20);
         Iterator<Tuple> iterator = zscanIterable.iterator();
         iterator.remove();
     }

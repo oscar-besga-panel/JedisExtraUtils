@@ -63,32 +63,32 @@ public class MockOfJedisTest {
 
     @Test
     public void testDataInsertion() throws InterruptedException {
-        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
+        mockOfJedis.getRedisClient().set("a", "A1", new SetParams());
         assertEquals("A1", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedisPooled().set("a", "A2", new SetParams());
+        mockOfJedis.getRedisClient().set("a", "A2", new SetParams());
         assertEquals("A2", mockOfJedis.getCurrentData().get("a"));
-        mockOfJedis.getJedisPooled().set("b", "B1", new SetParams().nx());
+        mockOfJedis.getRedisClient().set("b", "B1", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedisPooled().set("b", "B2", new SetParams().nx());
+        mockOfJedis.getRedisClient().set("b", "B2", new SetParams().nx());
         assertEquals("B1", mockOfJedis.getCurrentData().get("b"));
-        mockOfJedis.getJedisPooled().set("c", "C1", new SetParams().nx().px(500));
+        mockOfJedis.getRedisClient().set("c", "C1", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
-        mockOfJedis.getJedisPooled().set("c", "C2", new SetParams().nx().px(500));
+        mockOfJedis.getRedisClient().set("c", "C2", new SetParams().nx().px(500));
         assertEquals("C1", mockOfJedis.getCurrentData().get("c"));
         Thread.sleep(1000);
         assertNull(mockOfJedis.getCurrentData().get("c"));
-        assertEquals(1L, mockOfJedis.getJedisPooled().del("a"));
+        assertEquals(1L, mockOfJedis.getRedisClient().del("a"));
         assertNull(mockOfJedis.getCurrentData().get("a"));
-        assertEquals(0L, mockOfJedis.getJedisPooled().del("a"));
+        assertEquals(0L, mockOfJedis.getRedisClient().del("a"));
     }
 
     @Test
     public void testMockScan() {
-        mockOfJedis.getJedisPooled().set("a", "A1", new SetParams());
-        mockOfJedis.getJedisPooled().set("b", "B1", new SetParams());
-        mockOfJedis.getJedisPooled().set("c", "C1", new SetParams());
+        mockOfJedis.getRedisClient().set("a", "A1", new SetParams());
+        mockOfJedis.getRedisClient().set("b", "B1", new SetParams());
+        mockOfJedis.getRedisClient().set("c", "C1", new SetParams());
         //ScanResult<String> result = mockOfJedis.getJedisPooled().scan("", new ScanParams().match("*"));
-        ScanResult<String> result = mockOfJedis.getJedisPooled().scan("");
+        ScanResult<String> result = mockOfJedis.getRedisClient().scan("");
         assertEquals(ScanParams.SCAN_POINTER_START, result.getCursor());
         assertTrue( result.getResult().contains("a"));
         assertTrue( result.getResult().contains("b"));
@@ -97,38 +97,38 @@ public class MockOfJedisTest {
 
     @Test
     public void testMapDataInsertion() {
-        mockOfJedis.getJedisPooled().hset("map1", "a", "1");
-        mockOfJedis.getJedisPooled().hset("map1", "b", "2");
-        mockOfJedis.getJedisPooled().hset("map1", "c", "3");
-        mockOfJedis.getJedisPooled().hset("map2", "a", "10");
-        assertEquals("1", mockOfJedis.getJedisPooled().hget("map1", "a"));
-        assertEquals("2", mockOfJedis.getJedisPooled().hget("map1", "b"));
-        assertEquals("3", mockOfJedis.getJedisPooled().hget("map1", "c"));
-        assertEquals("10", mockOfJedis.getJedisPooled().hget("map2", "a"));
-        assertNull(mockOfJedis.getJedisPooled().hget("map2", "b"));
-        assertNull(mockOfJedis.getJedisPooled().hget("map3", "a"));
-        mockOfJedis.getJedisPooled().hdel("map1", "c");
-        mockOfJedis.getJedisPooled().hdel("map2", "c");
-        assertNull(mockOfJedis.getJedisPooled().hget("map1", "c"));
-        assertEquals("1", mockOfJedis.getJedisPooled().hget("map1", "a"));
-        assertEquals("10", mockOfJedis.getJedisPooled().hget("map2", "a"));
-        mockOfJedis.getJedisPooled().del("map2");
-        assertNull(mockOfJedis.getJedisPooled().hget("map2", "a"));
+        mockOfJedis.getRedisClient().hset("map1", "a", "1");
+        mockOfJedis.getRedisClient().hset("map1", "b", "2");
+        mockOfJedis.getRedisClient().hset("map1", "c", "3");
+        mockOfJedis.getRedisClient().hset("map2", "a", "10");
+        assertEquals("1", mockOfJedis.getRedisClient().hget("map1", "a"));
+        assertEquals("2", mockOfJedis.getRedisClient().hget("map1", "b"));
+        assertEquals("3", mockOfJedis.getRedisClient().hget("map1", "c"));
+        assertEquals("10", mockOfJedis.getRedisClient().hget("map2", "a"));
+        assertNull(mockOfJedis.getRedisClient().hget("map2", "b"));
+        assertNull(mockOfJedis.getRedisClient().hget("map3", "a"));
+        mockOfJedis.getRedisClient().hdel("map1", "c");
+        mockOfJedis.getRedisClient().hdel("map2", "c");
+        assertNull(mockOfJedis.getRedisClient().hget("map1", "c"));
+        assertEquals("1", mockOfJedis.getRedisClient().hget("map1", "a"));
+        assertEquals("10", mockOfJedis.getRedisClient().hget("map2", "a"));
+        mockOfJedis.getRedisClient().del("map2");
+        assertNull(mockOfJedis.getRedisClient().hget("map2", "a"));
     }
 
     @Test
     public void testMapHscan() {
-        mockOfJedis.getJedisPooled().hset("map1", "a", "1");
-        mockOfJedis.getJedisPooled().hset("map1", "b", "2");
-        mockOfJedis.getJedisPooled().hset("map1", "c", "3");
-        mockOfJedis.getJedisPooled().hset("map2", "d", "10");
-        ScanResult<Map.Entry<String, String>> scanResult = mockOfJedis.getJedisPooled().hscan("map1", ScanParams.SCAN_POINTER_START, new ScanParams());
+        mockOfJedis.getRedisClient().hset("map1", "a", "1");
+        mockOfJedis.getRedisClient().hset("map1", "b", "2");
+        mockOfJedis.getRedisClient().hset("map1", "c", "3");
+        mockOfJedis.getRedisClient().hset("map2", "d", "10");
+        ScanResult<Map.Entry<String, String>> scanResult = mockOfJedis.getRedisClient().hscan("map1", ScanParams.SCAN_POINTER_START, new ScanParams());
         Map<String, String> mapResult = new HashMap<>();
         scanResult.getResult().forEach( entry -> mapResult.put(entry.getKey(), entry.getValue()));
         assertEquals( ScanParams.SCAN_POINTER_START, scanResult.getCursor());
-        assertEquals("1", mockOfJedis.getJedisPooled().hget("map1", "a"));
-        assertEquals("2", mockOfJedis.getJedisPooled().hget("map1", "b"));
-        assertEquals("3", mockOfJedis.getJedisPooled().hget("map1", "c"));
+        assertEquals("1", mockOfJedis.getRedisClient().hget("map1", "a"));
+        assertEquals("2", mockOfJedis.getRedisClient().hget("map1", "b"));
+        assertEquals("3", mockOfJedis.getRedisClient().hget("map1", "c"));
         assertTrue(mapResult != null && !mapResult.isEmpty());
         assertEquals(3, mapResult.size());
         assertEquals("1", mapResult.get("a"));
@@ -139,30 +139,30 @@ public class MockOfJedisTest {
 
     @Test
     public void testSetDataInsertion() {
-        mockOfJedis.getJedisPooled().sadd("set1", "a");
-        mockOfJedis.getJedisPooled().sadd("set1", "b");
-        mockOfJedis.getJedisPooled().sadd("set1", "c");
-        mockOfJedis.getJedisPooled().sadd("set2", "d");
-        assertTrue(mockOfJedis.getJedisPooled().sismember("set1","a"));
-        assertTrue(mockOfJedis.getJedisPooled().sismember("set1","b"));
-        assertTrue(mockOfJedis.getJedisPooled().sismember("set1","c"));
-        assertFalse(mockOfJedis.getJedisPooled().sismember("set1","d"));
-        assertFalse(mockOfJedis.getJedisPooled().sismember("set2","a"));
-        assertTrue(mockOfJedis.getJedisPooled().sismember("set2","d"));
-        assertEquals(1L, mockOfJedis.getJedisPooled().srem("set1", "c"));
-        assertEquals(0L, mockOfJedis.getJedisPooled().srem("set2", "c"));
-        assertFalse(mockOfJedis.getJedisPooled().sismember("set1","c"));
-        mockOfJedis.getJedisPooled().del("set2");
-        assertFalse(mockOfJedis.getJedisPooled().sismember("set2","d"));
+        mockOfJedis.getRedisClient().sadd("set1", "a");
+        mockOfJedis.getRedisClient().sadd("set1", "b");
+        mockOfJedis.getRedisClient().sadd("set1", "c");
+        mockOfJedis.getRedisClient().sadd("set2", "d");
+        assertTrue(mockOfJedis.getRedisClient().sismember("set1","a"));
+        assertTrue(mockOfJedis.getRedisClient().sismember("set1","b"));
+        assertTrue(mockOfJedis.getRedisClient().sismember("set1","c"));
+        assertFalse(mockOfJedis.getRedisClient().sismember("set1","d"));
+        assertFalse(mockOfJedis.getRedisClient().sismember("set2","a"));
+        assertTrue(mockOfJedis.getRedisClient().sismember("set2","d"));
+        assertEquals(1L, mockOfJedis.getRedisClient().srem("set1", "c"));
+        assertEquals(0L, mockOfJedis.getRedisClient().srem("set2", "c"));
+        assertFalse(mockOfJedis.getRedisClient().sismember("set1","c"));
+        mockOfJedis.getRedisClient().del("set2");
+        assertFalse(mockOfJedis.getRedisClient().sismember("set2","d"));
     }
 
     @Test
     public void testSetSscan() {
-        mockOfJedis.getJedisPooled().sadd("set1", "a");
-        mockOfJedis.getJedisPooled().sadd("set1", "b");
-        mockOfJedis.getJedisPooled().sadd("set1", "c");
-        mockOfJedis.getJedisPooled().sadd("set2", "d");
-        ScanResult<String> scanResult = mockOfJedis.getJedisPooled().sscan("set1", ScanParams.SCAN_POINTER_START, new ScanParams());
+        mockOfJedis.getRedisClient().sadd("set1", "a");
+        mockOfJedis.getRedisClient().sadd("set1", "b");
+        mockOfJedis.getRedisClient().sadd("set1", "c");
+        mockOfJedis.getRedisClient().sadd("set2", "d");
+        ScanResult<String> scanResult = mockOfJedis.getRedisClient().sscan("set1", ScanParams.SCAN_POINTER_START, new ScanParams());
         assertEquals(ScanParams.SCAN_POINTER_START, scanResult.getCursor());
         assertTrue( scanResult.getResult().contains("a"));
         assertTrue( scanResult.getResult().contains("b"));
@@ -172,29 +172,29 @@ public class MockOfJedisTest {
 
     @Test
     public void testZSetDataInsertion() {
-        mockOfJedis.getJedisPooled().zadd("zset1", 1.0, "a");
-        mockOfJedis.getJedisPooled().zadd("zset1", 2.0, "b");
-        mockOfJedis.getJedisPooled().zadd("zset1", 3.0, "c");
-        mockOfJedis.getJedisPooled().zadd("zset2", 4.0, "d");
-        assertEquals(Double.valueOf(1.0), mockOfJedis.getJedisPooled().zscore("zset1", "a"));
-        assertEquals(Double.valueOf(2.0), mockOfJedis.getJedisPooled().zscore("zset1", "b"));
-        assertEquals(Double.valueOf(3.0), mockOfJedis.getJedisPooled().zscore("zset1", "c"));
-        assertNull( mockOfJedis.getJedisPooled().zscore("zset1", "d"));
-        assertEquals(Double.valueOf(4.0), mockOfJedis.getJedisPooled().zscore("zset2", "d"));
-        assertNull( mockOfJedis.getJedisPooled().zscore("zset2", "a"));
-        mockOfJedis.getJedisPooled().zrem("zset1","b");
-        assertNull( mockOfJedis.getJedisPooled().zscore("zset1", "b"));
-        mockOfJedis.getJedisPooled().del("zset2");
-        assertNull( mockOfJedis.getJedisPooled().zscore("zset2", "d"));
+        mockOfJedis.getRedisClient().zadd("zset1", 1.0, "a");
+        mockOfJedis.getRedisClient().zadd("zset1", 2.0, "b");
+        mockOfJedis.getRedisClient().zadd("zset1", 3.0, "c");
+        mockOfJedis.getRedisClient().zadd("zset2", 4.0, "d");
+        assertEquals(Double.valueOf(1.0), mockOfJedis.getRedisClient().zscore("zset1", "a"));
+        assertEquals(Double.valueOf(2.0), mockOfJedis.getRedisClient().zscore("zset1", "b"));
+        assertEquals(Double.valueOf(3.0), mockOfJedis.getRedisClient().zscore("zset1", "c"));
+        assertNull( mockOfJedis.getRedisClient().zscore("zset1", "d"));
+        assertEquals(Double.valueOf(4.0), mockOfJedis.getRedisClient().zscore("zset2", "d"));
+        assertNull( mockOfJedis.getRedisClient().zscore("zset2", "a"));
+        mockOfJedis.getRedisClient().zrem("zset1","b");
+        assertNull( mockOfJedis.getRedisClient().zscore("zset1", "b"));
+        mockOfJedis.getRedisClient().del("zset2");
+        assertNull( mockOfJedis.getRedisClient().zscore("zset2", "d"));
     }
 
     @Test
     public void testZSetZscan() {
-        mockOfJedis.getJedisPooled().zadd("zset1", 1.0, "a");
-        mockOfJedis.getJedisPooled().zadd("zset1", 2.0, "b");
-        mockOfJedis.getJedisPooled().zadd("zset1", 3.0, "c");
-        mockOfJedis.getJedisPooled().zadd("zset2", 4.0, "d");
-        ScanResult<Tuple> scanResult = mockOfJedis.getJedisPooled().zscan("zset1", ScanParams.SCAN_POINTER_START, new ScanParams());
+        mockOfJedis.getRedisClient().zadd("zset1", 1.0, "a");
+        mockOfJedis.getRedisClient().zadd("zset1", 2.0, "b");
+        mockOfJedis.getRedisClient().zadd("zset1", 3.0, "c");
+        mockOfJedis.getRedisClient().zadd("zset2", 4.0, "d");
+        ScanResult<Tuple> scanResult = mockOfJedis.getRedisClient().zscan("zset1", ScanParams.SCAN_POINTER_START, new ScanParams());
         assertEquals(ScanParams.SCAN_POINTER_START, scanResult.getCursor());
         AtomicInteger count = new AtomicInteger(0);
         AtomicReference<Double> score = new AtomicReference<>(Double.valueOf(0.0));

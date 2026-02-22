@@ -34,7 +34,7 @@ public final class CacheIterator implements Iterator<Map.Entry<String, String>>,
      */
     CacheIterator(SimpleCache cache) {
         this.cache = cache;
-        this.scanIterator = new ScanIterator(cache.getJedisPooled(), cache.resolveKey("*"), DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+        this.scanIterator = new ScanIterator(cache.getRedisClient(), cache.resolveKey("*"), DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     @Override
@@ -46,7 +46,7 @@ public final class CacheIterator implements Iterator<Map.Entry<String, String>>,
     public Map.Entry<String, String> next() {
         String redisKey = scanIterator.next();
         if (redisKey != null) {
-            String value = cache.getJedisPooled().get(redisKey);
+            String value = cache.getRedisClient().get(redisKey);
             String key = cache.unresolveKey(redisKey);
             return new SimpleEntry(key, value);
         } else {

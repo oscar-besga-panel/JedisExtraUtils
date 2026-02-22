@@ -4,6 +4,7 @@ import org.oba.jedis.extra.utils.utils.Listable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -29,7 +30,7 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
     public static final String DEFAULT_PATTERN_ITERATORS = null;
 
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final ScanParams scanParams;
 
     private final Queue<K> nextValues = new LinkedList<>();
@@ -38,15 +39,15 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
 
     /**
      * Base constrcutor
-     * @param jedisPooled Jedis pool to be used
+     * @param redisClient Jedis pool to be used
      */
-    AbstractScanIterator(JedisPooled jedisPooled, String pattern, int resultsPerScan) {
-        this.jedisPooled = jedisPooled;
+    AbstractScanIterator(UnifiedJedis redisClient, String pattern, int resultsPerScan) {
+        this.redisClient = redisClient;
         this.scanParams = generateNewScanParams(pattern, resultsPerScan);
     }
 
-    public JedisPooled getJedisPooled() {
-        return jedisPooled;
+    public UnifiedJedis getRedisClient() {
+        return redisClient;
     }
 
 
@@ -106,7 +107,7 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
                 currentCursor = currentResult.getCursor();
             }
             LOGGER.debug("Petition with currentCursor " + currentCursor);
-            currentResult = doScan(jedisPooled, currentCursor, getScanParams());
+            currentResult = doScan(redisClient, currentCursor, getScanParams());
             LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
 
             if (currentResult.getResult().isEmpty() && !currentResult.isCompleteIteration()) {
@@ -123,16 +124,16 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
 
     /**
      * Implement this method to call jedis.scan / jedis.hscan / jedis.sscan / jedis.zscan
-     * @param jedisPooled Jedis connection from jedisPool, it will be closed after the call
+     * @param redisClient Jedis connection from jedisPool, it will be closed after the call
      * @param currentCursor current cursor of call
      * @param scanParams scan params object
      * @return result of this call
      */
-    abstract ScanResult<K> doScan(JedisPooled jedisPooled, String currentCursor, ScanParams scanParams);
+    abstract ScanResult<K> doScan(UnifiedJedis redisClient, String currentCursor, ScanParams scanParams);
 
     public void remove() {
         if (next != null) {
-            doRemove(jedisPooled, next);
+            doRemove(redisClient, next);
             next = null;
         } else {
             throw new IllegalStateException("Next not called or other error");
@@ -141,10 +142,10 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
 
     /**
      * Implement this method to call jedis.del / jedis.hrem / jedis.srem / jedis.zrem
-     * @param jedisPooled Jedis connection from jedisPool, it will be closed after the call
+     * @param redisClient Jedis connection
      * @param next data to be deleted
      */
-    abstract void doRemove(JedisPooled jedisPooled, K next);
+    abstract void doRemove(UnifiedJedis redisClient, K next);
 
 
     /**

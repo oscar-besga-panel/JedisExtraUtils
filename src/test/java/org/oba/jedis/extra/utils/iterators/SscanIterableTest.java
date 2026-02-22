@@ -44,7 +44,7 @@ public class SscanIterableTest {
 
     @After
     public void after() {
-        mockOfJedis.getJedisPooled().del(sscanitName);
+        mockOfJedis.getRedisClient().del(sscanitName);
         if (mockOfJedis != null) {
             mockOfJedis.clearData();
         }
@@ -52,14 +52,14 @@ public class SscanIterableTest {
 
     void createABCData() {
         letters.forEach( letter -> {
-            mockOfJedis.getJedisPooled().sadd(sscanitName, letter);
+            mockOfJedis.getRedisClient().sadd(sscanitName, letter);
         });
     }
 
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(),sscanitName,  "*");
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(),sscanitName,  "*");
         Iterator<String> iterator =  sscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -74,14 +74,14 @@ public class SscanIterableTest {
 
     @Test
     public void iteratorEmpty2Test() {
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(),sscanitName,  20);
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(),sscanitName,  20);
         List<String> data = sscanIterable.asList();
         assertTrue(data.isEmpty());
     }
 
     @Test
     public void iteratorEmpty3Test() {
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(),sscanitName,  20);
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(),sscanitName,  20);
         List<String> data = sscanIterable.asList();
         assertTrue(data.isEmpty());
     }
@@ -91,7 +91,7 @@ public class SscanIterableTest {
     public void iteratorWithResultsTest() {
         int num = 0;
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(),sscanitName,  "*");
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(),sscanitName,  "*");
         Iterator<String> iterator =  sscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -109,11 +109,11 @@ public class SscanIterableTest {
     @Test
     public void iteratorWithResultKeysTest() {
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(), sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(), sscanitName, "*");
         Iterator<String> iterator =  sscanIterable.iterator();
         while(iterator.hasNext()) {
-            assertTrue( mockOfJedis.getJedisPooled().exists(sscanitName));
-            assertTrue( mockOfJedis.getJedisPooled().sismember(sscanitName, iterator.next()));
+            assertTrue( mockOfJedis.getRedisClient().exists(sscanitName));
+            assertTrue( mockOfJedis.getRedisClient().sismember(sscanitName, iterator.next()));
         }
     }
 
@@ -122,7 +122,7 @@ public class SscanIterableTest {
         AtomicInteger num = new AtomicInteger(0);
         StringBuilder sb = new StringBuilder();
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(), sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(), sscanitName, "*");
         sscanIterable.forEach( key -> {
             num.incrementAndGet();
             sb.append(key);
@@ -137,10 +137,10 @@ public class SscanIterableTest {
     @Test
     public void iteratorWithResultKeysForEachTest() {
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(), sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(), sscanitName, "*");
         sscanIterable.forEach( key -> {
-            assertTrue( mockOfJedis.getJedisPooled().exists(sscanitName));
-            assertTrue( mockOfJedis.getJedisPooled().sismember(sscanitName, key));
+            assertTrue( mockOfJedis.getRedisClient().exists(sscanitName));
+            assertTrue( mockOfJedis.getRedisClient().sismember(sscanitName, key));
         });
     }
 
@@ -148,16 +148,16 @@ public class SscanIterableTest {
     @Test
     public void iteratorRemoveForEach1Test() {
         createABCData();
-        mockOfJedis.getJedisPooled().sadd(sscanitName, "extra");
+        mockOfJedis.getRedisClient().sadd(sscanitName, "extra");
         List<String> deleted = new ArrayList<>();
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(), sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(), sscanitName, "*");
         Iterator<String> iterator = sscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            assertFalse( mockOfJedis.getJedisPooled().sismember(sscanitName, key));
+            assertFalse( mockOfJedis.getRedisClient().sismember(sscanitName, key));
         });
     }
 
@@ -165,21 +165,21 @@ public class SscanIterableTest {
     public void iteratorRemoveForEach2Test() {
         createABCData();
         List<String> deleted = new ArrayList<>();
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(), sscanitName, "*");
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(), sscanitName, "*");
         Iterator<String> iterator = sscanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            assertFalse( mockOfJedis.getJedisPooled().sismember(sscanitName, key));
+            assertFalse( mockOfJedis.getRedisClient().sismember(sscanitName, key));
         });
     }
 
     @Test
     public void asListTest() {
         createABCData();
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(), sscanitName);
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(), sscanitName);
         List<String> data = sscanIterable.asList();
         letters.forEach( letter -> {
            assertTrue(data.contains(letter));
@@ -189,7 +189,7 @@ public class SscanIterableTest {
 
     @Test(expected = IllegalStateException.class)
     public void errorInDeleteTest() {
-        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getJedisPooled(), sscanitName, 20);
+        SScanIterable sscanIterable = new SScanIterable(mockOfJedis.getRedisClient(), sscanitName, 20);
         Iterator<String> iterator = sscanIterable.iterator();
         iterator.remove();
     }

@@ -1,6 +1,7 @@
 package org.oba.jedis.extra.utils.iterators;
 
-import redis.clients.jedis.JedisPooled;
+
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -24,12 +25,12 @@ public class ScanUtil {
      * Scans for keys given a pattern
      * This method avoid returning duplicates
      *
-     * @param jedisPooled Pool of connections
+     * @param redisClient Pool of connections
      * @param pattern Patter for keys to match
      * @return List of matching keys
      */
-    public static List<String> retrieveListOfKeys(JedisPooled jedisPooled, String pattern) {
-        ScanIterable iterable = new ScanIterable(jedisPooled, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public static List<String> retrieveListOfKeys(UnifiedJedis redisClient, String pattern) {
+        ScanIterable iterable = new ScanIterable(redisClient, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
         return iterable.asList();
     }
 
@@ -38,12 +39,12 @@ public class ScanUtil {
      * Scans for keys given a pattern
      * CAUTION! This method could return duplicates (although very rarely)
      *
-     * @param jedisPooled Pool of connections
+     * @param redisClient Pool of connections
      * @param pattern Patter for keys to match
      * @param action executed for each key
      */
-    public static void useListOfKeys(JedisPooled jedisPooled, String pattern, Consumer<String> action) {
-        ScanIterable iterable = new ScanIterable(jedisPooled, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public static void useListOfKeys(UnifiedJedis redisClient, String pattern, Consumer<String> action) {
+        ScanIterable iterable = new ScanIterable(redisClient, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
         iterable.forEach(action);
     }
 

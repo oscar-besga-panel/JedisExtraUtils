@@ -8,6 +8,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.ScanParams;
@@ -49,7 +50,7 @@ public class MockOfJedisForSimpleCache {
         return UNIT_TEST_CYCLES_LIST > 0;
     }
 
-    private final JedisPooled jedisPooled;
+    private final RedisClient redisClient;
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
     private final List<TransactionOrder<?>> transactionActions = new ArrayList<>();
     private final Timer timer;
@@ -59,34 +60,34 @@ public class MockOfJedisForSimpleCache {
 
         timer = new Timer();
 
-        jedisPooled = Mockito.mock(JedisPooled.class);
+        redisClient = Mockito.mock(RedisClient.class);
         Transaction transaction = PowerMockito.mock(Transaction.class);
-        when(jedisPooled.multi()).thenReturn(transaction);
+        when(redisClient.multi()).thenReturn(transaction);
 
-        when(jedisPooled.exists(anyString())).thenAnswer(ioc -> {
+        when(redisClient.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExists(key);
         });
-        when(jedisPooled.get(anyString())).thenAnswer(ioc -> {
+        when(redisClient.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockGet(key);
         });
-        when(jedisPooled.set(anyString(), anyString())).thenAnswer(ioc -> {
+        when(redisClient.set(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             return mockSet(key, value);
         });
-        when(jedisPooled.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
+        when(redisClient.set(anyString(), anyString(), any(SetParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             SetParams setParams = ioc.getArgument(2);
             return mockSet(key, value, setParams);
         });
-        when(jedisPooled.del(anyString())).thenAnswer(ioc -> {
+        when(redisClient.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDelOne(key);
         });
-        when(jedisPooled.del(ArgumentMatchers.<String[]>any())).thenAnswer(ioc -> {
+        when(redisClient.del(ArgumentMatchers.<String[]>any())).thenAnswer(ioc -> {
             Object arg1 = ioc.getArgument(0);
             if (ioc.getArguments().length == 1 && arg1.getClass().isArray() && arg1.getClass().isAssignableFrom(String.class)) {
                 return mockDel((String[]) arg1);
@@ -98,7 +99,7 @@ public class MockOfJedisForSimpleCache {
                 throw new UnsupportedOperationException("Mock jedis del. Dont know what is Object arg1: " + arg1);
             }
         });
-        when(jedisPooled.scan(anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        when(redisClient.scan(anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String cursor = ioc.getArgument(0);
             ScanParams scanParams = ioc.getArgument(1);
             return mockScan(cursor, scanParams);
@@ -137,13 +138,13 @@ public class MockOfJedisForSimpleCache {
         });
         PowerMockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
 
-        when(jedisPooled.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> null);
+        when(redisClient.eval(anyString(),any(List.class), any(List.class))).thenAnswer(ioc -> null);
 
     }
 
 
-    JedisPooled getJedisPooled() {
-        return jedisPooled;
+    RedisClient getRedisClient() {
+        return redisClient;
     }
 
 
