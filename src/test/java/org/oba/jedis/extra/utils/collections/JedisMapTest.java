@@ -46,7 +46,7 @@ public class JedisMapTest {
 
 
     JedisMap createABCMap() {
-        JedisMap jedisMap = new JedisMap(mockOfJedisForMap.getJedisPooled(), mapName);
+        JedisMap jedisMap = new JedisMap(mockOfJedisForMap.getRedisClient(), mapName);
         jedisMap.put("a","1");
         jedisMap.put("b","2");
         jedisMap.put("c","3");
@@ -63,7 +63,7 @@ public class JedisMapTest {
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisMap jedisMap = new JedisMap(mockOfJedisForMap.getJedisPooled(), mapName);
+        JedisMap jedisMap = new JedisMap(mockOfJedisForMap.getRedisClient(), mapName);
         jedisMap.checkExists();
     }
 
@@ -94,7 +94,7 @@ public class JedisMapTest {
         int size1 = jedisMap.size();
         jedisMap.put("d","4");
         int size2 = jedisMap.size();
-        JedisMap jedisMap2 = new JedisMap(mockOfJedisForMap.getJedisPooled(), mapName2);
+        JedisMap jedisMap2 = new JedisMap(mockOfJedisForMap.getRedisClient(), mapName2);
         assertEquals(3, size1);
         assertEquals(4, size2);
         assertFalse(jedisMap.isEmpty());

@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.collections.JedisSet;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,21 +26,21 @@ public class FunctionalJedisSetIteratorTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String setName;
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         setName = "set:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPooled != null) {
-            jedisPooled.del(setName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(setName);
+            redisClient.close();
         }
     }
 
@@ -48,7 +48,7 @@ public class FunctionalJedisSetIteratorTest {
     public void testIterator() {
         LOGGER.debug("TEST ITERATOR --\n-");
         List<String> data = new ArrayList<>(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
-        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
+        JedisSet jedisSet = new JedisSet(redisClient, setName);
         jedisSet.addAll(data);
         Iterator<String> iterator = jedisSet.iterator();
         while (iterator.hasNext()) {
@@ -65,7 +65,7 @@ public class FunctionalJedisSetIteratorTest {
     public void testIteratorOne() {
         LOGGER.debug("TEST ITERATOR --\n-");
         List<String> data = new ArrayList<>(Collections.singletonList("a"));
-        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
+        JedisSet jedisSet = new JedisSet(redisClient, setName);
         jedisSet.addAll(data);
         Iterator<String> iterator = jedisSet.iterator();
         while (iterator.hasNext()) {
@@ -82,7 +82,7 @@ public class FunctionalJedisSetIteratorTest {
     public void testIteratorNone() {
         LOGGER.debug("TEST ITERATOR --\n-");
         List<String> data = new ArrayList<>();
-        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
+        JedisSet jedisSet = new JedisSet(redisClient, setName);
         jedisSet.addAll(data);
         Iterator<String> iterator = jedisSet.iterator();
         while (iterator.hasNext()) {
@@ -99,7 +99,7 @@ public class FunctionalJedisSetIteratorTest {
         LOGGER.debug("TEST ITERATOR --\n-");
         List<String> todel = new ArrayList<>(Arrays.asList("a", "d", "g"));
         List<String> data = new ArrayList<>(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
-        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
+        JedisSet jedisSet = new JedisSet(redisClient, setName);
         jedisSet.addAll(data);
         Iterator<String> iterator = jedisSet.iterator();
         while (iterator.hasNext()) {

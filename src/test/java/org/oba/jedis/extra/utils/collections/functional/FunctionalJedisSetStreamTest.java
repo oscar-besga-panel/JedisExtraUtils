@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.collections.JedisSet;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,28 +23,28 @@ public class FunctionalJedisSetStreamTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String setName;
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         setName = "set:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPooled != null) {
-            jedisPooled.del(setName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(setName);
+            redisClient.close();
         }
     }
 
     private static final List<String> initialData = Collections.unmodifiableList(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
 
     JedisSet createABCDEFGSet() {
-        JedisSet jedisSet = new JedisSet(jedisPooled, setName);
+        JedisSet jedisSet = new JedisSet(redisClient, setName);
         jedisSet.addAll(initialData);
         return jedisSet;
     }

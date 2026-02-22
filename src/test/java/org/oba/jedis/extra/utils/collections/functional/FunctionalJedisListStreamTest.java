@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,27 +24,27 @@ public class FunctionalJedisListStreamTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String listName;
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         listName = "list:" + this.getClass().getName() + ":"  + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPooled != null) {
-            jedisPooled.del(listName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(listName);
+            redisClient.close();
         }
     }
 
 
     private JedisList createABCDEList(){
-        JedisList jedisList = new JedisList(jedisPooled, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c", "d", "e"));
         return jedisList;
     }

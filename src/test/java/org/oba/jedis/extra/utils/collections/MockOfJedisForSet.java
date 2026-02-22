@@ -7,17 +7,11 @@ import org.powermock.api.mockito.PowerMockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.AbstractTransaction;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -30,23 +24,23 @@ public class MockOfJedisForSet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedisForList.class);
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis unifiedJedis;
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
 
     public MockOfJedisForSet() {
 
 
 
-        jedisPooled = Mockito.mock(JedisPooled.class);
+        unifiedJedis = Mockito.mock(UnifiedJedis.class);
 
         AbstractTransaction transaction = PowerMockito.mock(AbstractTransaction.class);
 
-        when(jedisPooled.multi()).thenReturn(transaction);
-        when(jedisPooled.exists(anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.multi()).thenReturn(transaction);
+        when(unifiedJedis.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExists(key);
         });
-        when(jedisPooled.del(anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
@@ -54,20 +48,20 @@ public class MockOfJedisForSet {
             String key = ioc.getArgument(0);
             return TransactionOrder.quickReponseExecuted(mockDel(key));
         });
-        when(jedisPooled.sadd(anyString(), any())).thenAnswer(this::iocSadd);
+        when(unifiedJedis.sadd(anyString(), any())).thenAnswer(this::iocSadd);
         when(transaction.sadd(anyString(), any())).thenAnswer( ioc ->
                 TransactionOrder.quickReponseExecuted(iocSadd(ioc))
         );
-        when(jedisPooled.sismember(anyString(), anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.sismember(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             return mockSismember(key, value);
         });
-        when(jedisPooled.scard(anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.scard(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockScard(key);
         });
-        when(jedisPooled.srem(anyString(), any())).thenAnswer(ioc -> {
+        when(unifiedJedis.srem(anyString(), any())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             Object value;
             if (ioc.getArguments().length > 2) {
@@ -84,13 +78,13 @@ public class MockOfJedisForSet {
             return mockSrem(key, value);
         });
 
-        when(jedisPooled.sscan(anyString(), anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.sscan(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String cursor = ioc.getArgument(1);
             ScanParams scanParams = new ScanParams();
             return mockSscan(key, cursor, scanParams);
         });
-        when(jedisPooled.sscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        when(unifiedJedis.sscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String cursor = ioc.getArgument(1);
             ScanParams scanParams = ioc.getArgument(2);
@@ -119,8 +113,8 @@ public class MockOfJedisForSet {
 
 
 
-    JedisPooled getJedisPooled() {
-        return jedisPooled;
+    UnifiedJedis getUnifiedJedis() {
+        return unifiedJedis;
     }
 
     synchronized void clearData(){

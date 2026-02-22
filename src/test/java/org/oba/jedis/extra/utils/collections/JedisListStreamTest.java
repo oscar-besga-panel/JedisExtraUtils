@@ -34,7 +34,7 @@ public class JedisListStreamTest {
 
 
     private JedisList createABCDEList(){
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getRedisClient(), listName);
         jedisList.addAll(Arrays.asList("a", "b", "c", "d", "e"));
         return jedisList;
     }

@@ -2,13 +2,12 @@ package org.oba.jedis.extra.utils.collections.functional;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisMap;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -29,7 +28,7 @@ public class FunctionalJedisMapTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String mapName, mapName2;
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
@@ -37,20 +36,20 @@ public class FunctionalJedisMapTest {
         if (!jtfTest.functionalTestEnabled()) return;
         mapName = "map:" + this.getClass().getName() + ":" + System.currentTimeMillis();
         mapName2 = "map2:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPooled != null) {
-            jedisPooled.del(mapName);
-            jedisPooled.del(mapName2);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(mapName);
+            redisClient.del(mapName2);
+            redisClient.close();
         }
     }
 
     JedisMap createABCMap() {
-        JedisMap jedisMap = new JedisMap(jedisPooled, mapName);
+        JedisMap jedisMap = new JedisMap(redisClient, mapName);
         jedisMap.put("a","1");
         jedisMap.put("b","2");
         jedisMap.put("c","3");
@@ -67,7 +66,7 @@ public class FunctionalJedisMapTest {
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisMap jedisMap = new JedisMap(jedisPooled, mapName);
+        JedisMap jedisMap = new JedisMap(redisClient, mapName);
         jedisMap.checkExists();
     }
 
@@ -92,7 +91,7 @@ public class FunctionalJedisMapTest {
         int size1 = jedisMap.size();
         jedisMap.put("d","4");
         int size2 = jedisMap.size();
-        JedisMap jedisMap2 = new JedisMap(jedisPooled, mapName2);
+        JedisMap jedisMap2 = new JedisMap(redisClient, mapName2);
         assertEquals(3, size1);
         assertEquals(4, size2);
         assertFalse(jedisMap.isEmpty());

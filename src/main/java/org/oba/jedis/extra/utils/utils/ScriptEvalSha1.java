@@ -3,6 +3,7 @@ package org.oba.jedis.extra.utils.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -29,16 +30,16 @@ public class ScriptEvalSha1 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptEvalSha1.class);
     public static final String SHA_1 = "SHA-1";
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis unifiedJedis;
     private final UniversalReader scriptSource;
     private String sha1Digest;
 
-    public ScriptEvalSha1(JedisPooled jedisPooled, UniversalReader scriptSource) {
-        this(jedisPooled, scriptSource, false);
+    public ScriptEvalSha1(UnifiedJedis unifiedJedis, UniversalReader scriptSource) {
+        this(unifiedJedis, scriptSource, false);
     }
 
-    public ScriptEvalSha1(JedisPooled jedisPooled, UniversalReader scriptSource, boolean autoload) {
-        this.jedisPooled = jedisPooled;
+    public ScriptEvalSha1(UnifiedJedis unifiedJedis, UniversalReader scriptSource, boolean autoload) {
+        this.unifiedJedis = unifiedJedis;
         this.scriptSource = scriptSource;
         if (autoload) {
             load();
@@ -62,7 +63,7 @@ public class ScriptEvalSha1 {
             if (scriptToLoad == null || scriptToLoad.isBlank()) {
                 throw new IllegalArgumentException("Script to load cannot be null nor empty");
             }
-            sha1Digest = jedisPooled.scriptLoad(scriptToLoad);
+            sha1Digest = unifiedJedis.scriptLoad(scriptToLoad);
             LOGGER.debug("SHA1 load from script {}", sha1Digest);
             if (sha1Digest == null || sha1Digest.isBlank()) {
                 LOGGER.error("SHA1 from reddit is null or empty !");
@@ -83,7 +84,7 @@ public class ScriptEvalSha1 {
             load();
         }
         LOGGER.debug("SHA1 eval {}", sha1Digest);
-        return jedisPooled.evalsha(sha1Digest, keys, params);
+        return unifiedJedis.evalsha(sha1Digest, keys, params);
     }
 
     /**

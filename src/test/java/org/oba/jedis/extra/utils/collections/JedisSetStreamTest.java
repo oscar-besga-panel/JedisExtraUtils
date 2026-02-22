@@ -36,7 +36,7 @@ public class JedisSetStreamTest {
     private static final List<String> initialData = Collections.unmodifiableList(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
 
     JedisSet createABCDEFGSet() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getUnifiedJedis(), setName);
         jedisSet.addAll(initialData);
         return jedisSet;
     }

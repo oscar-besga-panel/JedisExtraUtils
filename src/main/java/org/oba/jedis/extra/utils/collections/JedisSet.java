@@ -3,20 +3,20 @@ package org.oba.jedis.extra.utils.collections;
 import org.oba.jedis.extra.utils.iterators.SScanIterator;
 import org.oba.jedis.extra.utils.utils.Named;
 import redis.clients.jedis.AbstractTransaction;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-public class JedisSet implements Set<String>, Named {
+public final class JedisSet implements Set<String>, Named {
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final String name;
 
-    public JedisSet(JedisPooled jedisPooled, String name){
-        this.jedisPooled = jedisPooled;
+    public JedisSet(UnifiedJedis redisClient, String name){
+        this.redisClient = redisClient;
         this.name = name;
     }
 
@@ -34,7 +34,7 @@ public class JedisSet implements Set<String>, Named {
      * @return true if there is a reference in redis namespace, false otherwise
      */
     public boolean exists() {
-        return jedisPooled.exists(name);
+        return redisClient.exists(name);
     }
 
     /**
@@ -59,7 +59,7 @@ public class JedisSet implements Set<String>, Named {
 
     @Override
     public int size() {
-        long value = jedisPooled.scard(name);
+        long value = redisClient.scard(name);
         return Long.valueOf(value).intValue();
     }
 
@@ -70,12 +70,12 @@ public class JedisSet implements Set<String>, Named {
 
     @Override
     public boolean contains(Object o) {
-        return jedisPooled.sismember(name, (String) o);
+        return redisClient.sismember(name, (String) o);
     }
 
     @Override
     public Iterator<String> iterator() {
-        return new SScanIterator(jedisPooled, name);
+        return new SScanIterator(redisClient, name);
     }
 
     @Override
@@ -90,13 +90,13 @@ public class JedisSet implements Set<String>, Named {
 
     @Override
     public boolean add(String value) {
-        long result = jedisPooled.sadd(name, value);
+        long result = redisClient.sadd(name, value);
         return result != 0L;
     }
 
     @Override
     public boolean remove(Object o) {
-        long result = jedisPooled.srem(name, (String) o);
+        long result = redisClient.srem(name, (String) o);
         return result != 0L;
     }
 
@@ -105,7 +105,7 @@ public class JedisSet implements Set<String>, Named {
         boolean result = true;
         Iterator<?> it = c.iterator();
         while (result && it.hasNext()){
-            result = jedisPooled.sismember(name, (String) it.next());
+            result = redisClient.sismember(name, (String) it.next());
         }
         return result;
     }
@@ -118,7 +118,7 @@ public class JedisSet implements Set<String>, Named {
             return false;
         } else {
             String[] arrayValues = values.toArray(new String[0]);
-            long result = jedisPooled.sadd(name, arrayValues);
+            long result = redisClient.sadd(name, arrayValues);
             return result != 0L;
         }
     }
@@ -128,7 +128,7 @@ public class JedisSet implements Set<String>, Named {
         Set<String> retained = new HashSet<>(doSscan());
         boolean result = retained.retainAll(c);
         if (result) {
-            AbstractTransaction t = jedisPooled.multi();
+            AbstractTransaction t = redisClient.multi();
             t.del(name);
             retained.forEach( s -> t.sadd(name, s));
             t.exec();
@@ -139,18 +139,18 @@ public class JedisSet implements Set<String>, Named {
     @Override
     public boolean removeAll(Collection<?> c) {
         String[] a = c.toArray(new String[0]);
-        long result = jedisPooled.srem(name, a);
+        long result = redisClient.srem(name, a);
         return result != 0L;
     }
 
     @Override
     public void clear() {
-        jedisPooled.del(name);
+        redisClient.del(name);
     }
 
     private Set<String> doSscan() {
         Set<String> values = new HashSet<>();
-        SScanIterator sScanIterator = new SScanIterator(jedisPooled, name);
+        SScanIterator sScanIterator = new SScanIterator(redisClient, name);
         while(sScanIterator.hasNext()){
             values.add(sScanIterator.next());
         }

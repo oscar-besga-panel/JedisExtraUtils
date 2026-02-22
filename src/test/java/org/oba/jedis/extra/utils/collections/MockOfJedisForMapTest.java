@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 @PrepareForTest({Transaction.class })
 public class MockOfJedisForMapTest {
 
-
     private MockOfJedisForMap mockOfJedis;
 
     @Before

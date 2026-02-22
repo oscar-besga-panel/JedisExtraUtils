@@ -34,21 +34,21 @@ public class JedisSetTest {
     }
 
     JedisSet createABCSet() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getUnifiedJedis(), setName);
         jedisSet.addAll(Arrays.asList("a","b","c"));
         return jedisSet;
     }
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getUnifiedJedis(), setName);
         jedisSet.checkExists();
     }
 
 
     @Test
     public void basicTestExists() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getUnifiedJedis(), setName);
         jedisSet.add("a");
         assertTrue(jedisSet.exists());
     }
@@ -68,7 +68,7 @@ public class JedisSetTest {
 
     @Test
     public void testDataInsertion() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getUnifiedJedis(), setName);
         boolean exists0 = jedisSet.exists();
         boolean add1 = jedisSet.add("a");
         boolean exists1 = jedisSet.exists();
@@ -90,7 +90,7 @@ public class JedisSetTest {
 
     @Test
     public void testDataMultiInsertionAndContains() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getUnifiedJedis(), setName);
         jedisSet.add("a");
         boolean add1 = jedisSet.addAll(Arrays.asList("b","c"));
         boolean add2 = jedisSet.addAll(Arrays.asList("c","d"));
@@ -108,7 +108,7 @@ public class JedisSetTest {
 
     @Test
     public void testDataRemove() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getUnifiedJedis(), setName);
         jedisSet.addAll(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
         assertEquals(Integer.valueOf(7), Integer.valueOf(jedisSet.size()));
         assertTrue(jedisSet.remove("b"));
@@ -125,7 +125,7 @@ public class JedisSetTest {
 
     @Test
     public void testDataRemoveAll() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getUnifiedJedis(), setName);
         jedisSet.addAll(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
         assertEquals(Integer.valueOf(7), Integer.valueOf(jedisSet.size()));
         assertTrue(jedisSet.removeAll(Arrays.asList("b","c")));
@@ -141,7 +141,7 @@ public class JedisSetTest {
 
     @Test
     public void testDataRetainAll() {
-        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getJedisPooled(), setName);
+        JedisSet jedisSet = new JedisSet(mockOfJedisForSet.getUnifiedJedis(), setName);
         jedisSet.addAll(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
         boolean result1 = jedisSet.retainAll(Arrays.asList("a", "b", "c", "x", "y"));
         assertEquals(Integer.valueOf(3), Integer.valueOf(jedisSet.size()));

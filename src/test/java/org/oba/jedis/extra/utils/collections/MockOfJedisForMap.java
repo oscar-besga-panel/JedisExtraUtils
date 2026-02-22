@@ -6,17 +6,12 @@ import org.powermock.api.mockito.PowerMockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.AbstractTransaction;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -26,7 +21,7 @@ public class MockOfJedisForMap {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedisForMap.class);
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
 
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
@@ -36,51 +31,51 @@ public class MockOfJedisForMap {
 
         timer = new Timer();
 
-        jedisPooled = Mockito.mock(JedisPooled.class);
+        redisClient = Mockito.mock(UnifiedJedis.class);
 
         AbstractTransaction transaction = PowerMockito.mock(AbstractTransaction.class);
 
-        when(jedisPooled.multi()).thenReturn(transaction);
-        when(jedisPooled.exists(anyString())).thenAnswer(ioc -> {
+        when(redisClient.multi()).thenReturn(transaction);
+        when(redisClient.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExists(key);
         });
-        when(jedisPooled.del(anyString())).thenAnswer(ioc -> {
+        when(redisClient.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDelete(key);
         });
-        when(jedisPooled.hlen(anyString())).thenAnswer(ioc -> {
+        when(redisClient.hlen(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockHlen(key);
         });
-        when(jedisPooled.hget(anyString(), anyString())).thenAnswer(ioc -> {
+        when(redisClient.hget(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String name = ioc.getArgument(1);
             return mockHget(key, name);
         });
-        when(jedisPooled.hset(anyString(), anyString(), anyString())).thenAnswer(ioc -> {
+        when(redisClient.hset(anyString(), anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String name = ioc.getArgument(1);
             String value = ioc.getArgument(2);
             return mockHset(key, name, value);
         });
-        when(jedisPooled.hdel(anyString(), anyString())).thenAnswer(ioc -> {
+        when(redisClient.hdel(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String name = ioc.getArgument(1);
             return mockHdel(key, name);
         });
-        when(jedisPooled.hexists(anyString(), anyString())).thenAnswer(ioc -> {
+        when(redisClient.hexists(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String name = ioc.getArgument(1);
             return mockHexists(key, name);
         });
-        when(jedisPooled.hscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        when(redisClient.hscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String cursor = ioc.getArgument(1);
             ScanParams scanParams = ioc.getArgument(2);
             return mockHscan(key, cursor, scanParams);
         });
-        when(jedisPooled.hscan(anyString(), anyString())).thenAnswer(ioc -> {
+        when(redisClient.hscan(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String cursor = ioc.getArgument(1);
             ScanParams scanParams = new ScanParams();
@@ -105,8 +100,8 @@ public class MockOfJedisForMap {
         PowerMockito.when(transaction.exec()).thenAnswer(ioc -> mockTransactionExec());
     }
 
-    JedisPooled getJedisPooled() {
-        return jedisPooled;
+    UnifiedJedis getRedisClient() {
+        return redisClient;
     }
 
     private synchronized Map<String, String> getStringStringMap(String key) {

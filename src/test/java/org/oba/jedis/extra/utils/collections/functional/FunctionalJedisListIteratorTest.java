@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,28 +30,28 @@ public class FunctionalJedisListIteratorTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String listName;
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         listName = "list:" + this.getClass().getName() + ":" + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPooled != null) {
-            jedisPooled.del(listName);
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.del(listName);
+            redisClient.close();
         }
     }
 
 
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(jedisPooled, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
@@ -145,7 +145,7 @@ public class FunctionalJedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest2() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(jedisPooled, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
@@ -162,7 +162,7 @@ public class FunctionalJedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest3() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(jedisPooled, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
             String s = it.next();
@@ -176,7 +176,7 @@ public class FunctionalJedisListIteratorTest {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void listIteratorRemoveOneTestError() {
-        JedisList jedisList = new JedisList(jedisPooled, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         it.remove();
@@ -184,7 +184,7 @@ public class FunctionalJedisListIteratorTest {
 
     @Test
     public void listIteratorRemoveOneTest() {
-        JedisList jedisList = new JedisList(jedisPooled, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         if (it.hasNext()) {

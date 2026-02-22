@@ -5,6 +5,7 @@ import org.oba.jedis.extra.utils.utils.Named;
 import redis.clients.jedis.AbstractTransaction;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,9 +14,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class JedisMap implements Map<String, String>, Named {
+public final class JedisMap implements Map<String, String>, Named {
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final String name;
 
     /**
@@ -23,11 +24,11 @@ public class JedisMap implements Map<String, String>, Named {
      * This constructor doesn't affect the redis server
      * So really, creating here a list does not generate new data on Redis; the list on the server will
      *   exists when data is inserted
-     * @param jedisPooled Jedis pool connection
+     * @param redisClient Jedis pool connection
      * @param name Name of list on server
      */
-    public JedisMap(JedisPooled jedisPooled, String name){
-        this.jedisPooled = jedisPooled;
+    public JedisMap(UnifiedJedis redisClient, String name){
+        this.redisClient = redisClient;
         this.name = name;
     }
 
@@ -35,12 +36,12 @@ public class JedisMap implements Map<String, String>, Named {
      * Creates a new map in jedis with given name, or references an existing one
      * If the map doesn't exists, the 'from' data is stored,
      * if the map already exists, the 'from' data is added to the map
-     * @param jedisPooled Jedis pool connection
+     * @param redisClient Jedis pool connection
      * @param name Name of list on server
      * @param from Data to add to the map
      */
-    public JedisMap(JedisPooled jedisPooled, String name, Map<String, String> from){
-        this(jedisPooled, name);
+    public JedisMap(UnifiedJedis redisClient, String name, Map<String, String> from){
+        this(redisClient, name);
         putAll(from);
     }
 
@@ -58,7 +59,7 @@ public class JedisMap implements Map<String, String>, Named {
      * @return true if there is a reference in redis namespace, false otherwise
      */
     public boolean exists() {
-        return jedisPooled.exists(name);
+        return redisClient.exists(name);
     }
 
     /**
@@ -89,7 +90,7 @@ public class JedisMap implements Map<String, String>, Named {
 
     @Override
     public int size() {
-        long value = jedisPooled.hlen(name);
+        long value = redisClient.hlen(name);
         return Long.valueOf(value).intValue();
     }
 
@@ -100,7 +101,7 @@ public class JedisMap implements Map<String, String>, Named {
 
     @Override
     public boolean containsKey(Object key) {
-        return jedisPooled.hexists(name, (String) key);
+        return redisClient.hexists(name, (String) key);
     }
 
     @Override
@@ -111,12 +112,12 @@ public class JedisMap implements Map<String, String>, Named {
 
     @Override
     public String get(Object key) {
-        return jedisPooled.hget(name, (String) key);
+        return redisClient.hget(name, (String) key);
     }
 
     @Override
     public String put(String key, String value) {
-        AbstractTransaction t = jedisPooled.multi();
+        AbstractTransaction t = redisClient.multi();
         Response<String> previous = t.hget(name, key);
         t.hset(name, key, value);
         t.exec();
@@ -125,7 +126,7 @@ public class JedisMap implements Map<String, String>, Named {
 
     @Override
     public String remove(Object key) {
-        AbstractTransaction t = jedisPooled.multi();
+        AbstractTransaction t = redisClient.multi();
         Response<String> previous = t.hget(name, (String) key);
         t.hdel(name, (String) key);
         t.exec();
@@ -139,7 +140,7 @@ public class JedisMap implements Map<String, String>, Named {
 //            put(data.getKey(), data.getValue());
 //        }
         // better way
-        final AbstractTransaction t = jedisPooled.multi();
+        final AbstractTransaction t = redisClient.multi();
         for(Entry<? extends String, ? extends String> entry : m.entrySet()){
             t.hset(name, entry.getKey(), entry.getValue());
         }
@@ -152,7 +153,7 @@ public class JedisMap implements Map<String, String>, Named {
 
     @Override
     public void clear() {
-        jedisPooled.del(name);
+        redisClient.del(name);
     }
 
     @Override
@@ -182,7 +183,7 @@ public class JedisMap implements Map<String, String>, Named {
 
     private Set<Entry<String, String>> doHscan() {
         Set<Entry<String, String>> keyValues = new HashSet<>();
-        HScanIterator hScanIterator = new HScanIterator(jedisPooled, name);
+        HScanIterator hScanIterator = new HScanIterator(redisClient, name);
         while (hScanIterator.hasNext()){
             keyValues.add(hScanIterator.next());
         }

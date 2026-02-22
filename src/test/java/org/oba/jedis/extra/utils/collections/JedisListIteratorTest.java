@@ -40,7 +40,7 @@ public class JedisListIteratorTest {
 
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getRedisClient(), listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
@@ -134,7 +134,7 @@ public class JedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest2() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getRedisClient(), listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
@@ -151,7 +151,7 @@ public class JedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest3() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getRedisClient(), listName);
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
             String s = it.next();
@@ -165,7 +165,7 @@ public class JedisListIteratorTest {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void listIteratorRemoveOneTestError() {
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getRedisClient(), listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         it.remove();
@@ -173,7 +173,7 @@ public class JedisListIteratorTest {
 
     @Test
     public void listIteratorRemoveOneTest() {
-        JedisList jedisList = new JedisList(mockOfJedisForList.getJedisPooled(), listName);
+        JedisList jedisList = new JedisList(mockOfJedisForList.getRedisClient(), listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         if (it.hasNext()) {
