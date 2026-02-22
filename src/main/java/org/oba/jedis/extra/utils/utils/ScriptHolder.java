@@ -6,18 +6,19 @@ import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.rateLimiter.BucketRateLimiter;
 import org.oba.jedis.extra.utils.semaphore.JedisSemaphore;
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class ScriptHolder {
 
-    private final JedisPooled jedisPooled;
+    private final UnifiedJedis redisClient;
     private final Map<String, ScriptEvalSha1> scriptMap = new HashMap<>();
 
 
-    public static ScriptHolder generateHolderForJedisExtraUtils(JedisPooled jedisPooled) {
-        ScriptHolder scriptHolder = new ScriptHolder(jedisPooled);
+    public static ScriptHolder generateHolderForJedisExtraUtils(UnifiedJedis redisClient) {
+        ScriptHolder scriptHolder = new ScriptHolder(redisClient);
         scriptHolder.addScriptWithResourceAndFile(BucketRateLimiter.SCRIPT_NAME, BucketRateLimiter.FILE_PATH);
         scriptHolder.addScriptWithResourceAndFile(CycleData.SCRIPT_NAME, CycleData.FILE_PATH);
         scriptHolder.addScriptWithResourceAndFile(JedisList.SCRIPT_NAME_INDEX_OF, JedisList.FILE_PATH_INDEX_OF);
@@ -28,8 +29,8 @@ public class ScriptHolder {
     }
 
 
-    public ScriptHolder(JedisPooled jedisPooled) {
-        this.jedisPooled = jedisPooled;
+    public ScriptHolder(UnifiedJedis redisClient) {
+        this.redisClient = redisClient;
     }
 
     public void addScript(String key, ScriptEvalSha1 script) {
@@ -45,7 +46,7 @@ public class ScriptHolder {
         UniversalReader reader = new UniversalReader().
                 withResoruce(resource).
                 withFile(file);
-        ScriptEvalSha1 script = new ScriptEvalSha1(jedisPooled, reader, true);
+        ScriptEvalSha1 script = new ScriptEvalSha1(redisClient, reader, true);
         scriptMap.put(key, script);
     }
 
@@ -55,8 +56,8 @@ public class ScriptHolder {
         });
     }
 
-    public JedisPooled getJedisPooled() {
-        return jedisPooled;
+    public UnifiedJedis getRedisClient() {
+        return redisClient;
     }
 
 }

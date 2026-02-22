@@ -3,7 +3,6 @@ package org.oba.jedis.extra.utils.utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.oba.jedis.extra.utils.utils.functional.FunctionalRedisTimeTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,13 +30,13 @@ public class RedisTimeTest {
 
     @After
     public void after() throws IOException {
-        mockOfJedis.getJedisPooled().close();
+        mockOfJedis.getRedisClient().close();
         mockOfJedis.clearData();
     }
 
     @Test
     public void timeTest() {
-        RedisTime redisTime = new RedisTime(mockOfJedis.getJedisPooled());
+        RedisTime redisTime = new RedisTime(mockOfJedis.getRedisClient());
         List<String> timeFromRedis = redisTime.callTime();
         LOGGER.debug("Time from Redis: {}", timeFromRedis);
         BigInteger seconds = redisTime.callTimeInSeconds();
@@ -56,7 +55,7 @@ public class RedisTimeTest {
     @Test
     public void timeTestWithData() {
         mockOfJedis.setGivenTimestamp(123456789012345L);
-        RedisTime redisTime = new RedisTime(mockOfJedis.getJedisPooled());
+        RedisTime redisTime = new RedisTime(mockOfJedis.getRedisClient());
         List<String> timeFromRedis = redisTime.callTime();
         LOGGER.debug("Time from Redis: {}", timeFromRedis);
         BigInteger seconds = redisTime.callTimeInSeconds();

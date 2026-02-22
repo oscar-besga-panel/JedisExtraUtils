@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.RedisTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -23,26 +23,26 @@ public class FunctionalRedisTimeTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPooled != null) {
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.close();
         }
     }
 
     @Test
     public void timeTest() {
-        RedisTime redisTime = new RedisTime(jedisPooled);
+        RedisTime redisTime = new RedisTime(redisClient);
         List<String> timeFromRedis = redisTime.callTime();
         LOGGER.debug("Time from Redis: {}", timeFromRedis);
         BigInteger seconds = redisTime.callTimeInSeconds();

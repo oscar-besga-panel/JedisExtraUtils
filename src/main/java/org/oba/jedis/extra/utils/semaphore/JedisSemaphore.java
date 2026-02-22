@@ -85,7 +85,7 @@ public class JedisSemaphore implements Named {
      * @param initialPermits Initial permits of the semaphore
      */
     public JedisSemaphore(ScriptHolder scriptHolder, String name, int initialPermits) {
-        this.redisClient = scriptHolder.getJedisPooled();
+        this.redisClient = scriptHolder.getRedisClient();
         this.name = name;
         this.script = scriptHolder.getScript(SCRIPT_NAME);
         init(initialPermits);

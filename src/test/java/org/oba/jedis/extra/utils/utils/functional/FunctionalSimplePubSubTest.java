@@ -8,7 +8,7 @@ import org.oba.jedis.extra.utils.utils.SimpleEntry;
 import org.oba.jedis.extra.utils.utils.SimplePubSub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,22 +25,22 @@ public class FunctionalSimplePubSubTest {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
     private String channelName;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
+        redisClient = jtfTest.createRedisClient();
         channelName = "channel:" + this.getClass().getName() + ":" + System.currentTimeMillis() + "_";
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPooled != null) {
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.close();
         }
     }
 
@@ -61,7 +61,7 @@ public class FunctionalSimplePubSubTest {
         t.start();
         Thread.sleep(250);
         LOGGER.debug("onMessageTest publish  {} message1{} >", channelName, channelName);
-        jedisPooled.publish(channelName, "message1" + channelName);
+        redisClient.publish(channelName, "message1" + channelName);
         LOGGER.debug("onMessageTest publish  {} message1{} <", channelName, channelName);
         boolean acquired = semaphore.tryAcquire(750, TimeUnit.MILLISECONDS);
         assertTrue(acquired);
@@ -71,7 +71,7 @@ public class FunctionalSimplePubSubTest {
     }
 
     private void doSubscribe(SimplePubSub simplePubSub) {
-        jedisPooled.subscribe(simplePubSub, channelName);
+        redisClient.subscribe(simplePubSub, channelName);
     }
 
 }

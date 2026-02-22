@@ -31,7 +31,7 @@ public class SimplePubSubTest {
 
     @After
     public void after() throws IOException {
-        mockOfJedis.getJedisPooled().close();
+        mockOfJedis.getRedisClient().close();
         mockOfJedis.clearData();
     }
 
@@ -52,7 +52,7 @@ public class SimplePubSubTest {
         t.start();
         Thread.sleep(250);
         LOGGER.debug("onMessageTest publish  channel1 message1 >");
-        mockOfJedis.getJedisPooled().publish("channel1", "message1");
+        mockOfJedis.getRedisClient().publish("channel1", "message1");
         LOGGER.debug("onMessageTest publish  channel1 message1 <");
         boolean acquired = semaphore.tryAcquire(750, TimeUnit.MILLISECONDS);
         assertTrue(acquired);
@@ -62,7 +62,7 @@ public class SimplePubSubTest {
     }
 
     private void doSubscribe(SimplePubSub simplePubSub) {
-        mockOfJedis.getJedisPooled().subscribe(simplePubSub, "channel1");
+        mockOfJedis.getRedisClient().subscribe(simplePubSub, "channel1");
     }
 
 }

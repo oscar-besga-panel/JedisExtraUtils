@@ -12,7 +12,7 @@ import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.ScriptHolder;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -30,7 +30,7 @@ public class FunctionalScriptHolderTest {
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
 
-    private JedisPooled jedisPooled;
+    private UnifiedJedis redisClient;
 
     private ScriptHolder scriptHolder;
 
@@ -39,21 +39,21 @@ public class FunctionalScriptHolderTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPooled = jtfTest.createJedisPooled();
-        scriptHolder = new ScriptHolder(jedisPooled);
+        redisClient = jtfTest.createRedisClient();
+        scriptHolder = new ScriptHolder(redisClient);
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPooled != null) {
-            jedisPooled.close();
+        if (redisClient != null) {
+            redisClient.close();
         }
     }
 
     @Test
     public void generateHolderForJedisExtraUtilsTest() {
-        ScriptHolder holder = ScriptHolder.generateHolderForJedisExtraUtils(jedisPooled);
+        ScriptHolder holder = ScriptHolder.generateHolderForJedisExtraUtils(redisClient);
         assertNotNull(holder.getScript(BucketRateLimiter.SCRIPT_NAME));
         assertNotNull(holder.getScript(CycleData.SCRIPT_NAME));
         assertNotNull(holder.getScript(JedisList.SCRIPT_NAME_INDEX_OF));
@@ -64,7 +64,7 @@ public class FunctionalScriptHolderTest {
 
     @Test
     public void addTest() {
-        ScriptEvalSha1 scriptEvalSha1 = new ScriptEvalSha1(jedisPooled,
+        ScriptEvalSha1 scriptEvalSha1 = new ScriptEvalSha1(redisClient,
                 new UniversalReader().withResoruce(SCRIPT_NAME).withFile(FILE_PATH));
         scriptHolder.addScript(SCRIPT_NAME, scriptEvalSha1);
         assertNotNull(scriptHolder.getScript(SCRIPT_NAME));

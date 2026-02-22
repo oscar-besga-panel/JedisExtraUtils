@@ -1,5 +1,6 @@
 package org.oba.jedis.extra.utils.test;
 
+import org.junit.Test;
 import org.oba.jedis.extra.utils.iterators.ScanIterable;
 import org.oba.jedis.extra.utils.iterators.ScanIterator;
 import org.slf4j.Logger;
@@ -132,7 +133,7 @@ public class JedisTestFactory {
     @Deprecated
     public JedisPooled createJedisPooled() {
         if (enableSentinel) {
-            return createJedisPooledSentinel();
+            throw new UnsupportedOperationException("no sentinel available for JedisPooled");
         } else {
             return createJedisPooledClassic();
         }
@@ -179,25 +180,20 @@ public class JedisTestFactory {
         return new JedisPooled(poolConfig, address, config);
     }
 
-
-    public JedisPooled createJedisPooledSentinel() {
-        throw new UnsupportedOperationException("no sentinel available for JedisPooled");
-    }
-
     public void testConnection() {
-        try (JedisPooled jedisPooled = createJedisPooled()){
-            testConnection(jedisPooled);
+        try (UnifiedJedis redisClient = createRedisClient()) {
+            testConnection(redisClient);
         }
     }
 
-    public void testConnection(JedisPooled jedisPooled){
+    public void testConnection(UnifiedJedis redisClient){
         String val = "test:" + System.currentTimeMillis();
-        jedisPooled.set(val,val,new SetParams().px(5000));
-        String check = jedisPooled.get(val);
-        jedisPooled.del(val);
+        redisClient.set(val,val,new SetParams().px(5000));
+        String check = redisClient.get(val);
+        redisClient.del(val);
         if (!val.equalsIgnoreCase(check))
             throw new IllegalStateException("Jedis connection not ok");
-        if (!jedisPooled.ping().equalsIgnoreCase("PONG"))
+        if (!redisClient.ping().equalsIgnoreCase("PONG"))
             throw new IllegalStateException("Jedis connection not pong");
     }
 
@@ -223,9 +219,9 @@ public class JedisTestFactory {
         LOGGER.debug("main ini >>>> ");
         JedisTestFactory jedisTestFactory = JedisTestFactory.get();
         jedisTestFactory.testConnection();
-        JedisPooled jedisPooled = jedisTestFactory.createJedisPooled(15,5);
-        ScanIterable scanIterable = new ScanIterable(jedisPooled);
-        scanIterable.forEach(rkey -> LOGGER.debug("KEY: {} - TYPE {} ", rkey, jedisPooled.type(rkey)));
+        RedisClient redisClient = jedisTestFactory.createRedisClient();
+        ScanIterable scanIterable = new ScanIterable(redisClient);
+        scanIterable.forEach(rkey -> LOGGER.debug("KEY: {} - TYPE {} ", rkey, redisClient.type(rkey)));
         LOGGER.debug("main fin <<<< ");
     }
 
