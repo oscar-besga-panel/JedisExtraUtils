@@ -1,16 +1,14 @@
 package org.oba.jedis.extra.utils.utils;
 
+import javassist.util.proxy.MethodHandler;
+import javassist.util.proxy.ProxyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.CommandArguments;
-import redis.clients.jedis.Connection;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.*;
 import redis.clients.jedis.providers.ConnectionProvider;
 
-import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 
 public class JedisPoolToUnifiedRedis {
 
@@ -38,17 +36,14 @@ public class JedisPoolToUnifiedRedis {
         }
 
         @Override
-        public Connection getConnection() {
-            Connection connection =  jedisPool.getResource().getConnection();
-            Connection proxyInstance = (Connection) Proxy.newProxyInstance(JedisPoolToUnifiedRedis.class.getClassLoader(),
-                    new Class[] { Connection.class },
-                    new ConnectionInvocationHandler(connection));
-            return proxyInstance;
+        public Connection getConnection(CommandArguments args) {
+            return createConnectionProxy();
         }
 
+
         @Override
-        public Connection getConnection(CommandArguments args) {
-            return this.getConnection();
+        public Connection getConnection() {
+            return createConnectionProxy();
         }
 
         @Override
@@ -58,25 +53,54 @@ public class JedisPoolToUnifiedRedis {
             }
         }
 
+        // https://stackoverflow.com/questions/3291637/alternatives-to-java-lang-reflect-proxy-for-creating-proxies-of-abstract-classes
+        Connection createConnectionProxy() {
+            try {
+                LOGGER.debug("Creating connection proxy from jedisPool");
+                Jedis jedis = jedisPool.getResource();
+                Connection connection =  jedis.getConnection();
+                ProxyFactory factory = new ProxyFactory();
+                factory.setSuperclass(Connection.class);
+                MethodHandler handler = new ConnectionProxyMethodHandler(jedis, connection);
+                Connection connectionProxy = (Connection)factory.create(new Class<?>[0], new Object[0], handler);
+                return connectionProxy;
+            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                     InvocationTargetException e) {
+                LOGGER.error("Error while creating connection proxy", e);
+                throw new IllegalStateException("Error while creating connection proxy", e);
+            }
+        }
+
     }
-    // https://www.baeldung.com/java-dynamic-proxies
-    public static class ConnectionInvocationHandler implements InvocationHandler {
 
-        private Connection connection;
+    public static class ConnectionProxyMethodHandler implements MethodHandler {
 
-        ConnectionInvocationHandler(Connection connection) {
+        private final Jedis jedis;
+        private final Connection connection;
+
+        public ConnectionProxyMethodHandler(Jedis jedis, Connection connection) {
+            this.jedis = jedis;
             this.connection = connection;
         }
 
+
         @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            if (method.getName().equals("close")) {
-                LOGGER.warn("Closing a connection from JedisPool is not allowed. Please close the JedisPool instead.");
+        public Object invoke(Object self, Method thisMethod, Method proceed, Object[] args) throws Throwable {
+            if (thisMethod.getName().equals("toString")) {
+                LOGGER.debug("Invoke -> toString");
+                return connection.toString();
+            } else if (thisMethod.getName().equals("close")) {
+                LOGGER.debug("Invoke -> close");
+                jedis.close();
+                //connection.close(); // ??
                 return null;
             } else {
-                return method.invoke(proxy, args);
+                LOGGER.debug("invoke call -> Object self {}, Method thisMethod {}, Method proceed {}, Object[] args {}",
+                        self, thisMethod, proceed, args);
+                return thisMethod.invoke(connection, args);
             }
         }
+
     }
 
 }

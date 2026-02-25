@@ -47,7 +47,7 @@ These include
   (in a background thread of the class). One by one, and no messsage is lost (AT LEAST ONCE).
 * More utils like
   * SimplePubSub: a simple pub/sub that only consumes messages via a BiConsumer function
-
+* The class *JedisPoolToUnifiedRedis* to gap the bridge between the old JedisPool and the new RedisClient/UnifiedRedis
 
 All this classes use a Jedis pool connection to make them thread-safe and more efficient.
 
@@ -77,6 +77,7 @@ Made with
 - Help from Stackoveflow, forums like [Jedis redis forum](https://groups.google.com/g/jedis_redis)
 - SHA1 code from [olivertech](http://oliviertech.com/es/java/generate-SHA1-hash-from-a-String/)
 - Rate limiters ideas from [Bucket4j](https://bucket4j.com/) and [vbukhtoyarov-java](https://vbukhtoyarov-java.blogspot.com/2021/11/non-formal-overview-of-token-bucket.html)
+- Gemini IA from Google provided some help
 
 See also
 - [Awesome-redis](https://github.com/JamzyWang/awesome-redis)

@@ -19,6 +19,7 @@ repositories {
 dependencies {
     implementation "redis.clients:jedis:${jedisVersion}"
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    implementation "org.javassist:javassist:${javassistVersion}"
 
     testImplementation group: 'junit', name: 'junit', version: "${junitVersion}"
     testImplementation group: 'org.mockito', name: 'mockito-core', version: "${mockitoVersion}"

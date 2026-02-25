@@ -210,6 +210,42 @@ public class JedisTestFactory {
         return result;
     }
 
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public String getPass() {
+        return pass;
+    }
+
+    public boolean isEnableSentinel() {
+        return enableSentinel;
+    }
+
+    public String getSentinelHosts() {
+        return sentinelHosts;
+    }
+
+    public String getSentinelMaster() {
+        return sentinelMaster;
+    }
+
+    public String getSentinelPass() {
+        return sentinelPass;
+    }
+
+    public boolean isTestConnectionOk() {
+        return testConnectionOk;
+    }
+
     interface IoSupplier {
         InputStream get() throws IOException;
     }
