@@ -16,8 +16,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisNotificationLockTest {
+
+    private static final String COMMON_REDIS_TEST_NAME = "lock:" + FunctionalJedisNotificationLockTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -38,6 +41,7 @@ public class FunctionalJedisNotificationLockTest {
         if (!jtfTest.functionalTestEnabled()) return;
         if (unifiedJedis != null) {
             unifiedJedis.del(keyName);
+            deleteListOfKeysStartsWith(unifiedJedis, COMMON_REDIS_TEST_NAME);
             unifiedJedis.close();
         }
     }

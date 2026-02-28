@@ -24,10 +24,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalWritingFileScTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalWritingFileScTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "lock:" + FunctionalWritingFileScTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -47,12 +50,13 @@ public class FunctionalWritingFileScTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
+        jtfTest.withRedisClient( redisClient ->  deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME));
         redisClientList.forEach( this::doCloseJedisPool);
     }
 

@@ -12,9 +12,12 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalSemaphoreNumberPermitsTest {
+
+    private static final String COMMON_REDIS_TEST_NAME = "semaphore:" + FunctionalSemaphoreNumberPermitsTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -27,7 +30,7 @@ public class FunctionalSemaphoreNumberPermitsTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         redisClient = jtfTest.createRedisClient();
-        semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        semaphoreName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
@@ -35,6 +38,7 @@ public class FunctionalSemaphoreNumberPermitsTest {
         if (!jtfTest.functionalTestEnabled()) return;
         if (redisClient != null) {
             redisClient.del(semaphoreName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

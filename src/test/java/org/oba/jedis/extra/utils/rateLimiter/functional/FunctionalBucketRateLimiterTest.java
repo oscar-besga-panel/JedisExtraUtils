@@ -24,10 +24,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalBucketRateLimiterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalBucketRateLimiterTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "bucketName:" + FunctionalBucketRateLimiterTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -39,7 +42,7 @@ public class FunctionalBucketRateLimiterTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         redisClient = jtfTest.createRedisClient();
-        bucketName = "bucketName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        bucketName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
@@ -47,6 +50,7 @@ public class FunctionalBucketRateLimiterTest {
         if (!jtfTest.functionalTestEnabled()) return;
         if (redisClient != null) {
             redisClient.del(bucketName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

@@ -15,10 +15,13 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalInterruptingLocksWithExecutorTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptingLocksWithExecutorTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "lock:" + FunctionalInterruptingLocksWithExecutorTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -33,7 +36,7 @@ public class FunctionalInterruptingLocksWithExecutorTest {
         if (!jtfTest.functionalTestEnabled()) return;
         executorService = Executors.newFixedThreadPool(4);
         redisClient = jtfTest.createRedisClient();
-        lockName = "lock_" + this.getClass().getName() + "_" + System.currentTimeMillis();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
@@ -41,6 +44,7 @@ public class FunctionalInterruptingLocksWithExecutorTest {
         if (!jtfTest.functionalTestEnabled()) return;
         if (redisClient != null) {
             redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
         if (executorService != null) executorService.shutdown();

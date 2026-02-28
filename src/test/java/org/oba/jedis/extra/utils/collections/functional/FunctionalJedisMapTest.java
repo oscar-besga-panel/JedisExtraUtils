@@ -20,36 +20,40 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisMapTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisMapTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "list:" + FunctionalJedisMapTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private String mapName, mapName2;
+    private String mapName1, mapName2;
     private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        mapName = "map:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        mapName2 = "map2:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        mapName1 = COMMON_REDIS_TEST_NAME + "1:" + System.currentTimeMillis();
+        mapName2 = COMMON_REDIS_TEST_NAME + "2:" + System.currentTimeMillis();
         redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
         if (redisClient != null) {
-            redisClient.del(mapName);
+            redisClient.del(mapName1);
             redisClient.del(mapName2);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }
 
     JedisMap createABCMap() {
-        JedisMap jedisMap = new JedisMap(redisClient, mapName);
+        JedisMap jedisMap = new JedisMap(redisClient, mapName1);
         jedisMap.put("a","1");
         jedisMap.put("b","2");
         jedisMap.put("c","3");
@@ -66,7 +70,7 @@ public class FunctionalJedisMapTest {
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisMap jedisMap = new JedisMap(redisClient, mapName);
+        JedisMap jedisMap = new JedisMap(redisClient, mapName1);
         jedisMap.checkExists();
     }
 

@@ -18,12 +18,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "lock:" + FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -42,7 +45,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
         if (!jtfTest.functionalTestEnabled()) return;
 //        jedisPooled = jtfTest.createJedisPooled(24, 8);
         redisClient = jtfTest.createRedisClient();
-        lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
@@ -50,6 +53,7 @@ public class FunctionalJedisLocksOnCriticalZoneWithConnectionPoolTest {
         if (!jtfTest.functionalTestEnabled()) return;
         if (redisClient != null) {
             redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

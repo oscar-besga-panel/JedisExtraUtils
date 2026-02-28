@@ -15,10 +15,13 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisSetStreamTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisSetStreamTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "set:" + FunctionalJedisSetStreamTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -37,6 +40,7 @@ public class FunctionalJedisSetStreamTest {
     public void after() {
         if (redisClient != null) {
             redisClient.del(setName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

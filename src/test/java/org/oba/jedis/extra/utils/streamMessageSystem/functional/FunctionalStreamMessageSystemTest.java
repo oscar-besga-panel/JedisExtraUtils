@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.rateLimiter.functional.FunctionalBucketRateLimiterTest;
+import org.oba.jedis.extra.utils.semaphore.functional.FunctionalSemaphoreNumberPermitsTest;
 import org.oba.jedis.extra.utils.streamMessageSystem.MessageListener;
 import org.oba.jedis.extra.utils.streamMessageSystem.StreamMessageSystem;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
@@ -23,10 +24,13 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalStreamMessageSystemTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalBucketRateLimiterTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "factoryName:" + FunctionalStreamMessageSystemTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -41,7 +45,7 @@ public class FunctionalStreamMessageSystemTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         redisClient = jtfTest.createPooledRedisClient();
-        factoryName = "factoryName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        factoryName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
         semaphore = new Semaphore(0);
         messageList = new ArrayList<>();
         executor = Executors.newSingleThreadExecutor();
@@ -62,6 +66,8 @@ public class FunctionalStreamMessageSystemTest {
         semaphore.release(1_000);
         messageList.clear();
         if (redisClient != null) {
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            deleteListOfKeysStartsWith(redisClient, "TestStreamMessageSystem");
             redisClient.close();
         }
     }

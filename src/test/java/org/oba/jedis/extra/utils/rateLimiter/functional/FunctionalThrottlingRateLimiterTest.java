@@ -28,11 +28,14 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalThrottlingRateLimiterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalThrottlingRateLimiterTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "throttlingName:" + FunctionalThrottlingRateLimiterTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -44,7 +47,7 @@ public class FunctionalThrottlingRateLimiterTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         redisClient = jtfTest.createRedisClient();
-        throttlingName = "throttlingName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        throttlingName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
@@ -57,6 +60,7 @@ public class FunctionalThrottlingRateLimiterTest {
         }
         if (redisClient != null) {
             redisClient.del(throttlingName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

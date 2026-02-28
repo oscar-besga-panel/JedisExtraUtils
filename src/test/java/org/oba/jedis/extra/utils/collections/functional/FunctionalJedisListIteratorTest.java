@@ -3,6 +3,7 @@ package org.oba.jedis.extra.utils.collections.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.oba.jedis.extra.utils.cache.functional.FunctionalSimpleCacheIteratorTest;
 import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
@@ -20,10 +21,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisListIteratorTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "list:" + FunctionalJedisListIteratorTest.class.getName() + ":";
 
     private static final AtomicInteger testNumber = new AtomicInteger(0);
 
@@ -36,7 +40,7 @@ public class FunctionalJedisListIteratorTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        listName = "list:" + this.getClass().getName() + ":" + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
+        listName = COMMON_REDIS_TEST_NAME + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
         redisClient = jtfTest.createRedisClient();
     }
 
@@ -44,6 +48,7 @@ public class FunctionalJedisListIteratorTest {
     public void after() {
         if (redisClient != null) {
             redisClient.del(listName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

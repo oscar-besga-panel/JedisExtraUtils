@@ -16,11 +16,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalSemaphoreOnCriticalZoneTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalSemaphoreOnCriticalZoneTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "semaphore:" + FunctionalSemaphoreOnCriticalZoneTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -33,12 +36,13 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
-        semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        semaphoreName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
     public void after() {
-        //NOOP
+        if (!jtfTest.functionalTestEnabled()) return;
+        jtfTest.withRedisClient( redisClient -> deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME));
     }
 
     @Test(timeout = 35000)

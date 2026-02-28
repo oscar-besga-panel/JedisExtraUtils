@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class JedisTestFactory {
 
@@ -135,6 +136,13 @@ public class JedisTestFactory {
                 build();
     }
 
+    public void withRedisClient(Consumer<RedisClient> consumer) {
+        try (RedisClient redisClient = createRedisClient()) {
+            consumer.accept(redisClient);
+        }
+    }
+
+
     public RedisClient createPooledRedisClient() {
         return createPooledRedisClient(12,5);
     }
@@ -149,7 +157,7 @@ public class JedisTestFactory {
 //        poolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(15).toMillis());
 //        poolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(10).toMillis());
         poolConfig.setNumTestsPerEvictionRun(1);
-        poolConfig.setBlockWhenExhausted(false);
+        poolConfig.setBlockWhenExhausted(true);
         poolConfig.setMinIdle(minIdleConns);
 
         return new RedisClient.Builder().

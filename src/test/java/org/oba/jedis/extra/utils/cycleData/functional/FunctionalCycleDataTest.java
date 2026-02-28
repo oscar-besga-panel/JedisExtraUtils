@@ -18,10 +18,14 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalCycleDataTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalCycleDataTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "cycleDataName:" + FunctionalCycleDataTest.class.getName() + ":";
+
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -33,7 +37,7 @@ public class FunctionalCycleDataTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         redisClient = jtfTest.createRedisClient();
-        cycleDataName = "cycleDataName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        cycleDataName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
@@ -41,6 +45,7 @@ public class FunctionalCycleDataTest {
         if (!jtfTest.functionalTestEnabled()) return;
         if (redisClient != null) {
             redisClient.del(cycleDataName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

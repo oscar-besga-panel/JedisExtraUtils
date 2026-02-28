@@ -6,6 +6,8 @@ import redis.clients.jedis.UnifiedJedis;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.oba.jedis.extra.utils.utils.PartitionList.partition;
+
 /**
  * This class can help with the key scanning
  * It can use a pool or a single connection
@@ -32,6 +34,19 @@ public class ScanUtil {
     public static List<String> retrieveListOfKeys(UnifiedJedis redisClient, String pattern) {
         ScanIterable iterable = new ScanIterable(redisClient, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
         return iterable.asList();
+    }
+
+    public static void deleteListOfKeysStartsWith(UnifiedJedis redisClient, String startsWith) {
+        deleteListOfKeys(redisClient, startsWith + "*");
+    }
+
+
+    public static void deleteListOfKeys(UnifiedJedis redisClient, String pattern) {
+        ScanIterable iterable = new ScanIterable(redisClient, pattern, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+        List<String> toBeDeleted = iterable.asList();
+        partition(toBeDeleted, AbstractScanIterator.DEFAULT_RESULTS_PER_SCAN_ITERATORS).forEach( chunk ->
+                redisClient.del(chunk.toArray(new String[0]))
+        );
     }
 
 

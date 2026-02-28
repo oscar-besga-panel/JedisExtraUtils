@@ -24,9 +24,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FunctionalSimpleCacheIteratorTest {
+
+    private static final String COMMON_REDIS_TEST_NAME = "cache:" + FunctionalSimpleCacheIteratorTest.class.getName() + ":";
 
     private static final List<String> listNameKeysToDelete = new ArrayList<>();
 
@@ -45,12 +48,13 @@ public class FunctionalSimpleCacheIteratorTest {
     public void tearDown() {
         if (redisClient != null) {
             listNameKeysToDelete.forEach( k -> redisClient.del(k));
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }
 
     SimpleCache createNewCache() {
-        String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        String name = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
         listNameKeysToDelete.add(name);
         return new SimpleCache(redisClient, name, 3_600_000);
     }

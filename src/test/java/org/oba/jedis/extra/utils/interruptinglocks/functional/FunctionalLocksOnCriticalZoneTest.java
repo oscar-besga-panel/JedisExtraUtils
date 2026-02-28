@@ -20,12 +20,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 import static org.junit.Assert.assertFalse;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalLocksOnCriticalZoneTest {
 
-
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalLocksOnCriticalZoneTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "lock:" + FunctionalLocksOnCriticalZoneTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -42,7 +44,7 @@ public class FunctionalLocksOnCriticalZoneTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
         redisClient = jtfTest.createPooledRedisClient();
     }
 
@@ -51,6 +53,7 @@ public class FunctionalLocksOnCriticalZoneTest {
         if (!jtfTest.functionalTestEnabled()) return;
         if (redisClient != null) {
             redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

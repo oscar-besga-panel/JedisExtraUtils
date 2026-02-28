@@ -14,12 +14,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalJedisCountDownLatchTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisCountDownLatchTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "countDownLatch:" + FunctionalJedisCountDownLatchTest.class.getName() + ":";
+
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -30,7 +33,7 @@ public class FunctionalJedisCountDownLatchTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        countDownLatch = "countDownLatch:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        countDownLatch = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
         unifiedJedis = jtfTest.createRedisClient();
     }
 
@@ -39,6 +42,7 @@ public class FunctionalJedisCountDownLatchTest {
         if (!jtfTest.functionalTestEnabled()) return;
         if (unifiedJedis != null) {
             unifiedJedis.del(countDownLatch);
+            deleteListOfKeysStartsWith(unifiedJedis, COMMON_REDIS_TEST_NAME);
             unifiedJedis.close();
         }
     }

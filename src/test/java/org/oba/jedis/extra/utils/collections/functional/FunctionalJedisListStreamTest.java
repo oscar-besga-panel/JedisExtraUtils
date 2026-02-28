@@ -14,10 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisListStreamTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "list:" + FunctionalJedisListStreamTest.class.getName() + ":";
 
     private static final AtomicInteger testNumber = new AtomicInteger(0);
 
@@ -30,7 +33,7 @@ public class FunctionalJedisListStreamTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        listName = "list:" + this.getClass().getName() + ":"  + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
+        listName = COMMON_REDIS_TEST_NAME  + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
         redisClient = jtfTest.createRedisClient();
     }
 
@@ -38,6 +41,7 @@ public class FunctionalJedisListStreamTest {
     public void after() {
         if (redisClient != null) {
             redisClient.del(listName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

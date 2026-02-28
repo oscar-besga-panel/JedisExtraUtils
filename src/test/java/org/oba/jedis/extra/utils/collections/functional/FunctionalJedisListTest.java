@@ -17,10 +17,13 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisListTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "list:" + FunctionalJedisListTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -31,7 +34,7 @@ public class FunctionalJedisListTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        listName = "list:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        listName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
         redisClient = jtfTest.createRedisClient();
     }
 
@@ -39,6 +42,7 @@ public class FunctionalJedisListTest {
     public void after() {
         if (redisClient != null) {
             redisClient.del(listName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

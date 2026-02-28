@@ -15,11 +15,12 @@ import redis.clients.jedis.UnifiedJedis;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
-@PrepareForTest({Transaction.class })
+
 public class FunctionalJedisLockUnderlockTask {
+
+    private static final String COMMON_REDIS_TEST_NAME = "flock:" + FunctionalJedisLockUnderlockTask.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
     private String lockName;
@@ -29,7 +30,7 @@ public class FunctionalJedisLockUnderlockTask {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
         redisClient = jtfTest.createRedisClient();
     }
 
@@ -38,6 +39,7 @@ public class FunctionalJedisLockUnderlockTask {
         if (!jtfTest.functionalTestEnabled()) return;
         if (redisClient != null) {
             redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }

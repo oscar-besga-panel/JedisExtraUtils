@@ -20,12 +20,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalZscanIterableTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalZscanIterableTest.class);
 
-
+    private static final String COMMON_REDIS_TEST_NAME = "zscanIterable:" + FunctionalZscanIterableTest.class.getName() + ":";
 
     private static AtomicInteger count = new AtomicInteger(0);
 
@@ -48,7 +49,7 @@ public class FunctionalZscanIterableTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        zscanitName = "zscanIterable:" + this.getClass().getName() + ":" + System.currentTimeMillis() + ":" + count.incrementAndGet();
+        zscanitName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis() + ":" + count.incrementAndGet();
         redisClient = jtfTest.createRedisClient();
         letters = jtfTest.randomSizedListOfChars();
         LOGGER.debug("before count {} for name {} with letters {}", count.get(), zscanitName, letters );
@@ -58,6 +59,7 @@ public class FunctionalZscanIterableTest {
     public void after() {
         if (redisClient != null) {
             redisClient.del(zscanitName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
             redisClient.close();
         }
     }
