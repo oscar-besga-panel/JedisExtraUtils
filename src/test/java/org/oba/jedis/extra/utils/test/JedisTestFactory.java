@@ -4,6 +4,8 @@ import org.oba.jedis.extra.utils.iterators.ScanIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.ConnectionPoolConfig;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
@@ -130,9 +132,29 @@ public class JedisTestFactory {
         return functionalTestCycles;
     }
 
+    String newClientName() {
+        return "JedisTestFactory_" + numClient.incrementAndGet() + "_" + System.currentTimeMillis();
+    }
+
+    public JedisClientConfig newJedisClientConfig() {
+        if (!user.isEmpty() && !pass.isEmpty()) {
+            return DefaultJedisClientConfig.builder().clientName(newClientName()).
+                    user(user).password(pass).
+                    build();
+        } else if (user.isEmpty() && !pass.isEmpty()) {
+            return DefaultJedisClientConfig.builder().clientName(newClientName()).
+                    password(pass).
+                    build();
+        } else {
+            return DefaultJedisClientConfig.builder().clientName(newClientName()).
+                    build();
+        }
+    }
+
     public RedisClient createRedisClient() {
         return new RedisClient.Builder().
                 hostAndPort(host, port).
+                clientConfig(newJedisClientConfig()).
                 build();
     }
 
@@ -151,7 +173,7 @@ public class JedisTestFactory {
         ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
         poolConfig.setMaxTotal(maxConns);
         poolConfig.setMinIdle(minIdleConns);
-        poolConfig.setMaxWait(Duration.ofSeconds(20)); //TODO TEST
+        poolConfig.setMaxWait(Duration.ofSeconds(20));
         poolConfig.setTestOnReturn(false);
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestWhileIdle(true);
@@ -163,34 +185,9 @@ public class JedisTestFactory {
         return new RedisClient.Builder().
                 poolConfig(poolConfig).
                 hostAndPort(host, port).
+                clientConfig(newJedisClientConfig()).
                 build();
     }
-
-/*
-        DefaultJedisClientConfig.Builder configBuilder = DefaultJedisClientConfig.builder();
-        if (user != null && !user.trim().isEmpty()) {
-            configBuilder.user(user);
-        }
-        if (pass != null && !pass.trim().isEmpty()) {
-            configBuilder.password(pass);
-        }
-        configBuilder.clientName( String.join("_", "JedisTestFactory",
-                Integer.toString(numClient.incrementAndGet()), Long.toString(System.currentTimeMillis())));
-        configBuilder.database(0).timeoutMillis(120000);
-        JedisClientConfig config = configBuilder.build();
-        HostAndPort address = new HostAndPort(host, port);
-        ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
-        poolConfig.setMaxTotal(maxConns);
-        //poolConfig.setMaxWait(Duration.ofSeconds(60)); //TODO TEST
-        poolConfig.setTestOnReturn(true);
-        poolConfig.setTestOnBorrow(true);
-        poolConfig.setTestWhileIdle(true);
-        poolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(30).toMillis());
-        poolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(10).toMillis());
-        poolConfig.setNumTestsPerEvictionRun(1);
-        poolConfig.setBlockWhenExhausted(true);
-        poolConfig.setMinIdle(minIdleConns);
- */
 
     public void testConnection() {
         try (UnifiedJedis redisClient = createRedisClient()) {

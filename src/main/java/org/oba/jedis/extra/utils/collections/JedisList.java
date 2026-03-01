@@ -51,7 +51,7 @@ public final class JedisList implements List<String>, Named {
 
     private static final String TO_DELETE = "TO_DELETE";
 
-    private final UnifiedJedis unifiedJedis;
+    private final UnifiedJedis redisClient;
     private final String name;
     private final ScriptEvalSha1 scriptIndexOf;
     private final ScriptEvalSha1 scriptLastIndexOf;
@@ -61,16 +61,16 @@ public final class JedisList implements List<String>, Named {
      * This constructor doesn't make any change on Redis server
      * So really, creating here a list does not generate new data on Redis; the list on the server will
      *   exists when data is inserted
-     * @param unifiedJedis Jedis pool connection
+     * @param redisClient Jedis pool connection
      * @param name Name of list on server
      */
-    public JedisList(UnifiedJedis unifiedJedis, String name){
-        this.unifiedJedis = unifiedJedis;
+    public JedisList(UnifiedJedis redisClient, String name){
+        this.redisClient = redisClient;
         this.name = name;
-        this.scriptIndexOf = new ScriptEvalSha1(unifiedJedis, new UniversalReader().
+        this.scriptIndexOf = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME_INDEX_OF).
                 withFile(FILE_PATH_INDEX_OF));
-        this.scriptLastIndexOf = new ScriptEvalSha1(unifiedJedis, new UniversalReader().
+        this.scriptLastIndexOf = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME_LAST_INDEX_OF).
                 withFile(FILE_PATH_LAST_INDEX_OF));
 
@@ -80,12 +80,12 @@ public final class JedisList implements List<String>, Named {
      * Creates a new list in jedis with given name, or references an existing one
      * If the list doesn't exists, the 'from' data is stored,
      * if the list already exists, the 'from' data is added to the list
-     * @param unifiedJedis Jedis pool connection
+     * @param redisClient Jedis pool connection
      * @param name Name of list on server
      * @param from Data to add to the list
      */
-    public JedisList(UnifiedJedis unifiedJedis, String name, Collection<String> from){
-        this(unifiedJedis, name);
+    public JedisList(UnifiedJedis redisClient, String name, Collection<String> from){
+        this(redisClient, name);
         this.addAll(from);
     }
 
@@ -102,7 +102,7 @@ public final class JedisList implements List<String>, Named {
      * @return true if there is a reference in redis namespace, false otherwise
      */
     public boolean exists() {
-       return unifiedJedis.exists(name);
+       return redisClient.exists(name);
     }
 
     /**
@@ -122,7 +122,7 @@ public final class JedisList implements List<String>, Named {
      * @return list of data
      */
     public List<String> asList(){
-        return unifiedJedis.lrange(name, 0, -1);
+        return redisClient.lrange(name, 0, -1);
     }
 
     /**
@@ -134,7 +134,7 @@ public final class JedisList implements List<String>, Named {
      */
     public JedisList jedisSubList(String newListName, int fromIndex, int toIndex) {
         List<String> subList = subList(fromIndex, toIndex);
-        return new JedisList(unifiedJedis, newListName, subList);
+        return new JedisList(redisClient, newListName, subList);
     }
 
     /**
@@ -151,7 +151,7 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public int size() {
-        long len = unifiedJedis.llen(name);
+        long len = redisClient.llen(name);
         return Long.valueOf(len).intValue();
     }
 
@@ -182,13 +182,13 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public boolean add(String s) {
-        long result = unifiedJedis.rpush(name, s);
+        long result = redisClient.rpush(name, s);
         return result > 0;
     }
 
     @Override
     public boolean remove(Object o) {
-        long result = unifiedJedis.lrem(name, 1L, (String) o);
+        long result = redisClient.lrem(name, 1L, (String) o);
         return result > 0;
     }
 
@@ -204,7 +204,7 @@ public final class JedisList implements List<String>, Named {
     @Override
     public boolean addAll(Collection<? extends String> c) {
         String[] toAdd = c.toArray(new String[0]);
-        long result = unifiedJedis.rpush(name, toAdd);
+        long result = redisClient.rpush(name, toAdd);
         return result > 0;
     }
 
@@ -245,22 +245,22 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public void clear() {
-        unifiedJedis.del(name);
+        redisClient.del(name);
     }
 
     @Override
     public String get(int index) {
         checkIndex(index);
-        return unifiedJedis.lindex(name, index);
+        return redisClient.lindex(name, index);
     }
 
     @Override
     public String set(int index, String element) {
         String futureReplacedValue;
-        try (AbstractTransaction tjedis = unifiedJedis.multi()) {
-            Response<String> futureReplaced = tjedis.lindex(name, index);
-            tjedis.lset(name, index, element);
-            tjedis.exec();
+        try (AbstractTransaction t = redisClient.multi()) {
+            Response<String> futureReplaced = t.lindex(name, index);
+            t.lset(name, index, element);
+            t.exec();
             futureReplacedValue = futureReplaced.get();
         }
         return futureReplacedValue;
@@ -269,7 +269,7 @@ public final class JedisList implements List<String>, Named {
     @Override
     public void add(int index, String element) {
         String pivot = get(index);
-        unifiedJedis.linsert(name, ListPosition.BEFORE, pivot, element);
+        redisClient.linsert(name, ListPosition.BEFORE, pivot, element);
     }
 
     @Override
@@ -278,11 +278,11 @@ public final class JedisList implements List<String>, Named {
         checkIndex(index);
         String toDeleteTempName = UniqueTokenValueGenerator.generateUniqueTokenValue(name);
         String futureDeletedValue;
-        try (AbstractTransaction jedisMulti = unifiedJedis.multi()) {
-            Response<String> futureDeleted = jedisMulti.lindex(name, index);
-            jedisMulti.lset(name, index, toDeleteTempName);
-            jedisMulti.lrem(name, 1, toDeleteTempName);
-            jedisMulti.exec();
+        try (AbstractTransaction t = redisClient.multi()) {
+            Response<String> futureDeleted = t.lindex(name, index);
+            t.lset(name, index, toDeleteTempName);
+            t.lrem(name, 1, toDeleteTempName);
+            t.exec();
             futureDeletedValue = futureDeleted.get();
         }
         return futureDeletedValue;
@@ -322,7 +322,7 @@ public final class JedisList implements List<String>, Named {
         int effectiveIndex = toIndex - 1;
         checkIndex(fromIndex);
         checkIndex(effectiveIndex);
-        return unifiedJedis.lrange(name, fromIndex, effectiveIndex);
+        return redisClient.lrange(name, fromIndex, effectiveIndex);
     }
 
 

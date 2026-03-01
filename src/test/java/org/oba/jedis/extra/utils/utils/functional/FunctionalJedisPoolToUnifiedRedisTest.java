@@ -35,7 +35,7 @@ public class FunctionalJedisPoolToUnifiedRedisTest {
     @Test
     public void asUnifiedJedisTest() {
         HostAndPort hostAndPort = new HostAndPort(jtfTest.getHost(), jtfTest.getPort());
-        JedisClientConfig jedisClientConfig = DefaultJedisClientConfig.builder().build();
+        JedisClientConfig jedisClientConfig = jtfTest.newJedisClientConfig();
         JedisPool jedisPool = new JedisPool(hostAndPort, jedisClientConfig);
         LOGGER.debug("jedis pool create to hostAndPort {}", hostAndPort);
         UnifiedJedis redisClient = JedisPoolToUnifiedRedis.asUnifiedJedis(jedisPool);

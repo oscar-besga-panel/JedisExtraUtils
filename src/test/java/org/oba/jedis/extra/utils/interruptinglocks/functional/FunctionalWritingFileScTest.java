@@ -56,15 +56,9 @@ public class FunctionalWritingFileScTest {
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
+        jtfTest.withRedisClient( redisClient -> redisClient.del(lockName));
         jtfTest.withRedisClient( redisClient ->  deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME));
-        redisClientList.forEach( this::doCloseJedisPool);
-    }
-
-    void doCloseJedisPool(UnifiedJedis redisClient) {
-        if (redisClient != null) {
-            redisClient.del(lockName);
-            redisClient.close();
-        }
+        redisClientList.forEach(UnifiedJedis::close);
     }
 
     @Test(timeout = 35000)
@@ -108,8 +102,9 @@ public class FunctionalWritingFileScTest {
 
         @Override
         public void run() {
+            UnifiedJedis redisClient = null;
             try  {
-                UnifiedJedis redisClient = jtfTest.createRedisClient();
+                redisClient = jtfTest.createRedisClient();
                 redisClientList.add(redisClient);
                 jedisLock = new JedisLock(redisClient, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
