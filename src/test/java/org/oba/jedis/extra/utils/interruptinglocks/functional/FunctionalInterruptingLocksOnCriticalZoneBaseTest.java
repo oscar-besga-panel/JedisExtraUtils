@@ -41,7 +41,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        redisClient = jtfTest.createRedisClient();
+        redisClient = jtfTest.createPooledRedisClient(20,10);
         lockName = COMMON_REDIS_TEST_NAME + "lockT" + System.currentTimeMillis();
     }
 
@@ -65,7 +65,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseTest {
     }
 
     //TODO testreview
-    @Ignore
+    //@Ignore
     @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
@@ -95,14 +95,14 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseTest {
         }
     }
 
-    private void accesLockOfCriticalZone(int sleepTime){
+    private void accesLockOfCriticalZone(int sleepTimeSeconds){
         try {
-            InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(redisClient, lockName, 5, TimeUnit.SECONDS);
+            InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(redisClient, lockName, 15, TimeUnit.SECONDS);
             interruptingJedisJedisLockBase.lock();
             interruptingLockBaseList.add(interruptingJedisJedisLockBase);
             boolean c = JedisTestFactoryLocks.checkLock(interruptingJedisJedisLockBase);
             if (c) {
-                accessCriticalZone(sleepTime);
+                accessCriticalZone(sleepTimeSeconds);
             }
             interruptingJedisJedisLockBase.unlock();
         } catch (Exception e) {
@@ -111,14 +111,14 @@ public class FunctionalInterruptingLocksOnCriticalZoneBaseTest {
         }
     }
 
-    private void accessCriticalZone(int sleepTime){
+    private void accessCriticalZone(int sleepTimeSeconds){
         if (intoCriticalZone.get()) {
             errorInCriticalZone.set(true);
             throw new IllegalStateException("Other thread is here " + Thread.currentThread().getName() + " " + Thread.currentThread().getId());
         }
         intoCriticalZone.set(true);
         try {
-            Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
+            Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTimeSeconds));
         } catch (InterruptedException e) {
             //NOOP
         }

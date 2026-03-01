@@ -256,11 +256,14 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public String set(int index, String element) {
-        AbstractTransaction tjedis = unifiedJedis.multi();
-        Response<String> futureReplaced = tjedis.lindex(name, index);
-        tjedis.lset(name, index, element);
-        tjedis.exec();
-        return futureReplaced.get();
+        String futureReplacedValue;
+        try (AbstractTransaction tjedis = unifiedJedis.multi()) {
+            Response<String> futureReplaced = tjedis.lindex(name, index);
+            tjedis.lset(name, index, element);
+            tjedis.exec();
+            futureReplacedValue = futureReplaced.get();
+        }
+        return futureReplacedValue;
     }
 
     @Override
@@ -274,12 +277,15 @@ public final class JedisList implements List<String>, Named {
         /* https://stackoverflow.com/questions/31580535/remove-element-at-specific-index-from-redis-list */
         checkIndex(index);
         String toDeleteTempName = UniqueTokenValueGenerator.generateUniqueTokenValue(name);
-        AbstractTransaction jedisMulti = unifiedJedis.multi();
-        Response<String> futureDeleted = jedisMulti.lindex(name, index);
-        jedisMulti.lset(name, index, toDeleteTempName);
-        jedisMulti.lrem(name, 1, toDeleteTempName);
-        jedisMulti.exec();
-        return futureDeleted.get();
+        String futureDeletedValue;
+        try (AbstractTransaction jedisMulti = unifiedJedis.multi()) {
+            Response<String> futureDeleted = jedisMulti.lindex(name, index);
+            jedisMulti.lset(name, index, toDeleteTempName);
+            jedisMulti.lrem(name, 1, toDeleteTempName);
+            jedisMulti.exec();
+            futureDeletedValue = futureDeleted.get();
+        }
+        return futureDeletedValue;
     }
 
     @Override

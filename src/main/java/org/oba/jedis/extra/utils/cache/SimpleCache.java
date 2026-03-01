@@ -190,13 +190,16 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
      */
     public Map<String, String> getAll(Set<String> keys, CacheLoader cacheLoader) {
         checkClosed();
+        Map<String, String> responseValues;
+        try (AbstractTransaction t = redisClient.multi()) {
             Map<String, Response<String>> responses = new HashMap<>();
-            AbstractTransaction t = redisClient.multi();
-            for(String key: keys) {
+            for (String key : keys) {
                 responses.put(key, t.get(resolveKey(key)));
             }
             t.exec();
-            return resolveTransactionEntries(responses, cacheLoader);
+            responseValues = resolveTransactionEntries(responses, cacheLoader);
+        }
+        return responseValues;
     }
 
     /**
@@ -323,15 +326,18 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
         if (key == null) throw new IllegalArgumentException("RedisCache.getAndPut key is null");
         if (value == null) throw new IllegalArgumentException("RedisCache.getAndPut value is null");
         SetParams setParams = new SetParams().px(timeOutMs);
-        AbstractTransaction t = redisClient.multi();
-        Response<String> response = t.get(resolveKey(key));
-        t.set(resolveKey(key), value, setParams);
-        t.exec();
+        String responseValue;
+        try (AbstractTransaction t = redisClient.multi()) {
+            Response<String> response = t.get(resolveKey(key));
+            t.set(resolveKey(key), value, setParams);
+            t.exec();
+            responseValue = response.get();
+        }
         if (cacheWriter != null) {
             LOGGER.debug("write-through store key {} value {}", key, value);
             cacheWriter.write(key, value);
         }
-        return response.get();
+        return responseValue;
     }
 
     /**
@@ -358,9 +364,10 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
         checkClosed();
         if (values == null) throw new IllegalArgumentException("RedisCache.putAll map is null");
         SetParams setParams = new SetParams().px(timeOutMs);
-        AbstractTransaction t = redisClient.multi();
-        values.forEach( (k,v) -> t.set(resolveKey(k),v, setParams));
-        t.exec();
+        try (AbstractTransaction t = redisClient.multi()) {
+            values.forEach((k, v) -> t.set(resolveKey(k), v, setParams));
+            t.exec();
+        }
         if (allowWriteThrougth && cacheWriter != null) {
             LOGGER.debug("write-through store values {}", values);
             cacheWriter.writeAll(values);
@@ -399,15 +406,18 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
     public boolean remove(String key) {
         checkClosed();
         if (key == null) throw new IllegalArgumentException("RedisCache.remove key is null");
-        AbstractTransaction t = redisClient.multi();
-        Response<String> previous = t.get(resolveKey(key));
-        t.del(resolveKey(key));
-        t.exec();
-        if (previous.get() != null && cacheWriter != null) {
+        String previousValue;
+        try (AbstractTransaction t = redisClient.multi()) {
+            Response<String> previous = t.get(resolveKey(key));
+            t.del(resolveKey(key));
+            t.exec();
+            previousValue = previous.get();
+        }
+        if (previousValue != null && cacheWriter != null) {
             LOGGER.debug("write-through remove key {} ", key);
             cacheWriter.delete(key);
         }
-        return previous.get() != null;
+        return previousValue != null;
     }
 
     /**
@@ -447,15 +457,18 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
     public String getAndRemove(String key) {
         checkClosed();
         if (key == null) throw new IllegalArgumentException("RedisCache.getAndRemove key is null");
-        AbstractTransaction t = redisClient.multi();
-        Response<String> previous = t.get(resolveKey(key));
-        t.del(resolveKey(key));
-        t.exec();
-        if (previous.get() != null && cacheWriter != null) {
+        String previousValue;
+        try (AbstractTransaction t = redisClient.multi()) {
+            Response<String> previous = t.get(resolveKey(key));
+            t.del(resolveKey(key));
+            t.exec();
+            previousValue = previous.get();
+        }
+        if (previousValue != null && cacheWriter != null) {
             LOGGER.debug("write-through remove key {} ", key);
             cacheWriter.delete(key);
         }
-        return previous.get();
+        return previousValue;
     }
 
     /**

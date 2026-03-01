@@ -180,16 +180,21 @@ public class NotificationLock implements IJedisLock, MessageListener {
      */
     private boolean redisLock() {
         LOGGER.debug("redisLockUnderPool");
+
+        String clientStatusCodeReply;
+        String currentValueRedis;
         SetParams setParams = new SetParams().nx();
-        AbstractTransaction t = redisClient.multi();
-        Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken,setParams);
-        Response<String> responseCurrentValueRedis = t.get(name);
-        t.exec();
-        String clientStatusCodeReply = responseClientStatusCodeReply.get();
-        String currentValueRedis = responseCurrentValueRedis.get();
+        try (AbstractTransaction t = redisClient.multi()) {
+            Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken, setParams);
+            Response<String> responseCurrentValueRedis = t.get(name);
+            t.exec();
+            clientStatusCodeReply = responseClientStatusCodeReply.get();
+            currentValueRedis = responseCurrentValueRedis.get();
+        }
         LOGGER.debug("redisLockUnderPool clientStatusCodeReply {} currentValueRedis {} uniqueToken {}",
                 clientStatusCodeReply, currentValueRedis, uniqueToken);
-        return CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
+        return (clientStatusCodeReply != null) && (currentValueRedis != null) &&
+                CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
     }
 
     /**

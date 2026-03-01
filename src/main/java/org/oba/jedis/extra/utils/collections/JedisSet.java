@@ -128,10 +128,11 @@ public final class JedisSet implements Set<String>, Named {
         Set<String> retained = new HashSet<>(doSscan());
         boolean result = retained.retainAll(c);
         if (result) {
-            AbstractTransaction t = redisClient.multi();
-            t.del(name);
-            retained.forEach( s -> t.sadd(name, s));
-            t.exec();
+            try (AbstractTransaction t = redisClient.multi()) {
+                t.del(name);
+                retained.forEach( s -> t.sadd(name, s));
+                t.exec();
+            }
         }
         return result;
     }

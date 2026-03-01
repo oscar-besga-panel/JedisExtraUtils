@@ -194,13 +194,17 @@ public class JedisLock implements IJedisLock {
         if (leaseTime != null) {
             setParams.px(timeUnit.toMillis(leaseTime));
         }
-        AbstractTransaction t = redisClient.multi();
-        Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken,setParams);
-        Response<String> responseCurrentValueRedis = t.get(name);
-        t.exec();
-        String clientStatusCodeReply = responseClientStatusCodeReply.get();
-        String currentValueRedis = responseCurrentValueRedis.get();
-        boolean locked = CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
+        String clientStatusCodeReply;
+        String currentValueRedis;
+        try (AbstractTransaction t = redisClient.multi()) {
+            Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken, setParams);
+            Response<String> responseCurrentValueRedis = t.get(name);
+            t.exec();
+            clientStatusCodeReply = responseClientStatusCodeReply.get();
+            currentValueRedis = responseCurrentValueRedis.get();
+        }
+        boolean locked = (clientStatusCodeReply != null) && (currentValueRedis != null) &&
+                CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
         if (locked) {
             setLockMoment();
         }
@@ -243,12 +247,13 @@ public class JedisLock implements IJedisLock {
         LOGGER.info("checkLock >" + Thread.currentThread().getName() + "check time {}", timeLimit - System.currentTimeMillis());
         if ((leaseTime == null) || (timeLimit > System.currentTimeMillis())) {
             String currentValueRedis = redisClient.get(name);
-            LOGGER.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {}", uniqueToken, currentValueRedis);
+            LOGGER.debug("checkLock >" + Thread.currentThread().getName() + " check value {} currentValueRedis {}", uniqueToken, currentValueRedis);
             check = uniqueToken.equals(currentValueRedis);
         }
         if (!check) {
             resetLockMoment();
         }
+        LOGGER.info("checkLock > result {} ", check);
         return check;
     }
 

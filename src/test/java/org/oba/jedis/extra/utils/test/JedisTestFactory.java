@@ -150,15 +150,15 @@ public class JedisTestFactory {
     public RedisClient createPooledRedisClient(int maxConns, int minIdleConns) {
         ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
         poolConfig.setMaxTotal(maxConns);
+        poolConfig.setMinIdle(minIdleConns);
         poolConfig.setMaxWait(Duration.ofSeconds(20)); //TODO TEST
-        poolConfig.setTestOnReturn(true);
+        poolConfig.setTestOnReturn(false);
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestWhileIdle(true);
 //        poolConfig.setMinEvictableIdleTimeMillis(Duration.ofSeconds(15).toMillis());
 //        poolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(10).toMillis());
         poolConfig.setNumTestsPerEvictionRun(1);
-        poolConfig.setBlockWhenExhausted(true);
-        poolConfig.setMinIdle(minIdleConns);
+        poolConfig.setBlockWhenExhausted(false);
 
         return new RedisClient.Builder().
                 poolConfig(poolConfig).

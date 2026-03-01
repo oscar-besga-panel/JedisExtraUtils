@@ -181,7 +181,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
             if (realTimeToSleep > 0) {
                 Thread.sleep(realTimeToSleep);
             } else {
-                LOGGER.error("runInterruptThread realTimeToSleep ERROR, sleepring 50");
+                LOGGER.error("runInterruptThread realTimeToSleep ERROR, sleeping 50 ms");
                 Thread.sleep(50);
             }
             interruptAndUnlock();

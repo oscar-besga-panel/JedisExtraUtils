@@ -112,20 +112,26 @@ public final class JedisMap implements Map<String, String>, Named {
 
     @Override
     public String put(String key, String value) {
-        AbstractTransaction t = redisClient.multi();
-        Response<String> previous = t.hget(name, key);
-        t.hset(name, key, value);
-        t.exec();
-        return previous.get();
+        String previousValue;
+        try (AbstractTransaction t = redisClient.multi()) {
+            Response<String> previous = t.hget(name, key);
+            t.hset(name, key, value);
+            t.exec();
+            previousValue = previous.get();
+        }
+        return previousValue;
     }
 
     @Override
     public String remove(Object key) {
-        AbstractTransaction t = redisClient.multi();
-        Response<String> previous = t.hget(name, (String) key);
-        t.hdel(name, (String) key);
-        t.exec();
-        return previous.get();
+        String previousValue;
+        try (AbstractTransaction t = redisClient.multi()) {
+            Response<String> previous = t.hget(name, (String) key);
+            t.hdel(name, (String) key);
+            t.exec();
+            previousValue = previous.get();
+        }
+        return previousValue;
     }
 
     @Override
@@ -135,15 +141,17 @@ public final class JedisMap implements Map<String, String>, Named {
 //            put(data.getKey(), data.getValue());
 //        }
         // better way
-        final AbstractTransaction t = redisClient.multi();
-        for(Entry<? extends String, ? extends String> entry : m.entrySet()){
-            t.hset(name, entry.getKey(), entry.getValue());
+
+        try (AbstractTransaction t = redisClient.multi()) {
+            for(Entry<? extends String, ? extends String> entry : m.entrySet()){
+                t.hset(name, entry.getKey(), entry.getValue());
+            }
+    //            m.entrySet().
+    //                    forEach( entry ->
+    //                            t.hset(name, entry.getKey(), entry.getValue())
+    //                    );
+            t.exec();
         }
-//            m.entrySet().
-//                    forEach( entry ->
-//                            t.hset(name, entry.getKey(), entry.getValue())
-//                    );
-        t.exec();
     }
 
     @Override
