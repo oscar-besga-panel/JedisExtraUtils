@@ -29,16 +29,16 @@ public class ScriptEvalSha1 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptEvalSha1.class);
     public static final String SHA_1 = "SHA-1";
 
-    private final UnifiedJedis unifiedJedis;
+    private final UnifiedJedis redisClient;
     private final UniversalReader scriptSource;
     private String sha1Digest;
 
-    public ScriptEvalSha1(UnifiedJedis unifiedJedis, UniversalReader scriptSource) {
-        this(unifiedJedis, scriptSource, false);
+    public ScriptEvalSha1(UnifiedJedis redisClient, UniversalReader scriptSource) {
+        this(redisClient, scriptSource, false);
     }
 
-    public ScriptEvalSha1(UnifiedJedis unifiedJedis, UniversalReader scriptSource, boolean autoload) {
-        this.unifiedJedis = unifiedJedis;
+    public ScriptEvalSha1(UnifiedJedis redisClient, UniversalReader scriptSource, boolean autoload) {
+        this.redisClient = redisClient;
         this.scriptSource = scriptSource;
         if (autoload) {
             load();
@@ -62,7 +62,7 @@ public class ScriptEvalSha1 {
             if (scriptToLoad == null || scriptToLoad.isBlank()) {
                 throw new IllegalArgumentException("Script to load cannot be null nor empty");
             }
-            sha1Digest = unifiedJedis.scriptLoad(scriptToLoad);
+            sha1Digest = redisClient.scriptLoad(scriptToLoad);
             LOGGER.debug("SHA1 load from script {}", sha1Digest);
             if (sha1Digest == null || sha1Digest.isBlank()) {
                 LOGGER.error("SHA1 from reddit is null or empty !");
@@ -83,7 +83,7 @@ public class ScriptEvalSha1 {
             load();
         }
         LOGGER.debug("SHA1 eval {}", sha1Digest);
-        return unifiedJedis.evalsha(sha1Digest, keys, params);
+        return redisClient.evalsha(sha1Digest, keys, params);
     }
 
     /**

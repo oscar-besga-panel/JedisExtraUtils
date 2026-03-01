@@ -42,7 +42,6 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-//        jedisPooled = jtfTest.createJedisPooled(24, 8);
         redisClient = jtfTest.createPooledRedisClient();
         lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
@@ -57,7 +56,6 @@ public class FunctionalJedisLocksOnCriticalZoneWithWaitingTimeTest {
         }
     }
 
-//    @Ignore
     @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {

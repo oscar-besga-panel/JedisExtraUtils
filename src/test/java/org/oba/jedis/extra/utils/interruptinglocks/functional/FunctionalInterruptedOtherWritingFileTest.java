@@ -64,9 +64,6 @@ public class FunctionalInterruptedOtherWritingFileTest {
         }
     }
 
-
-    //TODO testreview
-    //@Ignore
     @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {

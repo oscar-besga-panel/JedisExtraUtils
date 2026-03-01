@@ -102,16 +102,28 @@ public final class StreamMessageSystem implements Named, AutoCloseable {
             } else {
                 streamData = Map.of(name, nextStreamEntryID(lastStreamEntryIDRange));
             }
-            // LOGGER.debug("listenMessages begin {} with streamdata {}", name, streamData);
+            LOGGER.debug("listenMessages begin {} with streamdata {}", name, streamData);
             List<Map.Entry<String, List<StreamEntry>>> streamedEntries = null;
-            if (active.get()) {
-                streamedEntries = redisClient.xread(newXReadParams(), streamData);
-            }
-            if (active.get() && streamedEntries != null && !streamedEntries.isEmpty()) {
-                streamedEntries.stream().
-                        filter( streamedEntry -> streamedEntry.getKey().equals(name)).
-                        map(Map.Entry::getValue).
-                        forEach(this::processEntries);
+            try {
+                if (active.get()) {
+                    streamedEntries = redisClient.xread(newXReadParams(), streamData);
+                }
+                if (active.get() && streamedEntries != null && !streamedEntries.isEmpty()) {
+                    streamedEntries.stream().
+                            filter(streamedEntry -> streamedEntry.getKey().equals(name)).
+                            map(Map.Entry::getValue).
+                            forEach(this::processEntries);
+                }
+            } finally {
+//                if (streamedEntries!= null) {
+//                    streamedEntries.forEach( entry -> {
+//                        if (entry != null && entry.getValue() != null) {
+//                            entry.getValue().forEach( streamEntry -> {
+//                                // close ?
+//                            });
+//                        }
+//                    });
+//                }
             }
             // LOGGER.debug("listenMessages end {} with streamdata {} as result {}", name, streamData, streamedEntries);
         }

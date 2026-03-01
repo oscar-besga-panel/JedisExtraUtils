@@ -66,7 +66,6 @@ public class FunctionalJedisNotificationLocksOnCriticalZoneTest {
         }
     }
 
-    @Ignore
     @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
