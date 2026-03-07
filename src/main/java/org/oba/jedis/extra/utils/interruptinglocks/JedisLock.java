@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.AbstractTransaction;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.args.ExpiryOption;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
@@ -15,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateUniqueTokenValue;
@@ -51,7 +54,7 @@ public class JedisLock implements IJedisLock {
     private long leaseMoment = -1L;
     private long timeLimit = -1L;
 
-    private long waitCylce = 300L;
+    private long waitCycle = 300L;
 
 
     /**
@@ -90,7 +93,7 @@ public class JedisLock implements IJedisLock {
     }
 
     public void setWaitCylce(int time, TimeUnit timeUnit){
-        this.waitCylce = timeUnit.toMillis(time);
+        this.waitCycle = timeUnit.toMillis(time);
     }
 
     @Override
@@ -128,7 +131,7 @@ public class JedisLock implements IJedisLock {
         final TimeLimit timeLimit = new TimeLimit(time,unit);
         boolean locked = redisLock();
         while (!locked && timeLimit.checkInLimit()) {
-            Thread.sleep(waitCylce);
+            Thread.sleep(waitCycle);
             locked = redisLock();
         }
         return locked;
@@ -139,7 +142,7 @@ public class JedisLock implements IJedisLock {
         boolean locked = redisLock();
         while (!locked) {
             try {
-                Thread.sleep(waitCylce);
+                Thread.sleep(waitCycle);
                 locked = redisLock();
             } catch (InterruptedException ie) {
                 LOGGER.debug("interrupted", ie);
@@ -152,7 +155,7 @@ public class JedisLock implements IJedisLock {
     public void lockInterruptibly() throws InterruptedException {
         boolean locked = redisLock();
         while (!locked) {
-            Thread.sleep(waitCylce);
+            Thread.sleep(waitCycle);
             locked = redisLock();
         }
     }
@@ -180,6 +183,36 @@ public class JedisLock implements IJedisLock {
         try (JedisLock jl = this){
             jl.lock();
             return task.get();
+        }
+    }
+
+    public boolean addMoreExpireTimeToCurrentLock(Long addExpireTimeMillis) {
+        if (addExpireTimeMillis <= 0L) {
+            throw new IllegalArgumentException("moreLeaseTime can not be zero nor bellow");
+        }
+        AtomicBoolean result = new AtomicBoolean(false);
+        if (leaseTime != null && redisCheckLock()) {
+            withResource(jedis -> {
+                long millisLeft = timeLimit - System.currentTimeMillis();
+                long timeToSet = addExpireTimeMillis + millisLeft;
+                LOGGER.debug("timetoset {} for lock {}", timeToSet, name);
+                long response = jedis.pexpire(name, timeToSet, ExpiryOption.XX);
+                if (response == 1L) {
+                    this.timeLimit = System.currentTimeMillis() +  timeToSet;
+                    result.set(true);
+                } else {
+                    LOGGER.warn("expire not correct for lock {}", name);
+                }
+            });
+        }
+        return result.get();
+    }
+
+    public long timeToLiveMillis() {
+        if (leaseTime != null && redisCheckLock()) {
+            return timeLimit - System.currentTimeMillis();
+        } else {
+            return -1L;
         }
     }
 

@@ -8,6 +8,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import redis.clients.jedis.Transaction;
 
+import redis.clients.jedis.args.ExpiryOption;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
@@ -87,7 +88,22 @@ public class MockOfJedisTest {
         List<String> values = Collections.singletonList("A1");
         Object response = mockOfJedis.getRedisClient().evalsha("sha1", keys, values);
         assertNull( mockOfJedis.getCurrentData().get("a"));
-        assertEquals(1,response);
+        assertEquals(1L, response);
+    }
+
+    @Test
+    public void testDataInsertionWithTimeouts() throws InterruptedException {
+        mockOfJedis.getJedis().set("c", "C1", new SetParams().nx().px(500));
+        mockOfJedis.getJedis().set("d", "D1", new SetParams().nx().px(500));
+        mockOfJedis.getJedis().pexpire("d", 1000L, ExpiryOption.XX);
+        Thread.sleep(1000);
+        assertNull(mockOfJedis.getCurrentData().get("c"));
+        assertEquals("D1", mockOfJedis.getCurrentData().get("d"));
+        mockOfJedis.getJedis().pexpire("d", 1000L, ExpiryOption.XX);
+        Thread.sleep(1000);
+        assertEquals("D1", mockOfJedis.getCurrentData().get("d"));
+        Thread.sleep(1000);
+        assertNull(mockOfJedis.getCurrentData().get("d"));
     }
 
 }

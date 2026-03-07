@@ -141,6 +141,22 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     }
 
     /**
+     * NOT IMPLEMENTED
+     */
+    public boolean addMoreExpireTimeToCurrentLock(Long addExpireTimeMillis) {
+        LOGGER.warn("Not implemented");
+        return false;
+    }
+
+    /**
+     * NOT IMPLEMENTED
+     */
+    public long timeToLiveMillis() {
+        LOGGER.warn("Not implemented");
+        return -1L;
+    }
+
+    /**
      * Execute after getting a lock
      */
     private void afterLock(){
