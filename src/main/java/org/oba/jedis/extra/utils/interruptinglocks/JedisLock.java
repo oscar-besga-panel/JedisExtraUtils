@@ -228,10 +228,10 @@ public class JedisLock implements IJedisLock {
         List<String> keys = Collections.singletonList(name);
         List<String> values = Collections.singletonList(uniqueToken);
         Object response = script.evalSha(keys, values);
-        int num = 0;
+        long num = 0;
         if (response != null) {
             LOGGER.debug("response {}", response);
-            num = Integer.parseInt(response.toString());
+            num = Long.parseLong(response.toString());
         }
         if (num > 0) {
             resetLockMoment();

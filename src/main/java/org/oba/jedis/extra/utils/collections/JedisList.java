@@ -266,6 +266,7 @@ public final class JedisList implements List<String>, Named {
         return futureReplacedValue;
     }
 
+
     @Override
     public void add(int index, String element) {
         String pivot = get(index);
