@@ -4,8 +4,7 @@ import org.mockito.Mockito;
 import org.oba.jedis.extra.utils.test.TTL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPubSub;
-import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SetParams;
 import redis.clients.jedis.resps.ScanResult;
@@ -14,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -46,7 +46,10 @@ public final class MockOfJedis {
     }
 
     private final UnifiedJedis redisClient;
+    private final AbstractTransaction transaction;
     private final Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
+
+    private final Map<String, String> transactionData = Collections.synchronizedMap(new HashMap<>());
     private final Timer timer;
     private final AtomicLong givenTimestamp = new AtomicLong(-1);
 
@@ -61,7 +64,21 @@ public final class MockOfJedis {
         timer = new Timer();
 
         redisClient = Mockito.mock(UnifiedJedis.class);
+        transaction = Mockito.mock(AbstractTransaction.class);
 
+        when(redisClient.multi()).thenReturn(transaction);
+        when(transaction.set(anyString(), anyString())).thenAnswer( ioc -> {
+            String key = ioc.getArgument(0, String.class);
+            String value = ioc.getArgument(1, String.class);
+            transactionData.put(key, value);
+            return new Response<>(new MockBuilder( d -> null));
+        });
+        when(transaction.get(anyString())).thenAnswer(ioc -> {
+            String key = ioc.getArgument(0, String.class);
+            Response<String> response = new Response<>(new MockBuilder(transactionData::get));
+            response.set(key);
+            return response;
+        });
         when(redisClient.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExist(key);
@@ -234,13 +251,22 @@ public final class MockOfJedis {
         return redisClient;
     }
 
+    public AbstractTransaction getTransaction() {
+        return transaction;
+    }
+
     public synchronized void clearData(){
         givenTimestamp.set(-1);
         data.clear();
+        transactionData.clear();
     }
 
     public synchronized Map<String,String> getCurrentData() {
         return new HashMap<>(data);
+    }
+
+    public synchronized Map<String,String> getCurrentTransactionData() {
+        return new HashMap<>(transactionData);
     }
 
     public void setGivenTimestamp(long timestamp) {
@@ -257,6 +283,22 @@ public final class MockOfJedis {
             pattern = "";
         }
         return pattern;
+    }
+
+
+    class MockBuilder extends Builder<String> {
+
+        private final Function<String, String> builder;
+
+        MockBuilder(Function<String, String> builder) {
+            this.builder = builder;
+        }
+
+        @Override
+        public String build(Object data) {
+            return builder.apply((String) data);
+        }
+
     }
 
  }

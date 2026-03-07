@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateUniqueTokenValue;
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiGet;
 
 /**
  * A lock that checks if the locks have been freed with a streaming mechanism
@@ -180,21 +181,20 @@ public class NotificationLock implements IJedisLock, MessageListener {
      */
     private boolean redisLock() {
         LOGGER.debug("redisLockUnderPool");
-
-        String clientStatusCodeReply;
-        String currentValueRedis;
-        SetParams setParams = new SetParams().nx();
-        try (AbstractTransaction t = redisClient.multi()) {
-            Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken, setParams);
-            Response<String> responseCurrentValueRedis = t.get(name);
-            t.exec();
+        return withinMultiGet(redisClient, trs -> {
+            String clientStatusCodeReply;
+            String currentValueRedis;
+            SetParams setParams = new SetParams().nx();
+            Response<String> responseClientStatusCodeReply = trs.set(name, uniqueToken, setParams);
+            Response<String> responseCurrentValueRedis = trs.get(name);
+            trs.exec();
             clientStatusCodeReply = responseClientStatusCodeReply.get();
             currentValueRedis = responseCurrentValueRedis.get();
-        }
-        LOGGER.debug("redisLockUnderPool clientStatusCodeReply {} currentValueRedis {} uniqueToken {}",
-                clientStatusCodeReply, currentValueRedis, uniqueToken);
-        return (clientStatusCodeReply != null) && (currentValueRedis != null) &&
-                CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
+            LOGGER.debug("redisLockUnderPool clientStatusCodeReply {} currentValueRedis {} uniqueToken {}",
+                    clientStatusCodeReply, currentValueRedis, uniqueToken);
+            return (clientStatusCodeReply != null) && (currentValueRedis != null) &&
+                    CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
+        });
     }
 
     /**

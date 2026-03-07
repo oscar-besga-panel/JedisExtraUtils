@@ -10,6 +10,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiDo;
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiGet;
+
 public final class JedisSet implements Set<String>, Named {
 
     private final UnifiedJedis redisClient;
@@ -128,11 +131,11 @@ public final class JedisSet implements Set<String>, Named {
         Set<String> retained = new HashSet<>(doSscan());
         boolean result = retained.retainAll(c);
         if (result) {
-            try (AbstractTransaction t = redisClient.multi()) {
-                t.del(name);
-                retained.forEach( s -> t.sadd(name, s));
-                t.exec();
-            }
+            withinMultiDo(redisClient, trs -> {
+                trs.del(name);
+                retained.forEach( s -> trs.sadd(name, s));
+                trs.exec();
+            });
         }
         return result;
     }

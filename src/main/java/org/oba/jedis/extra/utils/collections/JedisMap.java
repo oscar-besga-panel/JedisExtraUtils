@@ -9,6 +9,9 @@ import redis.clients.jedis.UnifiedJedis;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiDo;
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiGet;
+
 public final class JedisMap implements Map<String, String>, Named {
 
     private final UnifiedJedis redisClient;
@@ -112,46 +115,32 @@ public final class JedisMap implements Map<String, String>, Named {
 
     @Override
     public String put(String key, String value) {
-        String previousValue;
-        try (AbstractTransaction t = redisClient.multi()) {
-            Response<String> previous = t.hget(name, key);
-            t.hset(name, key, value);
-            t.exec();
-            previousValue = previous.get();
-        }
-        return previousValue;
+        return withinMultiGet(redisClient, trs -> {
+            Response<String> previous = trs.hget(name, key);
+            trs.hset(name, key, value);
+            trs.exec();
+            return previous.get();
+        });
     }
 
     @Override
     public String remove(Object key) {
-        String previousValue;
-        try (AbstractTransaction t = redisClient.multi()) {
-            Response<String> previous = t.hget(name, (String) key);
-            t.hdel(name, (String) key);
-            t.exec();
-            previousValue = previous.get();
-        }
-        return previousValue;
+        return withinMultiGet(redisClient, trs -> {
+            Response<String> previous = trs.hget(name, (String) key);
+            trs.hdel(name, (String) key);
+            trs.exec();
+            return previous.get();
+        });
     }
 
     @Override
     public void putAll(Map<? extends String, ? extends String> m) {
-        // Quick dirty way
-//        for(Entry<? extends String, ? extends String> data : m.entrySet()){
-//            put(data.getKey(), data.getValue());
-//        }
-        // better way
-
-        try (AbstractTransaction t = redisClient.multi()) {
+        withinMultiDo(redisClient, trs -> {
             for(Entry<? extends String, ? extends String> entry : m.entrySet()){
-                t.hset(name, entry.getKey(), entry.getValue());
+                trs.hset(name, entry.getKey(), entry.getValue());
             }
-    //            m.entrySet().
-    //                    forEach( entry ->
-    //                            t.hset(name, entry.getKey(), entry.getValue())
-    //                    );
-            t.exec();
-        }
+            trs.exec();
+        });
     }
 
     @Override

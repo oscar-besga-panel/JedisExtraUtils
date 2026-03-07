@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateUniqueTokenValue;
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiGet;
 
 /**
  * Class that will perform a lock based on Redis locks
@@ -194,17 +195,18 @@ public class JedisLock implements IJedisLock {
         if (leaseTime != null) {
             setParams.px(timeUnit.toMillis(leaseTime));
         }
-        String clientStatusCodeReply;
-        String currentValueRedis;
-        try (AbstractTransaction t = redisClient.multi()) {
-            Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken, setParams);
-            Response<String> responseCurrentValueRedis = t.get(name);
-            t.exec();
+        boolean locked = withinMultiGet(redisClient, trs -> {
+            String clientStatusCodeReply;
+            String currentValueRedis;
+            Response<String> responseClientStatusCodeReply = trs.set(name, uniqueToken, setParams);
+            Response<String> responseCurrentValueRedis = trs.get(name);
+            trs.exec();
             clientStatusCodeReply = responseClientStatusCodeReply.get();
             currentValueRedis = responseCurrentValueRedis.get();
-        }
-        boolean locked = (clientStatusCodeReply != null) && (currentValueRedis != null) &&
-                CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
+            return (clientStatusCodeReply != null) && (currentValueRedis != null) &&
+                    CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) &&
+                    uniqueToken.equals(currentValueRedis);
+        });
         if (locked) {
             setLockMoment();
         }

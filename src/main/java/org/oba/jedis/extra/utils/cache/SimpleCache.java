@@ -17,6 +17,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiDo;
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiGet;
+
 /**
  * A cache is a Map-like data structure that provides temporary storage
  * of application data.
@@ -191,15 +194,14 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
     public Map<String, String> getAll(Set<String> keys, CacheLoader cacheLoader) {
         checkClosed();
         Map<String, String> responseValues;
-        try (AbstractTransaction t = redisClient.multi()) {
+        return withinMultiGet(redisClient, trs -> {
             Map<String, Response<String>> responses = new HashMap<>();
             for (String key : keys) {
-                responses.put(key, t.get(resolveKey(key)));
+                responses.put(key, trs.get(resolveKey(key)));
             }
-            t.exec();
-            responseValues = resolveTransactionEntries(responses, cacheLoader);
-        }
-        return responseValues;
+            trs.exec();
+            return resolveTransactionEntries(responses, cacheLoader);
+        });
     }
 
     /**
@@ -326,13 +328,12 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
         if (key == null) throw new IllegalArgumentException("RedisCache.getAndPut key is null");
         if (value == null) throw new IllegalArgumentException("RedisCache.getAndPut value is null");
         SetParams setParams = new SetParams().px(timeOutMs);
-        String responseValue;
-        try (AbstractTransaction t = redisClient.multi()) {
-            Response<String> response = t.get(resolveKey(key));
-            t.set(resolveKey(key), value, setParams);
-            t.exec();
-            responseValue = response.get();
-        }
+        String responseValue  = withinMultiGet(redisClient, trs -> {
+            Response<String> response = trs.get(resolveKey(key));
+            trs.set(resolveKey(key), value, setParams);
+            trs.exec();
+            return response.get();
+        });
         if (cacheWriter != null) {
             LOGGER.debug("write-through store key {} value {}", key, value);
             cacheWriter.write(key, value);
@@ -364,10 +365,10 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
         checkClosed();
         if (values == null) throw new IllegalArgumentException("RedisCache.putAll map is null");
         SetParams setParams = new SetParams().px(timeOutMs);
-        try (AbstractTransaction t = redisClient.multi()) {
-            values.forEach((k, v) -> t.set(resolveKey(k), v, setParams));
-            t.exec();
-        }
+        withinMultiDo(redisClient, trs -> {
+            values.forEach((k, v) -> trs.set(resolveKey(k), v, setParams));
+            trs.exec();
+        });
         if (allowWriteThrougth && cacheWriter != null) {
             LOGGER.debug("write-through store values {}", values);
             cacheWriter.writeAll(values);
@@ -406,13 +407,12 @@ public class SimpleCache implements Iterable<Map.Entry<String,String>>,
     public boolean remove(String key) {
         checkClosed();
         if (key == null) throw new IllegalArgumentException("RedisCache.remove key is null");
-        String previousValue;
-        try (AbstractTransaction t = redisClient.multi()) {
-            Response<String> previous = t.get(resolveKey(key));
-            t.del(resolveKey(key));
-            t.exec();
-            previousValue = previous.get();
-        }
+        String previousValue = withinMultiGet(redisClient, trs -> {
+            Response<String> previous = trs.get(resolveKey(key));
+            trs.del(resolveKey(key));
+            trs.exec();
+            return previous.get();
+        });
         if (previousValue != null && cacheWriter != null) {
             LOGGER.debug("write-through remove key {} ", key);
             cacheWriter.delete(key);
