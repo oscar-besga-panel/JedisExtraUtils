@@ -188,33 +188,31 @@ public class FunctionalJedisLockTest {
 
     @Test(timeout = 35000)
     public void testLockWithUpdatedTime() throws InterruptedException {
-        try (Jedis jedis = jedisPool.getResource()) {
-            JedisLock jedisLock1 = new JedisLock(jedisPool, keyName, 2L, TimeUnit.SECONDS);
-            boolean result1 = jedisLock1.tryLock();
-            assertTrue(jedisLock1.isLocked());
-            assertTrue(result1);
-            assertEquals(getJedisLockUniqueToken(jedisLock1), jedis.get(jedisLock1.getName()));
-            JedisLock jedisLock2 = new JedisLock(jedisPool, keyName);
-            boolean result2 = jedisLock2.tryLockForAWhile(1L, TimeUnit.SECONDS);
-            assertFalse(jedisLock2.isLocked());
-            assertFalse(result2);
-            jedisLock1.addMoreExpireTimeToCurrentLock(2L, TimeUnit.SECONDS);
-            Thread.sleep(2500);
-            assertTrue(jedisLock1.isLocked());
-            Thread.sleep(2500);
-            assertFalse(jedisLock1.isLocked());
-        }
+        JedisLock jedisLock1 = new JedisLock(redisClient, keyName, 2L, TimeUnit.SECONDS);
+        boolean result1 = jedisLock1.tryLock();
+        assertTrue(jedisLock1.isLocked());
+        assertTrue(result1);
+        assertEquals(getJedisLockUniqueToken(jedisLock1), redisClient.get(jedisLock1.getName()));
+        JedisLock jedisLock2 = new JedisLock(redisClient, keyName);
+        boolean result2 = jedisLock2.tryLockForAWhile(1L, TimeUnit.SECONDS);
+        assertFalse(jedisLock2.isLocked());
+        assertFalse(result2);
+        jedisLock1.addMoreExpireTimeToCurrentLock(2L, TimeUnit.SECONDS);
+        Thread.sleep(2500);
+        assertTrue(jedisLock1.isLocked());
+        Thread.sleep(2500);
+        assertFalse(jedisLock1.isLocked());
     }
 
     @Test(timeout = 35000)
     public void testMantainLockWithoutUpdatedTime() throws InterruptedException {
         Semaphore sem2 = new Semaphore(0);
-        JedisLock jedisLock1 = new JedisLock(jedisPool, keyName, 2L, TimeUnit.SECONDS);
+        JedisLock jedisLock1 = new JedisLock(redisClient, keyName, 2L, TimeUnit.SECONDS);
         boolean lockResult1 = jedisLock1.tryLock();
         AtomicBoolean lockResult2 = new AtomicBoolean(false);
         Thread backgroundLock = new Thread(() -> {
             try {
-                JedisLock jedisLock2 = new JedisLock(jedisPool, keyName, 2L, TimeUnit.SECONDS);
+                JedisLock jedisLock2 = new JedisLock(redisClient, keyName, 2L, TimeUnit.SECONDS);
                 boolean result = jedisLock2.tryLockForAWhile(3L, TimeUnit.SECONDS);
                 lockResult2.set(result);
                 sem2.release();
@@ -233,12 +231,12 @@ public class FunctionalJedisLockTest {
     public void testMantainLockWithUpdatedTime() throws InterruptedException {
         Semaphore sem1 = new Semaphore(0);
         Semaphore sem2 = new Semaphore(0);
-        JedisLock jedisLock1 = new JedisLock(jedisPool, keyName, 2L, TimeUnit.SECONDS);
+        JedisLock jedisLock1 = new JedisLock(redisClient, keyName, 2L, TimeUnit.SECONDS);
         boolean lockResult1 = jedisLock1.tryLock();
         AtomicBoolean lockResult2 = new AtomicBoolean(false);
         Thread backgroundLock  = new Thread(() -> {
             try {
-                JedisLock jedisLock2 = new JedisLock(jedisPool, keyName, 2L, TimeUnit.SECONDS);
+                JedisLock jedisLock2 = new JedisLock(redisClient, keyName, 2L, TimeUnit.SECONDS);
                 sem1.release();
                 boolean result = jedisLock2.tryLockForAWhile(3L, TimeUnit.SECONDS);
                 lockResult2.set(result);

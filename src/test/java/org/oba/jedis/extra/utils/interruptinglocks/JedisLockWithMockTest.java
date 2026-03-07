@@ -196,12 +196,12 @@ public class JedisLockWithMockTest {
     @Test(timeout = 35000)
     public void testLockWithUpdatedTime() throws InterruptedException {
         String lockname = getUniqueName();
-        JedisLock jedisLock1 = new JedisLock(jedisPool, lockname,2L, TimeUnit.SECONDS);
+        JedisLock jedisLock1 = new JedisLock(redisClient, lockname,2L, TimeUnit.SECONDS);
         boolean result1 = jedisLock1.tryLock();
         assertTrue(jedisLock1.isLocked());
         assertTrue(result1);
         assertEquals(jedisLock1.getUniqueToken(), mockOfJedis.getCurrentData().get(jedisLock1.getName()));
-        JedisLock jedisLock2 = new JedisLock(jedisPool, lockname);
+        JedisLock jedisLock2 = new JedisLock(redisClient, lockname);
         boolean result2 = jedisLock2.tryLockForAWhile(1L, TimeUnit.SECONDS);
         assertFalse(jedisLock2.isLocked());
         assertFalse(result2);
@@ -216,12 +216,12 @@ public class JedisLockWithMockTest {
     public void testMantainLockWithoutUpdatedTime() throws InterruptedException {
         String lockname = getUniqueName();
         Semaphore sem2 = new Semaphore(0);
-        JedisLock jedisLock1 = new JedisLock(jedisPool, lockname, 2L, TimeUnit.SECONDS);
+        JedisLock jedisLock1 = new JedisLock(redisClient, lockname, 2L, TimeUnit.SECONDS);
         boolean lockResult1 = jedisLock1.tryLock();
         AtomicBoolean lockResult2 = new AtomicBoolean(false);
         Thread backgroundLock = new Thread(() -> {
             try {
-                JedisLock jedisLock2 = new JedisLock(jedisPool, lockname, 2L, TimeUnit.SECONDS);
+                JedisLock jedisLock2 = new JedisLock(redisClient, lockname, 2L, TimeUnit.SECONDS);
                 boolean result = jedisLock2.tryLockForAWhile(3L, TimeUnit.SECONDS);
                 lockResult2.set(result);
                 sem2.release();
@@ -241,12 +241,12 @@ public class JedisLockWithMockTest {
         String lockname = getUniqueName();
         Semaphore sem1 = new Semaphore(0);
         Semaphore sem2 = new Semaphore(0);
-        JedisLock jedisLock1 = new JedisLock(jedisPool, lockname, 2L, TimeUnit.SECONDS);
+        JedisLock jedisLock1 = new JedisLock(redisClient, lockname, 2L, TimeUnit.SECONDS);
         boolean lockResult1 = jedisLock1.tryLock();
         AtomicBoolean lockResult2 = new AtomicBoolean(false);
         Thread backgroundLock  = new Thread(() -> {
             try {
-                JedisLock jedisLock2 = new JedisLock(jedisPool, lockname, 2L, TimeUnit.SECONDS);
+                JedisLock jedisLock2 = new JedisLock(redisClient, lockname, 2L, TimeUnit.SECONDS);
                 sem1.release();
                 boolean result = jedisLock2.tryLockForAWhile(3L, TimeUnit.SECONDS);
                 lockResult2.set(result);

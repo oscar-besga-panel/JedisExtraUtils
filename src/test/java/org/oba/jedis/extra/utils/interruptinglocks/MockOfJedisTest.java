@@ -93,13 +93,13 @@ public class MockOfJedisTest {
 
     @Test
     public void testDataInsertionWithTimeouts() throws InterruptedException {
-        mockOfJedis.getJedis().set("c", "C1", new SetParams().nx().px(500));
-        mockOfJedis.getJedis().set("d", "D1", new SetParams().nx().px(500));
-        mockOfJedis.getJedis().pexpire("d", 1000L, ExpiryOption.XX);
+        mockOfJedis.getRedisClient().set("c", "C1", new SetParams().nx().px(500));
+        mockOfJedis.getRedisClient().set("d", "D1", new SetParams().nx().px(500));
+        mockOfJedis.getRedisClient().pexpire("d", 1000L, ExpiryOption.XX);
         Thread.sleep(1000);
         assertNull(mockOfJedis.getCurrentData().get("c"));
         assertEquals("D1", mockOfJedis.getCurrentData().get("d"));
-        mockOfJedis.getJedis().pexpire("d", 1000L, ExpiryOption.XX);
+        mockOfJedis.getRedisClient().pexpire("d", 1000L, ExpiryOption.XX);
         Thread.sleep(1000);
         assertEquals("D1", mockOfJedis.getCurrentData().get("d"));
         Thread.sleep(1000);

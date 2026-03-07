@@ -1,5 +1,4 @@
-
-[![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+  [![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
 _Project information_        
 [![MIT License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
@@ -93,7 +92,7 @@ Also, you will find a little Groovy and a docker composer to setup a testing red
 
 | Library version | Jedis version | JDK Version | Pool Used         |
 |-----------------|---------------|-------------|-------------------|
-| 7.3.0           | 7.1.X         | JDK11       | UnifiedRedis (1)  |
+| 7.3.0           | 7.3.X         | JDK11       | UnifiedRedis (1)  |
 | 7.0.0           | 7.0.X         | JDK11       | JedisPool         |
 | 6.5.0           | 6.0.X         | JDK11       | JedisPool         |
 | 6.3.0           | 5.2.X         | JDK11       | JedisPool         |

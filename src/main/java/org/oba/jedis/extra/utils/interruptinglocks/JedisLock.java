@@ -6,18 +6,15 @@ import org.oba.jedis.extra.utils.utils.TimeLimit;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.AbstractTransaction;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
-import redis.clients.jedis.args.ExpiryOption;
 import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.args.ExpiryOption;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateUniqueTokenValue;
@@ -190,22 +187,20 @@ public class JedisLock implements IJedisLock {
         if (addExpireTimeMillis <= 0L) {
             throw new IllegalArgumentException("moreLeaseTime can not be zero nor bellow");
         }
-        AtomicBoolean result = new AtomicBoolean(false);
+        boolean result = false;
         if (leaseTime != null && redisCheckLock()) {
-            withResource(jedis -> {
-                long millisLeft = timeLimit - System.currentTimeMillis();
-                long timeToSet = addExpireTimeMillis + millisLeft;
-                LOGGER.debug("timetoset {} for lock {}", timeToSet, name);
-                long response = jedis.pexpire(name, timeToSet, ExpiryOption.XX);
-                if (response == 1L) {
-                    this.timeLimit = System.currentTimeMillis() +  timeToSet;
-                    result.set(true);
-                } else {
-                    LOGGER.warn("expire not correct for lock {}", name);
-                }
-            });
+            long millisLeft = timeLimit - System.currentTimeMillis();
+            long timeToSet = addExpireTimeMillis + millisLeft;
+            LOGGER.debug("timetoset {} for lock {}", timeToSet, name);
+            long response = redisClient.pexpire(name, timeToSet, ExpiryOption.XX);
+            if (response == 1L) {
+                this.timeLimit = System.currentTimeMillis() +  timeToSet;
+                result = true;
+            } else {
+                LOGGER.warn("expire not correct for lock {}", name);
+            }
         }
-        return result.get();
+        return result;
     }
 
     public long timeToLiveMillis() {

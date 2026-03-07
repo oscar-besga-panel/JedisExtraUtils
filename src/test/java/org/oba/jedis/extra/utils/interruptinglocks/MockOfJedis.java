@@ -80,13 +80,12 @@ public class MockOfJedis {
             List<String> args = ioc.getArgument(2, List.class);
             return mockEvalsha(keys, args);
         });
-        Mockito.when(jedis.pexpire(anyString(), anyLong(), any(ExpiryOption.class))).thenAnswer( ioc -> {
+        Mockito.when(redisClient.pexpire(anyString(), anyLong(), any(ExpiryOption.class))).thenAnswer( ioc -> {
             String name = ioc.getArgument(0, String.class);
             long time = ioc.getArgument(1, Long.class);
             ExpiryOption expiryOption = ioc.getArgument(2, ExpiryOption.class);
             return mockEvalPExpire(name, time, expiryOption);
         });
-        Mockito.when(jedis.multi()).thenReturn(transaction);
         Mockito.when(redisClient.multi()).thenReturn(transaction);
         Mockito.when(transaction.get(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
