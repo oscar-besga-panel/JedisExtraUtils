@@ -86,7 +86,7 @@ public class JedisLock implements IJedisLock {
         this.uniqueToken = generateUniqueTokenValue(name);
         this.script = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
-                withFile(FILE_PATH));
+                withFile(FILE_PATH), true);
     }
 
     public void setWaitCylce(int time, TimeUnit timeUnit){

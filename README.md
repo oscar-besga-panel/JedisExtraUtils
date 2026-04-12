@@ -92,6 +92,7 @@ Also, you will find a little Groovy and a docker composer to setup a testing red
 
 | Library version | Jedis version | JDK Version | Pool Used         |
 |-----------------|---------------|-------------|-------------------|
+| 7.4.1           | 7.4.1         | JDK11       | UnifiedRedis (1)  |
 | 7.3.0           | 7.3.X         | JDK11       | UnifiedRedis (1)  |
 | 7.0.0           | 7.0.X         | JDK11       | JedisPool         |
 | 6.5.0           | 6.0.X         | JDK11       | JedisPool         |

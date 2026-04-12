@@ -31,7 +31,7 @@ public class ScriptEvalSha1 {
 
     private final UnifiedJedis redisClient;
     private final UniversalReader scriptSource;
-    private String sha1Digest;
+    private volatile String sha1Digest;
 
     public ScriptEvalSha1(UnifiedJedis redisClient, UniversalReader scriptSource) {
         this(redisClient, scriptSource, false);
@@ -59,6 +59,7 @@ public class ScriptEvalSha1 {
     private synchronized void syncLoad() {
         if (sha1Digest == null) {
             String scriptToLoad = scriptSource.read();
+            String sha1FromScript = sha1(scriptToLoad);
             if (scriptToLoad == null || scriptToLoad.isBlank()) {
                 throw new IllegalArgumentException("Script to load cannot be null nor empty");
             }
@@ -66,7 +67,7 @@ public class ScriptEvalSha1 {
             LOGGER.debug("SHA1 load from script {}", sha1Digest);
             if (sha1Digest == null || sha1Digest.isBlank()) {
                 LOGGER.error("SHA1 from reddit is null or empty !");
-            } else if (!sha1Digest.equals(sha1(scriptToLoad))) {
+            } else if (!sha1Digest.equals(sha1FromScript)) {
                 LOGGER.error("SHA1 from reddit and local doesn't match !");
             }
         }
