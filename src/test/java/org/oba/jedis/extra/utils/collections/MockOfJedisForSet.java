@@ -4,23 +4,14 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.oba.jedis.extra.utils.test.TransactionOrder;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.api.support.membermodification.MemberMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Transaction;
-
+import redis.clients.jedis.AbstractTransaction;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -33,26 +24,23 @@ public class MockOfJedisForSet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOfJedisForList.class);
 
-    private final Jedis jedis;
-    private final JedisPool jedisPool;
+    private final UnifiedJedis unifiedJedis;
     private final Map<String, Object> data = Collections.synchronizedMap(new HashMap<>());
 
     public MockOfJedisForSet() {
 
 
 
-        jedis = Mockito.mock(Jedis.class);
-        jedisPool = Mockito.mock(JedisPool.class);
-        when(jedisPool.getResource()).thenReturn(jedis);
+        unifiedJedis = Mockito.mock(UnifiedJedis.class);
 
-        Transaction transaction = PowerMockito.mock(Transaction.class);
+        AbstractTransaction transaction = PowerMockito.mock(AbstractTransaction.class);
 
-        when(jedis.multi()).thenReturn(transaction);
-        when(jedis.exists(anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.multi()).thenReturn(transaction);
+        when(unifiedJedis.exists(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockExists(key);
         });
-        when(jedis.del(anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.del(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockDel(key);
         });
@@ -60,20 +48,20 @@ public class MockOfJedisForSet {
             String key = ioc.getArgument(0);
             return TransactionOrder.quickReponseExecuted(mockDel(key));
         });
-        when(jedis.sadd(anyString(), any())).thenAnswer(this::iocSadd);
+        when(unifiedJedis.sadd(anyString(), any())).thenAnswer(this::iocSadd);
         when(transaction.sadd(anyString(), any())).thenAnswer( ioc ->
                 TransactionOrder.quickReponseExecuted(iocSadd(ioc))
         );
-        when(jedis.sismember(anyString(), anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.sismember(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String value = ioc.getArgument(1);
             return mockSismember(key, value);
         });
-        when(jedis.scard(anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.scard(anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             return mockScard(key);
         });
-        when(jedis.srem(anyString(), any())).thenAnswer(ioc -> {
+        when(unifiedJedis.srem(anyString(), any())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             Object value;
             if (ioc.getArguments().length > 2) {
@@ -90,13 +78,13 @@ public class MockOfJedisForSet {
             return mockSrem(key, value);
         });
 
-        when(jedis.sscan(anyString(), anyString())).thenAnswer(ioc -> {
+        when(unifiedJedis.sscan(anyString(), anyString())).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String cursor = ioc.getArgument(1);
             ScanParams scanParams = new ScanParams();
             return mockSscan(key, cursor, scanParams);
         });
-        when(jedis.sscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
+        when(unifiedJedis.sscan(anyString(), anyString(), any(ScanParams.class))).thenAnswer(ioc -> {
             String key = ioc.getArgument(0);
             String cursor = ioc.getArgument(1);
             ScanParams scanParams = ioc.getArgument(2);
@@ -124,12 +112,9 @@ public class MockOfJedisForSet {
     }
 
 
-    Jedis getJedis(){
-        return jedis;
-    }
 
-    JedisPool getJedisPool() {
-        return jedisPool;
+    UnifiedJedis getUnifiedJedis() {
+        return unifiedJedis;
     }
 
     synchronized void clearData(){

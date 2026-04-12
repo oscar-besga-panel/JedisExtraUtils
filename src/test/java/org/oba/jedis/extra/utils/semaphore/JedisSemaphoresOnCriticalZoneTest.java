@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,7 +41,10 @@ public class JedisSemaphoresOnCriticalZoneTest {
 
     @After
     public void after() {
-        if (mockOfJedis != null) mockOfJedis.clearData();
+        if (mockOfJedis != null) {
+            mockOfJedis.clearData();
+            mockOfJedis.getRedisClient().close();
+        }
     }
 
     @Test
@@ -70,12 +73,11 @@ public class JedisSemaphoresOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPool jedisPool = mockOfJedis.getJedisPool();
-            JedisSemaphore jedisSemaphore = new JedisSemaphore(jedisPool, semaphoreName, 1);
+            UnifiedJedis redisClient = mockOfJedis.getRedisClient();
+            JedisSemaphore jedisSemaphore = new JedisSemaphore(redisClient, semaphoreName, 1);
             jedisSemaphore.acquire();
             accessCriticalZone(sleepTime);
             jedisSemaphore.release();
-            jedisPool.close();
         } catch (Exception e){
             otherErrors.set(true);
             LOGGER.error("Other error ", e);

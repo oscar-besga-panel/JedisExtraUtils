@@ -1,8 +1,7 @@
 package org.oba.jedis.extra.utils.iterators;
 
 import org.oba.jedis.extra.utils.utils.Named;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -25,42 +24,42 @@ public class SScanIterator extends AbstractScanIterator<String> implements  Name
 
     /**
      * Iterator for sset entries
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the set
      */
-    public SScanIterator(JedisPool jedisPool, String name) {
-        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public SScanIterator(UnifiedJedis redisClient, String name) {
+        this(redisClient, name, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterator for sset entries
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      */
-    public SScanIterator(JedisPool jedisPool, String name, String pattern) {
-        this(jedisPool, name, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public SScanIterator(UnifiedJedis redisClient, String name, String pattern) {
+        this(redisClient, name, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterator for sset entries
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the set
      * @param resultsPerScan results per call to redis
      */
-    public SScanIterator(JedisPool jedisPool, String name, int resultsPerScan) {
-        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    public SScanIterator(UnifiedJedis redisClient, String name, int resultsPerScan) {
+        this(redisClient, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
     }
 
     /**
      * Iterator for sset entries
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */
-    public SScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
-        super(jedisPool, pattern, resultsPerScan);
+    public SScanIterator(UnifiedJedis redisClient, String name, String pattern, int resultsPerScan) {
+        super(redisClient, pattern, resultsPerScan);
         this.name = name;
     }
 
@@ -70,13 +69,13 @@ public class SScanIterator extends AbstractScanIterator<String> implements  Name
     }
 
     @Override
-    ScanResult<String> doScan(Jedis jedis, String currentCursor, ScanParams scanParams) {
-        return jedis.sscan(name, currentCursor, scanParams);
+    ScanResult<String> doScan(UnifiedJedis redisClient, String currentCursor, ScanParams scanParams) {
+        return redisClient.sscan(name, currentCursor, scanParams);
     }
 
     @Override
-    void doRemove(Jedis jedis, String next) {
-        jedis.srem(name, next);
+    void doRemove(UnifiedJedis redisClient, String next) {
+        redisClient.srem(name, next);
     }
 
 

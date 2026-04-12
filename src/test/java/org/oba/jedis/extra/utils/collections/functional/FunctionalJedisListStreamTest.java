@@ -5,47 +5,50 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisListStreamTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "list:" + FunctionalJedisListStreamTest.class.getName() + ":";
 
     private static final AtomicInteger testNumber = new AtomicInteger(0);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String listName;
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        listName = "list:" + this.getClass().getName() + ":"  + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        listName = COMMON_REDIS_TEST_NAME  + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, listName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(listName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
 
     private JedisList createABCDEList(){
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c", "d", "e"));
         return jedisList;
     }

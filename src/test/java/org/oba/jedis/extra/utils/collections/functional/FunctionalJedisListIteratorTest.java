@@ -3,12 +3,12 @@ package org.oba.jedis.extra.utils.collections.functional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.oba.jedis.extra.utils.cache.functional.FunctionalSimpleCacheIteratorTest;
 import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,38 +21,42 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisListIteratorTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListIteratorTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "list:" + FunctionalJedisListIteratorTest.class.getName() + ":";
 
     private static final AtomicInteger testNumber = new AtomicInteger(0);
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String listName;
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        listName = "list:" + this.getClass().getName() + ":" + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        listName = COMMON_REDIS_TEST_NAME + testNumber.incrementAndGet() + "_" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, listName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(listName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
 
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
@@ -146,7 +150,7 @@ public class FunctionalJedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest2() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
@@ -163,7 +167,7 @@ public class FunctionalJedisListIteratorTest {
     @Test
     public void listIteratorBasicWhileTest3() {
         List<String> check = new ArrayList<>();
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         Iterator<String> it = jedisList.iterator();
         while(it.hasNext()) {
             String s = it.next();
@@ -177,7 +181,7 @@ public class FunctionalJedisListIteratorTest {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void listIteratorRemoveOneTestError() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         it.remove();
@@ -185,7 +189,7 @@ public class FunctionalJedisListIteratorTest {
 
     @Test
     public void listIteratorRemoveOneTest() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.add("a");
         Iterator<String> it = jedisList.iterator();
         if (it.hasNext()) {

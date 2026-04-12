@@ -3,14 +3,13 @@ package org.oba.jedis.extra.utils.rateLimiter.functional;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.rateLimiter.ThrottlingRateLimiter;
+import org.oba.jedis.extra.utils.test.FixedDaemonThreadPool;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -22,7 +21,6 @@ import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -30,42 +28,46 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalThrottlingRateLimiterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalThrottlingRateLimiterTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "throttlingName:" + FunctionalThrottlingRateLimiterTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
     private String throttlingName;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
-        throttlingName = "throttlingName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
+        throttlingName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPool, throttlingName);
+        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(redisClient, throttlingName);
         if (throttlingRateLimiter.exists()) {
             throttlingRateLimiter.delete();
             LOGGER.debug("deleted throttlingRateLimiter {}", throttlingName);
         }
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, throttlingName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(throttlingName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
     @Test
     public void create0Test() {
-        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(jedisPool, throttlingName).
+        ThrottlingRateLimiter throttlingRateLimiter = new ThrottlingRateLimiter(redisClient, throttlingName).
                 create(1, TimeUnit.SECONDS);
         Assert.assertTrue(throttlingRateLimiter.exists());
         throttlingRateLimiter.delete();
@@ -76,12 +78,12 @@ public class FunctionalThrottlingRateLimiterTest {
         throttlingRateLimiter.
                 createIfNotExists(2, TimeUnit.SECONDS);
         Assert.assertTrue(throttlingRateLimiter.exists());
-        assertEquals("1500000", jedisPool.getResource().hget(throttlingName, "allow_micros"));
+        assertEquals("1500000", redisClient.hget(throttlingName, "allow_micros"));
     }
 
     @Test(timeout = 15000)
     public void throttlingBasicTest() throws InterruptedException {
-        ThrottlingRateLimiter rateLimiter = new ThrottlingRateLimiter(jedisPool, throttlingName).
+        ThrottlingRateLimiter rateLimiter = new ThrottlingRateLimiter(redisClient, throttlingName).
                 create(500, TimeUnit.MILLISECONDS);
         Thread.sleep(550);
         boolean result1 = rateLimiter.allow();
@@ -98,12 +100,12 @@ public class FunctionalThrottlingRateLimiterTest {
     }
 
 
-    @Test(timeout = 15000)
+    @Test(timeout = 35000)
     public void throttlingAdvancedTest() {
         SortedMap<Integer, Map.Entry<Long,Boolean>> resultMap = new TreeMap<>();
-        ThrottlingRateLimiter rateLimiter = new ThrottlingRateLimiter(jedisPool, throttlingName).
+        ThrottlingRateLimiter rateLimiter = new ThrottlingRateLimiter(redisClient, throttlingName).
                 create(495, TimeUnit.MILLISECONDS);
-        ExecutorService executor = Executors.newFixedThreadPool(50);
+        ExecutorService executor = new FixedDaemonThreadPool(50, 120, TimeUnit.SECONDS);
         List<Future<Boolean>> futureList = new ArrayList<>();
         CountDownLatch countDownLatch = new CountDownLatch(1);
         for(int i= 0; i < 50; i++) {

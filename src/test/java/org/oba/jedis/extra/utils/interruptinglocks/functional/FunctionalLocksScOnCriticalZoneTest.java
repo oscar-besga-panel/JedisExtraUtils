@@ -2,16 +2,14 @@ package org.oba.jedis.extra.utils.interruptinglocks.functional;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.JedisLock;
 import org.oba.jedis.extra.utils.interruptinglocks.LockFromRedis;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.utils.JedisPoolAdapter;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,12 +20,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 import static org.junit.Assert.assertFalse;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalLocksScOnCriticalZoneTest {
 
-
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalLocksScOnCriticalZoneTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "lock:" + FunctionalLocksScOnCriticalZoneTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -36,8 +36,7 @@ public class FunctionalLocksScOnCriticalZoneTest {
     private final AtomicBoolean otherError = new AtomicBoolean(false);
     private String lockName;
     private final List<Lock> lockList = new ArrayList<>();
-    private final List<Jedis> jedisList = new ArrayList<>();
-    private final List<JedisPool> jedisPoolList = new ArrayList<>();
+    private UnifiedJedis redisClient;
 
 
 
@@ -45,33 +44,22 @@ public class FunctionalLocksScOnCriticalZoneTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
+        //jedisPooled = jtfTest.createJedisPooled(24, 8);
+        redisClient = jtfTest.createPooledRedisClient();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPoolList.forEach( jedisPool -> {
-            if (jedisPool!= null) {
-                WithJedisPoolDelete.doDelete(jedisPool, lockName);
-                jedisPool.close();
-            }
-        });
-        jedisList.forEach(jedis -> {
-            if (jedis != null) jedis.close();
-        });
-
+        if (redisClient!= null) {
+            redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
+        }
     }
 
-    JedisPool createJedisPoolAdapter() {
-        Jedis jedis = jtfTest.createJedisClient();
-        jedisList.add(jedis);
-        JedisPool jedisPool = JedisPoolAdapter.poolFromJedis(jedis);
-        jedisPoolList.add(jedisPool);
-        return jedisPool;
-    }
-
-    @Test
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
             intoCriticalZone.set(false);
@@ -99,8 +87,7 @@ public class FunctionalLocksScOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPool jedisPool = createJedisPoolAdapter();
-            Lock lock = new JedisLock(jedisPool, lockName).asConcurrentLock();
+            Lock lock = new JedisLock(redisClient, lockName).asConcurrentLock();
             lockList.add(lock);
             lock.lock();
             JedisTestFactoryLocks.checkLock(lock);

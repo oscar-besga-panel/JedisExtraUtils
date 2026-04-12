@@ -7,31 +7,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisSentinelPool;
 
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.oba.jedis.extra.utils.utils.MockOfJedis.unitTestEnabled;
 
-public class JedisSentinelPoolAdapterTest {
+public class JedisPoolAdapterTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(JedisSentinelPoolAdapterTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JedisPoolAdapterTest.class);
 
     private MockOfJedis mockOfJedis;
     private JedisPool jedisPool;
-    private JedisSentinelPool jedisSentinelPool;
     private Jedis jedis;
 
 
     @Before
     public void before() throws IOException {
-        org.junit.Assume.assumeTrue(unitTestEnabled());
-        if (!unitTestEnabled()) return;
+        org.junit.Assume.assumeTrue(MockOfJedis.unitTestEnabled());
+        if (!MockOfJedis.unitTestEnabled()) return;
         mockOfJedis = new MockOfJedis();
-        jedisPool = mockOfJedis.getJedisPool();
-        jedisSentinelPool = mockOfJedis.getJedisSentinelPool();
+        jedisPool = mockOfJedis.getJedisPooled();
         jedis = mockOfJedis.getJedis();
     }
 
@@ -49,7 +45,7 @@ public class JedisSentinelPoolAdapterTest {
 
     @Test
     public void testProxy1() {
-        JedisPool jedisPoolButReallyIsAProxy = JedisSentinelPoolAdapter.poolFromSentinel(jedisSentinelPool);
+        JedisPool jedisPoolButReallyIsAProxy = JedisPoolAdapter.poolFromJedis(jedis);
         try(Jedis jedisProxyConnection = jedisPoolButReallyIsAProxy.getResource()){
             jedisProxyConnection.set("a","1");
             jedisProxyConnection.set("b","2");
@@ -62,7 +58,7 @@ public class JedisSentinelPoolAdapterTest {
 
     @Test
     public void testProxy2() {
-        JedisSentinelPoolAdapter.poolFromSentinel(jedisSentinelPool).withResource( jedisProxyConnection ->{
+        JedisPoolAdapter.poolFromJedis(jedis).withResource( jedisProxyConnection ->{
             jedisProxyConnection.set("a","1");
             jedisProxyConnection.set("b","2");
             jedisProxyConnection.set("c","3");
@@ -75,7 +71,7 @@ public class JedisSentinelPoolAdapterTest {
     @Test
     public void testProxy3() {
         jedis.set("a","1");
-        String result = JedisSentinelPoolAdapter.poolFromSentinel(jedisSentinelPool).
+        String result = JedisPoolAdapter.poolFromJedis(jedis).
                 withResourceFunction( jedisProxyConnection -> {
             return jedisProxyConnection.get("a");
         });

@@ -9,10 +9,9 @@ import org.oba.jedis.extra.utils.utils.TimeLimit;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.AbstractTransaction;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.SetParams;
 
 import java.util.Collections;
@@ -23,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static org.oba.jedis.extra.utils.lock.UniqueTokenValueGenerator.generateUniqueTokenValue;
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiGet;
 
 /**
  * A lock that checks if the locks have been freed with a streaming mechanism
@@ -39,31 +39,26 @@ public class NotificationLock implements IJedisLock, MessageListener {
     public static final String NOTIFICATION_LOCK_STREAM = "NOTIFICATIONLOCKSTREAM";
     public static final String CLIENT_RESPONSE_OK = "OK";
 
-    private final JedisPool jedisPool;
+    private final UnifiedJedis redisClient;
     private final String name;
     private final String uniqueToken;
     private final ScriptEvalSha1 script;
     private final StreamMessageSystem streamMessageSystem;
     private final Semaphore semaphore;
 
-    public NotificationLock(JedisPool jedisPool, String name) {
-        this.jedisPool = jedisPool;
+    public NotificationLock(UnifiedJedis redisClient, String name) {
+        this.redisClient = redisClient;
         this.name = name;
         this.uniqueToken = generateUniqueTokenValue(name);
-        this.script = new ScriptEvalSha1(jedisPool, new UniversalReader().
+        this.script = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME).
                 withFile(FILE_PATH));
-        this.streamMessageSystem = new StreamMessageSystem(NOTIFICATION_LOCK_STREAM, jedisPool, this);
+        this.streamMessageSystem = new StreamMessageSystem(NOTIFICATION_LOCK_STREAM, redisClient, this);
         this.semaphore = new Semaphore(0);
     }
 
     String getUniqueToken(){
         return uniqueToken;
-    }
-
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
     }
 
     @Override
@@ -188,17 +183,7 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * @return true if the lock is remotely held
      */
     private boolean redisCheckLock() {
-        return withResourceGet(this::redisCheckLockUnderPool);
-    }
-
-    /**
-     * If a leaseTime is set, it checks the leasetime and the timelimit
-     * Then it checks if remote redis has te same value as the lock
-     * If not, returns false
-     * @return true if the lock is remotely held
-     */
-    private boolean redisCheckLockUnderPool(Jedis jedis) {
-        String currentValueRedis = jedis.get(name);
+        String currentValueRedis = redisClient.get(name);
         boolean check = uniqueToken.equals(currentValueRedis);
         LOGGER.debug("checkLock >" + Thread.currentThread().getName() + "check value {} currentValueRedis {} check {}",
                 uniqueToken, currentValueRedis, check);
@@ -212,21 +197,21 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * @return true if lock obtained, false otherwise
      */
     private boolean redisLock() {
-        return withResourceGet(this::redisLockUnderPool);
-    }
-
-    private boolean redisLockUnderPool(Jedis jedis) {
         LOGGER.debug("redisLockUnderPool");
-        SetParams setParams = new SetParams().nx();
-        Transaction t = jedis.multi();
-        Response<String> responseClientStatusCodeReply = t.set(name, uniqueToken,setParams);
-        Response<String> responseCurrentValueRedis = t.get(name);
-        t.exec();
-        String clientStatusCodeReply = responseClientStatusCodeReply.get();
-        String currentValueRedis = responseCurrentValueRedis.get();
-        LOGGER.debug("redisLockUnderPool clientStatusCodeReply {} currentValueRedis {} uniqueToken {}",
-                clientStatusCodeReply, currentValueRedis, uniqueToken);
-        return CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
+        return withinMultiGet(redisClient, trs -> {
+            String clientStatusCodeReply;
+            String currentValueRedis;
+            SetParams setParams = new SetParams().nx();
+            Response<String> responseClientStatusCodeReply = trs.set(name, uniqueToken, setParams);
+            Response<String> responseCurrentValueRedis = trs.get(name);
+            trs.exec();
+            clientStatusCodeReply = responseClientStatusCodeReply.get();
+            currentValueRedis = responseCurrentValueRedis.get();
+            LOGGER.debug("redisLockUnderPool clientStatusCodeReply {} currentValueRedis {} uniqueToken {}",
+                    clientStatusCodeReply, currentValueRedis, uniqueToken);
+            return (clientStatusCodeReply != null) && (currentValueRedis != null) &&
+                    CLIENT_RESPONSE_OK.equalsIgnoreCase(clientStatusCodeReply) && uniqueToken.equals(currentValueRedis);
+        });
     }
 
     /**
@@ -266,12 +251,12 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * Helper method that creates the lock for simpler use
      * The steps are: create lock - obtain lock - execute task - free lock
      * A simple lock without time limit and interrumpiblity is used
-     * @param jedisPool Jedis pool client
+     * @param redisClient Jedis pool client
      * @param name Name of the lock
      * @param task Task to execute
      */
-    public static <T> T underLockTask(JedisPool jedisPool, String name, Supplier<T> task) {
-        JedisLock jedisLock = new JedisLock(jedisPool, name);
+    public static <T> T underLockTask(UnifiedJedis redisClient, String name, Supplier<T> task) {
+        JedisLock jedisLock = new JedisLock(redisClient, name);
         return jedisLock.underLock(task);
     }
 
@@ -280,12 +265,12 @@ public class NotificationLock implements IJedisLock, MessageListener {
      * Helper method that creates the lock for simpler use
      * The steps are: obtain lock - execute task - free lock - return result
      * A simple lock without time limit and interruptibility is used
-     * @param jedisPool Jedis pool client
+     * @param redisClient Jedis pool client
      * @param name Name of the lock
      * @param task Task to execute with return type
      */
-    public static void underLockTask(JedisPool jedisPool, String name, Runnable task) {
-        JedisLock jedisLock = new JedisLock(jedisPool, name);
+    public static void underLockTask(UnifiedJedis redisClient, String name, Runnable task) {
+        JedisLock jedisLock = new JedisLock(redisClient, name);
         jedisLock.underLock(task);
     }
 

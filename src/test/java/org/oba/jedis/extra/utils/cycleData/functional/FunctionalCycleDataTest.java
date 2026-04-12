@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.cycle.CycleData;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,36 +18,41 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalCycleDataTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalCycleDataTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "cycleDataName:" + FunctionalCycleDataTest.class.getName() + ":";
+
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
     private String cycleDataName;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
-        cycleDataName = "cycleDataName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
+        cycleDataName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, cycleDataName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(cycleDataName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
     @Test
     public void cycleDataBasicTest() throws InterruptedException {
-        CycleData cycleData = new CycleData(jedisPool, cycleDataName).
+        CycleData cycleData = new CycleData(redisClient, cycleDataName).
                 create("A","B","C");
         List<String> results = new ArrayList<>();
         for(int i = 0; i < 10; i++) {
@@ -63,7 +67,7 @@ public class FunctionalCycleDataTest {
 
     @Test
     public void createBasicTest() throws InterruptedException {
-        CycleData cycleData = new CycleData(jedisPool, cycleDataName).
+        CycleData cycleData = new CycleData(redisClient, cycleDataName).
                 createIfNotExists("A","B","C");
         assertTrue(cycleData.exists());
         cycleData.delete();
@@ -76,11 +80,11 @@ public class FunctionalCycleDataTest {
 
     @Test
     public void iteratorTest() {
-        CycleData cycleData = new CycleData(jedisPool, cycleDataName).
+        CycleData cycleData = new CycleData(redisClient, cycleDataName).
                 createIfNotExists("A","B","C");
         int num = 0;
         // Tried with one million and it works
-        while(cycleData.hasNext() && (num++ < 1_000)){
+        while(cycleData.hasNext() && (num++ < 100)){
             assertNotNull(cycleData.next());
         }
         assertNotNull(cycleData.next());

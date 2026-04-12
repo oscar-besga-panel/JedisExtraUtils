@@ -5,42 +5,45 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalInterruptingLocksBaseTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptingLocksBaseTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "flock:" + FunctionalInterruptingLocksBaseTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String lockName;
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
+        //redisClient = jtfTest.createJedisPooled(24, 8);
+        redisClient = jtfTest.createRedisClient();
 
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
@@ -73,8 +76,7 @@ public class FunctionalInterruptingLocksBaseTest {
 
     private boolean wasInterrupted(int sleepSeconds){
         boolean wasInterrupted = false;
-        Jedis jedis = jtfTest.createJedisClient();
-        InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(jedisPool, lockName, 5, TimeUnit.SECONDS);
+        InterruptingJedisJedisLockBase interruptingJedisJedisLockBase = new InterruptingJedisJedisLockBase(redisClient, lockName, 5, TimeUnit.SECONDS);
         interruptingJedisJedisLockBase.lock();
         JedisTestFactoryLocks.checkLock(interruptingJedisJedisLockBase);
         try {
@@ -83,7 +85,6 @@ public class FunctionalInterruptingLocksBaseTest {
             wasInterrupted = true;
         }
         interruptingJedisJedisLockBase.unlock();
-        jedis.close();
         return wasInterrupted;
     }
 }

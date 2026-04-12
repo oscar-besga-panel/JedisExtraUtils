@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockExecutor;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,15 +15,18 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalInterruptingLocksWithExecutorTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptingLocksWithExecutorTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "lock:" + FunctionalInterruptingLocksWithExecutorTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String lockName;
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
     private ExecutorService executorService;
 
 
@@ -33,16 +35,17 @@ public class FunctionalInterruptingLocksWithExecutorTest {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         executorService = Executors.newFixedThreadPool(4);
-        jedisPool = jtfTest.createJedisPool();
-        lockName = "lock_" + this.getClass().getName() + "_" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
         if (executorService != null) executorService.shutdown();
     }
@@ -69,7 +72,7 @@ public class FunctionalInterruptingLocksWithExecutorTest {
 
     private boolean wasInterrupted(int sleepSeconds){
         boolean wasInterrupted = false;
-        InterruptingJedisJedisLockExecutor interruptingLock = new InterruptingJedisJedisLockExecutor(jedisPool, lockName, 5, TimeUnit.SECONDS, executorService);
+        InterruptingJedisJedisLockExecutor interruptingLock = new InterruptingJedisJedisLockExecutor(redisClient, lockName, 5, TimeUnit.SECONDS, executorService);
         interruptingLock.lock();
         JedisTestFactoryLocks.checkLock(interruptingLock);
         try {

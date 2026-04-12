@@ -7,7 +7,7 @@ import org.oba.jedis.extra.utils.semaphore.JedisSemaphore;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,11 +16,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalSemaphoreOnCriticalZoneTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalSemaphoreOnCriticalZoneTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "semaphore:" + FunctionalSemaphoreOnCriticalZoneTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -33,15 +36,16 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
-        semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        semaphoreName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
     public void after() {
-        //NOOP
+        if (!jtfTest.functionalTestEnabled()) return;
+        jtfTest.withRedisClient( redisClient -> deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME));
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for(int i = 0; i < jtfTest.getFunctionalTestCycles(); i++) {
             intoCriticalZone.set(false);
@@ -68,12 +72,12 @@ public class FunctionalSemaphoreOnCriticalZoneTest {
 
     private void accesLockOfCriticalZone(int sleepTime) {
         try {
-            JedisPool jedisPool = jtfTest.createJedisPool();
-            JedisSemaphore semaphore = new JedisSemaphore(jedisPool, semaphoreName, 1);
+            UnifiedJedis redisClient = jtfTest.createRedisClient();
+            JedisSemaphore semaphore = new JedisSemaphore(redisClient, semaphoreName, 1);
             semaphore.acquire();
             accessCriticalZone(sleepTime);
             semaphore.release();
-            jedisPool.close();
+            redisClient.close();
         }catch (Exception e) {
             LOGGER.error("Other error ", e);
             otherError.set(true);

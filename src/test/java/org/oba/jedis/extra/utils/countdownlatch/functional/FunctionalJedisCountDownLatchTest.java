@@ -5,57 +5,54 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.countdownlatch.JedisCountDownLatch;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalJedisCountDownLatchTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisCountDownLatchTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "countDownLatch:" + FunctionalJedisCountDownLatchTest.class.getName() + ":";
+
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String countDownLatch;
-    private Jedis jedis;
-    private JedisPool jedisPool;
+    private UnifiedJedis unifiedJedis;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        countDownLatch = "countDownLatch:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedis = jtfTest.createJedisClient();
-        jedisPool = jtfTest.createJedisPool();
+        countDownLatch = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
+        unifiedJedis = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedis != null) jedis.close();
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, countDownLatch);
-            jedisPool.close();
+        if (unifiedJedis != null) {
+            unifiedJedis.del(countDownLatch);
+            deleteListOfKeysStartsWith(unifiedJedis, COMMON_REDIS_TEST_NAME);
+            unifiedJedis.close();
         }
     }
-
-
 
     @Test
     public void waitTest(){
         final AtomicBoolean awaitDone = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
@@ -67,7 +64,7 @@ public class FunctionalJedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
@@ -87,7 +84,7 @@ public class FunctionalJedisCountDownLatchTest {
             e.printStackTrace();
         }
         assertTrue(awaitDone.get());
-        assertTrue( 0L ==  new JedisCountDownLatch(jedisPool, countDownLatch,1).getCount());
+        assertTrue( 0L ==  new JedisCountDownLatch(unifiedJedis, countDownLatch,1).getCount());
     }
 
     @Test
@@ -95,7 +92,7 @@ public class FunctionalJedisCountDownLatchTest {
         final AtomicBoolean awaitDone = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 jedisCountDownLatch1.await();
                 awaitDone.set(true);
@@ -107,7 +104,7 @@ public class FunctionalJedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 Thread.sleep(2500);
                 jedisCountDownLatch2.countDown();
@@ -127,7 +124,7 @@ public class FunctionalJedisCountDownLatchTest {
             e.printStackTrace();
         }
         assertFalse(awaitDone.get());
-        assertTrue( 1L ==  new JedisCountDownLatch(jedisPool, countDownLatch,1).getCount());
+        assertTrue( 1L ==  new JedisCountDownLatch(unifiedJedis, countDownLatch,1).getCount());
     }
 
     @Test
@@ -136,7 +133,7 @@ public class FunctionalJedisCountDownLatchTest {
         final AtomicBoolean awaitZero = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 boolean reachedZero = jedisCountDownLatch1.await(1000, TimeUnit.MILLISECONDS);
                 awaitZero.set(reachedZero);
@@ -149,7 +146,7 @@ public class FunctionalJedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 Thread.sleep(500);
                 jedisCountDownLatch2.countDown();
@@ -170,7 +167,7 @@ public class FunctionalJedisCountDownLatchTest {
         }
         assertTrue(awaitDone.get());
         assertTrue(awaitZero.get());
-        assertTrue( 0L ==  new JedisCountDownLatch(jedisPool, countDownLatch,1).getCount());
+        assertTrue( 0L ==  new JedisCountDownLatch(unifiedJedis, countDownLatch,1).getCount());
     }
 
     @Test
@@ -179,7 +176,7 @@ public class FunctionalJedisCountDownLatchTest {
         final AtomicBoolean awaitZero = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 LOGGER.debug("Thread1 - Created jedisCountDownLatch1");
                 boolean reachedZero = jedisCountDownLatch1.await(500, TimeUnit.MILLISECONDS);
@@ -194,7 +191,7 @@ public class FunctionalJedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 LOGGER.debug("Thread2 - Created jedisCountDownLatch2");
                 Thread.sleep(2000);
@@ -218,7 +215,7 @@ public class FunctionalJedisCountDownLatchTest {
         }
         assertTrue(awaitDone.get());
         assertFalse(awaitZero.get());
-        assertTrue( 0L ==  new JedisCountDownLatch(jedisPool, countDownLatch,1).getCount());
+        assertTrue( 0L ==  new JedisCountDownLatch(unifiedJedis, countDownLatch,1).getCount());
     }
 
     @Test
@@ -227,7 +224,7 @@ public class FunctionalJedisCountDownLatchTest {
         final AtomicBoolean awaitZero = new AtomicBoolean(false);
         final Thread t1 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch1 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 LOGGER.debug("Thread1 - Created jedisCountDownLatch1");
                 boolean reachedZero = jedisCountDownLatch1.await(1500, TimeUnit.MILLISECONDS);
@@ -242,7 +239,7 @@ public class FunctionalJedisCountDownLatchTest {
         t1.setDaemon(true);
         final Thread t2 = new Thread(() -> {
             try {
-                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(jedisPool, countDownLatch,1).
+                JedisCountDownLatch jedisCountDownLatch2 = new JedisCountDownLatch(unifiedJedis, countDownLatch,1).
                         withWaitingTimeMilis(100);
                 LOGGER.debug("Thread2 - Created jedisCountDownLatch2");
                 Thread.sleep(2500);
@@ -266,12 +263,12 @@ public class FunctionalJedisCountDownLatchTest {
         }
         assertFalse(awaitDone.get());
         assertFalse(awaitZero.get());
-        assertTrue( 1L ==  new JedisCountDownLatch(jedisPool, countDownLatch,1).getCount());
+        assertTrue( 1L ==  new JedisCountDownLatch(unifiedJedis, countDownLatch,1).getCount());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void badInit(){
-        new JedisCountDownLatch(jedisPool, countDownLatch,-1);
+        new JedisCountDownLatch(unifiedJedis, countDownLatch,-1);
     }
 
 

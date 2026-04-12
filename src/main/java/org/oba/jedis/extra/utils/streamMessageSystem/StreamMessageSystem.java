@@ -1,12 +1,10 @@
 package org.oba.jedis.extra.utils.streamMessageSystem;
 
-import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.StreamEntryID;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.XAddParams;
 import redis.clients.jedis.params.XReadParams;
 import redis.clients.jedis.resps.StreamEntry;
@@ -23,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Listener is invoked by a background thread, and the connection waits for a new message to arrive
  * No messages are lost in the stream, all are retrieved and passed to the listener
  */
-public final class StreamMessageSystem implements JedisPoolUser, Named, AutoCloseable {
+public final class StreamMessageSystem implements Named, AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamMessageSystem.class);
 
@@ -36,7 +34,7 @@ public final class StreamMessageSystem implements JedisPoolUser, Named, AutoClos
 
     private final String name;
     private final MessageListener messageListener;
-    private final JedisPool jedisPool;
+    private final UnifiedJedis redisClient;
     private final int blockMillis;
 
     private final Thread messagesThread;
@@ -48,24 +46,24 @@ public final class StreamMessageSystem implements JedisPoolUser, Named, AutoClos
     /**
      * Creates new
      * @param name Name of the stream
-     * @param jedisPool Pool of connections
+     * @param redisClient Pool of connections
      * @param messageListener Listener to messages
      */
-    public StreamMessageSystem(String name, JedisPool jedisPool, MessageListener messageListener) {
-        this(name, jedisPool, XREADPARAMS_BLOCK, messageListener);
+    public StreamMessageSystem(String name, UnifiedJedis redisClient, MessageListener messageListener) {
+        this(name, redisClient, XREADPARAMS_BLOCK, messageListener);
     }
 
     /**
      * Creates new
      * @param name Name of the stream
-     * @param jedisPool Pool of connections
+     * @param redisClient Pool of connections
      * @param blockMillis Time to block connection
      * @param messageListener Listener to messages
      */
-    public StreamMessageSystem(String name, JedisPool jedisPool, int blockMillis, MessageListener messageListener) {
+    public StreamMessageSystem(String name, UnifiedJedis redisClient, int blockMillis, MessageListener messageListener) {
         this.name = name;
         this.messageListener = messageListener;
-        this.jedisPool = jedisPool;
+        this.redisClient = redisClient;
         this.blockMillis = blockMillis;
         this.messagesThread = new Thread(this::listenMessages);
         this.messagesThread.setDaemon(true);
@@ -78,7 +76,7 @@ public final class StreamMessageSystem implements JedisPoolUser, Named, AutoClos
      */
     void listenMessages() {
         try {
-            withResource(this::listenMessagesWithXREAD);
+            this.listenMessagesWithXREAD();
         } catch (Exception e) {
             LOGGER.error("Error in messagesThread", e);
         }
@@ -96,7 +94,7 @@ public final class StreamMessageSystem implements JedisPoolUser, Named, AutoClos
     /**
      * Internal method of thread
      */
-    void listenMessagesWithXREAD(Jedis jedis) {
+    void listenMessagesWithXREAD() {
         while (active.get()){
             Map<String, StreamEntryID> streamData;
             if (lastStreamEntryIDRange == null) {
@@ -104,16 +102,28 @@ public final class StreamMessageSystem implements JedisPoolUser, Named, AutoClos
             } else {
                 streamData = Map.of(name, nextStreamEntryID(lastStreamEntryIDRange));
             }
-            // LOGGER.debug("listenMessages begin {} with streamdata {}", name, streamData);
+            LOGGER.debug("listenMessages begin {} with streamdata {}", name, streamData);
             List<Map.Entry<String, List<StreamEntry>>> streamedEntries = null;
-            if (active.get()) {
-                streamedEntries = jedis.xread(newXReadParams(), streamData);
-            }
-            if (active.get() && streamedEntries != null && !streamedEntries.isEmpty()) {
-                streamedEntries.stream().
-                        filter( streamedEntry -> streamedEntry.getKey().equals(name)).
-                        map(Map.Entry::getValue).
-                        forEach(this::processEntries);
+            try {
+                if (active.get()) {
+                    streamedEntries = redisClient.xread(newXReadParams(), streamData);
+                }
+                if (active.get() && streamedEntries != null && !streamedEntries.isEmpty()) {
+                    streamedEntries.stream().
+                            filter(streamedEntry -> streamedEntry.getKey().equals(name)).
+                            map(Map.Entry::getValue).
+                            forEach(this::processEntries);
+                }
+            } finally {
+//                if (streamedEntries!= null) {
+//                    streamedEntries.forEach( entry -> {
+//                        if (entry != null && entry.getValue() != null) {
+//                            entry.getValue().forEach( streamEntry -> {
+//                                // close ?
+//                            });
+//                        }
+//                    });
+//                }
             }
             // LOGGER.debug("listenMessages end {} with streamdata {} as result {}", name, streamData, streamedEntries);
         }
@@ -170,24 +180,17 @@ public final class StreamMessageSystem implements JedisPoolUser, Named, AutoClos
         if (!active.get()) {
             throw new IllegalStateException("StreamMessageSystem not active, cannot send!");
         }
-        withResource(jedis -> {
-            XAddParams addParams = new XAddParams();
-            Map<String, String> data = Map.of(MESSAGE, message);
-            lastMessageSent = data;
-            lastStreamEntryIDSent = jedis.xadd(name, addParams, data);
-            LOGGER.debug("sendMessage message {} with lastStreamEntryIDSent {}", message, lastStreamEntryIDSent);
-        });
+        XAddParams addParams = new XAddParams();
+        Map<String, String> data = Map.of(MESSAGE, message);
+        lastMessageSent = data;
+        lastStreamEntryIDSent = redisClient.xadd(name, addParams, data);
+        LOGGER.debug("sendMessage message {} with lastStreamEntryIDSent {}", message, lastStreamEntryIDSent);
     }
 
     @Override
     public void close() {
         active.set(false);
         messagesThread.interrupt();
-    }
-
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
     }
 
     @Override

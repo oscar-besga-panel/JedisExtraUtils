@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisMap;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -21,37 +20,40 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisMapTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisMapTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "list:" + FunctionalJedisMapTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private String mapName, mapName2;
-    private JedisPool jedisPool;
+    private String mapName1, mapName2;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        mapName = "map:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        mapName2 = "map2:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        mapName1 = COMMON_REDIS_TEST_NAME + "1:" + System.currentTimeMillis();
+        mapName2 = COMMON_REDIS_TEST_NAME + "2:" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, mapName);
-            WithJedisPoolDelete.doDelete(jedisPool, mapName2);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(mapName1);
+            redisClient.del(mapName2);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
-
     JedisMap createABCMap() {
-        JedisMap jedisMap = new JedisMap(jedisPool, mapName);
+        JedisMap jedisMap = new JedisMap(redisClient, mapName1);
         jedisMap.put("a","1");
         jedisMap.put("b","2");
         jedisMap.put("c","3");
@@ -68,7 +70,7 @@ public class FunctionalJedisMapTest {
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisMap jedisMap = new JedisMap(jedisPool, mapName);
+        JedisMap jedisMap = new JedisMap(redisClient, mapName1);
         jedisMap.checkExists();
     }
 
@@ -86,14 +88,14 @@ public class FunctionalJedisMapTest {
         assertFalse(jedisMap.containsKey("d"));
     }
 
-
+    //TODO Map wtf
     @Test
     public void basicTestSize() {
         JedisMap jedisMap = createABCMap();
         int size1 = jedisMap.size();
         jedisMap.put("d","4");
         int size2 = jedisMap.size();
-        JedisMap jedisMap2 = new JedisMap(jedisPool, mapName2);
+        JedisMap jedisMap2 = new JedisMap(redisClient, mapName2);
         assertEquals(3, size1);
         assertEquals(4, size2);
         assertFalse(jedisMap.isEmpty());

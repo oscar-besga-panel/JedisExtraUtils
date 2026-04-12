@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.semaphore.JedisSemaphore;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -17,15 +16,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalSemaphoreWaitingTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalSemaphoreWaitingTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "semaphore:" + FunctionalSemaphoreWaitingTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
     private String semaphoreName;
 
 
@@ -33,23 +35,24 @@ public class FunctionalSemaphoreWaitingTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
-        semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
+        semaphoreName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, semaphoreName);
-            jedisPool.close();
+        if (redisClient != null) {
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.del(semaphoreName);
+            redisClient.close();
         }
     }
 
 
     @Test
     public void tesSemaphore() {
-        JedisSemaphore jedisSemaphore = new JedisSemaphore(jedisPool, semaphoreName,0);
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(redisClient, semaphoreName,0);
         assertEquals(semaphoreName, jedisSemaphore.getName());
         jedisSemaphore.destroy();
         assertEquals(-1, jedisSemaphore.availablePermits());
@@ -62,7 +65,7 @@ public class FunctionalSemaphoreWaitingTest {
         AtomicBoolean released = new AtomicBoolean(false);
         Thread t1 = new Thread(() ->{
             try {
-                JedisSemaphore jedisSemaphore1 = new JedisSemaphore(jedisPool, semaphoreName,0);
+                JedisSemaphore jedisSemaphore1 = new JedisSemaphore(redisClient, semaphoreName,0);
                 LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD1 waiting 1 permit");
                 jedisSemaphore1.acquire(1);
@@ -77,7 +80,7 @@ public class FunctionalSemaphoreWaitingTest {
         t1.start();
         Thread t2 = new Thread(() ->{
             try {
-                JedisSemaphore jedisSemaphore2 = new JedisSemaphore(jedisPool, semaphoreName,0);
+                JedisSemaphore jedisSemaphore2 = new JedisSemaphore(redisClient, semaphoreName,0);
                 Thread.sleep(1500);
                 LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
@@ -106,7 +109,7 @@ public class FunctionalSemaphoreWaitingTest {
         AtomicBoolean released = new AtomicBoolean(false);
         Thread t1 = new Thread(() ->{
             try {
-                JedisSemaphore jedisSemaphore1 = new JedisSemaphore(jedisPool, semaphoreName,0);
+                JedisSemaphore jedisSemaphore1 = new JedisSemaphore(redisClient, semaphoreName,0);
                 LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD1 waiting 1 permit");
                 boolean tried = jedisSemaphore1.tryAcquire(1,2500, TimeUnit.MILLISECONDS);
@@ -122,7 +125,7 @@ public class FunctionalSemaphoreWaitingTest {
         t1.start();
         Thread t2 = new Thread(() ->{
             try {
-                JedisSemaphore jedisSemaphore2 = new JedisSemaphore(jedisPool, semaphoreName,0);
+                JedisSemaphore jedisSemaphore2 = new JedisSemaphore(redisClient, semaphoreName,0);
                 Thread.sleep(1500);
                 LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
@@ -151,7 +154,7 @@ public class FunctionalSemaphoreWaitingTest {
         AtomicBoolean released = new AtomicBoolean(false);
         Thread t1 = new Thread(() ->{
             try {
-                JedisSemaphore jedisSemaphore1 = new JedisSemaphore(jedisPool, semaphoreName,0);
+                JedisSemaphore jedisSemaphore1 = new JedisSemaphore(redisClient, semaphoreName,0);
                 LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD1 waiting for 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD1 waiting 1 permit");
                 boolean tried = jedisSemaphore1.tryAcquire(1,500, TimeUnit.MILLISECONDS);
@@ -167,7 +170,7 @@ public class FunctionalSemaphoreWaitingTest {
         t1.start();
         Thread t2 = new Thread(() ->{
             try {
-                JedisSemaphore jedisSemaphore2 = new JedisSemaphore(jedisPool, semaphoreName,0);
+                JedisSemaphore jedisSemaphore2 = new JedisSemaphore(redisClient, semaphoreName,0);
                 Thread.sleep(2500);
                 LOGGER.debug("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
                 System.out.println("FunctionalMessageSemaphoreTest_THREAD2 releasing 1 permit");
@@ -188,6 +191,7 @@ public class FunctionalSemaphoreWaitingTest {
         assertTrue(acquiredEnd.get());
         assertTrue(released.get());
     }
+
 
 
 }

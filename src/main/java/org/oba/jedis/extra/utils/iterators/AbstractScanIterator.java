@@ -1,11 +1,9 @@
 package org.oba.jedis.extra.utils.iterators;
 
-import org.oba.jedis.extra.utils.utils.JedisPoolUser;
 import org.oba.jedis.extra.utils.utils.Listable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -15,7 +13,7 @@ import java.util.*;
  * Iterator scan for the keys of the redis database
  * It is abstract so it can be applied to SCAN, HSCAN, SSCAN
  */
-abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K>, JedisPoolUser {
+abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractScanIterator.class);
 
 
@@ -24,7 +22,7 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K>, Jedi
     public static final String DEFAULT_PATTERN_ITERATORS = null;
 
 
-    private final JedisPool jedisPool;
+    private final UnifiedJedis redisClient;
     private final ScanParams scanParams;
 
     private final Queue<K> nextValues = new LinkedList<>();
@@ -33,16 +31,15 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K>, Jedi
 
     /**
      * Base constrcutor
-     * @param jedisPool Jedis pool to be used
+     * @param redisClient Jedis pool to be used
      */
-    AbstractScanIterator(JedisPool jedisPool, String pattern, int resultsPerScan) {
-        this.jedisPool = jedisPool;
+    AbstractScanIterator(UnifiedJedis redisClient, String pattern, int resultsPerScan) {
+        this.redisClient = redisClient;
         this.scanParams = generateNewScanParams(pattern, resultsPerScan);
     }
 
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisPool;
+    public UnifiedJedis getRedisClient() {
+        return redisClient;
     }
 
 
@@ -102,7 +99,7 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K>, Jedi
                 currentCursor = currentResult.getCursor();
             }
             LOGGER.debug("Petition with currentCursor " + currentCursor);
-            currentResult = withResourceGet(jedis -> doScan(jedis, currentCursor, getScanParams()));
+            currentResult = doScan(redisClient, currentCursor, getScanParams());
             LOGGER.debug("Recovered data list is {}  with cursor {} ", currentResult.getResult(), currentResult.getCursor());
 
             if (currentResult.getResult().isEmpty() && !currentResult.isCompleteIteration()) {
@@ -119,16 +116,16 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K>, Jedi
 
     /**
      * Implement this method to call jedis.scan / jedis.hscan / jedis.sscan / jedis.zscan
-     * @param jedis Jedis connection from jedisPool, it will be closed after the call
+     * @param redisClient Jedis connection from jedisPool, it will be closed after the call
      * @param currentCursor current cursor of call
      * @param scanParams scan params object
      * @return result of this call
      */
-    abstract ScanResult<K> doScan(Jedis jedis, String currentCursor, ScanParams scanParams);
+    abstract ScanResult<K> doScan(UnifiedJedis redisClient, String currentCursor, ScanParams scanParams);
 
     public void remove() {
         if (next != null) {
-            withResource(jedis -> doRemove(jedis, next));
+            doRemove(redisClient, next);
             next = null;
         } else {
             throw new IllegalStateException("Next not called or other error");
@@ -137,10 +134,10 @@ abstract class AbstractScanIterator<K> implements Iterator<K>, Listable<K>, Jedi
 
     /**
      * Implement this method to call jedis.del / jedis.hrem / jedis.srem / jedis.zrem
-     * @param jedis Jedis connection from jedisPool, it will be closed after the call
+     * @param redisClient Jedis connection
      * @param next data to be deleted
      */
-    abstract void doRemove(Jedis jedis, K next);
+    abstract void doRemove(UnifiedJedis redisClient, K next);
 
 
     /**

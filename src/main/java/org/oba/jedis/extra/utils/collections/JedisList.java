@@ -6,10 +6,8 @@ import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.args.ListPosition;
 
 import java.util.Collection;
@@ -17,7 +15,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.concurrent.ThreadLocalRandom;
+
+import static org.oba.jedis.extra.utils.utils.TransactionUtil.withinMultiGet;
 
 /**
  * A Jedis-based implementation of a List interface backed on Redis list on server
@@ -53,7 +52,7 @@ public final class JedisList implements List<String>, Named {
 
     private static final String TO_DELETE = "TO_DELETE";
 
-    private final JedisPool jedisPool;
+    private final UnifiedJedis redisClient;
     private final String name;
     private final ScriptEvalSha1 scriptIndexOf;
     private final ScriptEvalSha1 scriptLastIndexOf;
@@ -63,16 +62,16 @@ public final class JedisList implements List<String>, Named {
      * This constructor doesn't make any change on Redis server
      * So really, creating here a list does not generate new data on Redis; the list on the server will
      *   exists when data is inserted
-     * @param jedisPool Jedis pool connection
+     * @param redisClient Jedis pool connection
      * @param name Name of list on server
      */
-    public JedisList(JedisPool jedisPool, String name){
-        this.jedisPool = jedisPool;
+    public JedisList(UnifiedJedis redisClient, String name){
+        this.redisClient = redisClient;
         this.name = name;
-        this.scriptIndexOf = new ScriptEvalSha1(jedisPool, new UniversalReader().
+        this.scriptIndexOf = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME_INDEX_OF).
                 withFile(FILE_PATH_INDEX_OF));
-        this.scriptLastIndexOf = new ScriptEvalSha1(jedisPool, new UniversalReader().
+        this.scriptLastIndexOf = new ScriptEvalSha1(redisClient, new UniversalReader().
                 withResoruce(SCRIPT_NAME_LAST_INDEX_OF).
                 withFile(FILE_PATH_LAST_INDEX_OF));
 
@@ -82,12 +81,12 @@ public final class JedisList implements List<String>, Named {
      * Creates a new list in jedis with given name, or references an existing one
      * If the list doesn't exists, the 'from' data is stored,
      * if the list already exists, the 'from' data is added to the list
-     * @param jedisPool Jedis pool connection
+     * @param redisClient Jedis pool connection
      * @param name Name of list on server
      * @param from Data to add to the list
      */
-    public JedisList(JedisPool jedisPool, String name, Collection<String> from){
-        this(jedisPool, name);
+    public JedisList(UnifiedJedis redisClient, String name, Collection<String> from){
+        this(redisClient, name);
         this.addAll(from);
     }
 
@@ -104,9 +103,7 @@ public final class JedisList implements List<String>, Named {
      * @return true if there is a reference in redis namespace, false otherwise
      */
     public boolean exists() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.exists(name);
-        }
+       return redisClient.exists(name);
     }
 
     /**
@@ -126,9 +123,7 @@ public final class JedisList implements List<String>, Named {
      * @return list of data
      */
     public List<String> asList(){
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.lrange(name, 0, -1);
-        }
+        return redisClient.lrange(name, 0, -1);
     }
 
     /**
@@ -140,7 +135,7 @@ public final class JedisList implements List<String>, Named {
      */
     public JedisList jedisSubList(String newListName, int fromIndex, int toIndex) {
         List<String> subList = subList(fromIndex, toIndex);
-        return new JedisList(jedisPool, newListName, subList);
+        return new JedisList(redisClient, newListName, subList);
     }
 
     /**
@@ -157,10 +152,8 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public int size() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            long len = jedis.llen(name);
-            return Long.valueOf(len).intValue();
-        }
+        long len = redisClient.llen(name);
+        return Long.valueOf(len).intValue();
     }
 
     @Override
@@ -190,18 +183,14 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public boolean add(String s) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            long result = jedis.rpush(name, s);
-            return result > 0;
-        }
+        long result = redisClient.rpush(name, s);
+        return result > 0;
     }
 
     @Override
     public boolean remove(Object o) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            long result = jedis.lrem(name, 1L, (String) o);
-            return result > 0;
-        }
+        long result = redisClient.lrem(name, 1L, (String) o);
+        return result > 0;
     }
 
     @Override
@@ -215,11 +204,9 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public boolean addAll(Collection<? extends String> c) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            String[] toAdd = c.toArray(new String[0]);
-            long result = jedis.rpush(name, toAdd);
-            return result > 0;
-        }
+        String[] toAdd = c.toArray(new String[0]);
+        long result = redisClient.rpush(name, toAdd);
+        return result > 0;
     }
 
     @Override
@@ -259,51 +246,45 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public void clear() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.del(name);
-        }
+        redisClient.del(name);
     }
 
     @Override
     public String get(int index) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            checkIndex(index);
-            return jedis.lindex(name, index);
-        }
+        checkIndex(index);
+        return redisClient.lindex(name, index);
     }
 
     @Override
     public String set(int index, String element) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Transaction tjedis = jedis.multi();
-            Response<String> futureReplaced = tjedis.lindex(name, index);
-            tjedis.lset(name, index, element);
-            tjedis.exec();
-            return futureReplaced.get();
-        }
+        String futureReplacedValue = withinMultiGet(redisClient, trs -> {
+            Response<String> futureReplaced = trs.lindex(name, index);
+            trs.lset(name, index, element);
+            trs.exec();
+            return  futureReplaced.get();
+        });
+        return futureReplacedValue;
     }
+
 
     @Override
     public void add(int index, String element) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            String pivot = get(index);
-            jedis.linsert(name, ListPosition.BEFORE, pivot, element);
-        }
+        String pivot = get(index);
+        redisClient.linsert(name, ListPosition.BEFORE, pivot, element);
     }
 
     @Override
     public String remove(int index) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            /* https://stackoverflow.com/questions/31580535/remove-element-at-specific-index-from-redis-list */
-            checkIndex(index);
-            String toDeleteTempName = UniqueTokenValueGenerator.generateUniqueTokenValue(name);
-            Transaction jedisMulti = jedis.multi();
-            Response<String> futureDeleted = jedisMulti.lindex(name, index);
-            jedisMulti.lset(name, index, toDeleteTempName);
-            jedisMulti.lrem(name, 1, toDeleteTempName);
-            jedisMulti.exec();
+        /* https://stackoverflow.com/questions/31580535/remove-element-at-specific-index-from-redis-list */
+        checkIndex(index);
+        String toDeleteTempName = UniqueTokenValueGenerator.generateUniqueTokenValue(name);
+        return withinMultiGet(redisClient, trs -> {
+            Response<String> futureDeleted = trs.lindex(name, index);
+            trs.lset(name, index, toDeleteTempName);
+            trs.lrem(name, 1, toDeleteTempName);
+            trs.exec();
             return futureDeleted.get();
-        }
+        });
     }
 
     @Override
@@ -337,12 +318,10 @@ public final class JedisList implements List<String>, Named {
 
     @Override
     public List<String> subList(int fromIndex, int toIndex) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            int effectiveIndex = toIndex - 1;
-            checkIndex(fromIndex);
-            checkIndex(effectiveIndex);
-            return jedis.lrange(name, fromIndex, effectiveIndex);
-        }
+        int effectiveIndex = toIndex - 1;
+        checkIndex(fromIndex);
+        checkIndex(effectiveIndex);
+        return redisClient.lrange(name, fromIndex, effectiveIndex);
     }
 
 

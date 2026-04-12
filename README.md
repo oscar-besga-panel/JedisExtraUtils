@@ -1,5 +1,4 @@
-
-[![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+  [![Open Source Love](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
 _Project information_        
 [![MIT License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
@@ -47,7 +46,7 @@ These include
   (in a background thread of the class). One by one, and no messsage is lost (AT LEAST ONCE).
 * More utils like
   * SimplePubSub: a simple pub/sub that only consumes messages via a BiConsumer function
-
+* The class *JedisPoolToUnifiedRedis* to gap the bridge between the old JedisPool and the new RedisClient/UnifiedRedis
 
 All this classes use a Jedis pool connection to make them thread-safe and more efficient.
 
@@ -77,6 +76,7 @@ Made with
 - Help from Stackoveflow, forums like [Jedis redis forum](https://groups.google.com/g/jedis_redis)
 - SHA1 code from [olivertech](http://oliviertech.com/es/java/generate-SHA1-hash-from-a-String/)
 - Rate limiters ideas from [Bucket4j](https://bucket4j.com/) and [vbukhtoyarov-java](https://vbukhtoyarov-java.blogspot.com/2021/11/non-formal-overview-of-token-bucket.html)
+- Gemini IA from Google provided some help
 
 See also
 - [Awesome-redis](https://github.com/JamzyWang/awesome-redis)
@@ -90,16 +90,20 @@ Also, you will find a little Groovy and a docker composer to setup a testing red
 
 ### Compatibility Matrix
 
-| Library version | Jedis version | JDK Version |
-|-----------------|---------------|-------------|
-| 7.0.0           | 7.0.X         | JDK11       |
-| 6.5.0           | 6.0.X         | JDK11       |
-| 6.3.0           | 5.2.X         | JDK11       |
-| 6.1.0           | 5.1.X         | JDK11       |
-| 6.0.0           | 5.0.X         | JDK11       |
-| 5.3.0           | 4.4.X         | JDK11       |
+| Library version | Jedis version | JDK Version | Pool Used         |
+|-----------------|---------------|-------------|-------------------|
+| 7.4.1           | 7.4.1         | JDK11       | UnifiedRedis (1)  |
+| 7.3.0           | 7.3.X         | JDK11       | UnifiedRedis (1)  |
+| 7.0.0           | 7.0.X         | JDK11       | JedisPool         |
+| 6.5.0           | 6.0.X         | JDK11       | JedisPool         |
+| 6.3.0           | 5.2.X         | JDK11       | JedisPool         |
+| 6.1.0           | 5.1.X         | JDK11       | JedisPool         |
+| 6.0.0           | 5.0.X         | JDK11       | JedisPool         |
+| 5.3.0           | 4.4.X         | JDK11       | JedisPool         |
   
 The Redis server version will be from 6.0 to the latest one, as it is compatible with all the jedis versions used in this project.
+
+* (1) _UnifiedRedis can be RedisClient, RedisSentinelClient, RedisClusterClient, MultiDBClient and deprecated ones ( JedisPooled, JedisCluster, JedisSentineled)_
 
 ## Miscelanea
 

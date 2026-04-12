@@ -9,8 +9,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.oba.jedis.extra.utils.cache.CacheKeyIterator;
 import org.oba.jedis.extra.utils.cache.SimpleCache;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.RedisClient;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,38 +19,42 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FunctionalSimpleCacheKeyIteratorTest {
 
-    private static final List<String> listNameKeysToDelete = new ArrayList<>();
+    private static final String COMMON_REDIS_TEST_NAME = "cache:" + FunctionalSimpleCacheKeyIteratorTest.class.getName() + ":";
 
+    private static final List<String> listNameKeysToDelete = new ArrayList<>();
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-
-    private JedisPool jedisPool;
+    private RedisClient redisClient;
 
     @Before
     public void setup() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void tearDown() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, listNameKeysToDelete);
-            jedisPool.close();
+        if (redisClient != null) {
+            listNameKeysToDelete.forEach(k -> redisClient.del(k));
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
     SimpleCache createNewCache() {
-        String name = "cache:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        String name = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
         listNameKeysToDelete.add(name);
-        return new SimpleCache(jedisPool, name, 3_600_000);
+        return new SimpleCache(redisClient, name, 3_600_000);
     }
 
     @Test

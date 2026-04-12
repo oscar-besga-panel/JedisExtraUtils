@@ -1,8 +1,7 @@
 package org.oba.jedis.extra.utils.iterators;
 
 import org.oba.jedis.extra.utils.utils.Named;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 import redis.clients.jedis.resps.Tuple;
@@ -27,42 +26,42 @@ public class ZScanIterator extends AbstractScanIterator<Tuple> implements Named 
 
     /**
      * Iterator for zset entries (ordered set)
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the set
      */
-    public ZScanIterator(JedisPool jedisPool, String name) {
-        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public ZScanIterator(UnifiedJedis redisClient, String name) {
+        this(redisClient, name, DEFAULT_PATTERN_ITERATORS, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterator for zset entries (ordered set)
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      */
-    public ZScanIterator(JedisPool jedisPool, String name, String pattern) {
-        this(jedisPool, name, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
+    public ZScanIterator(UnifiedJedis redisClient, String name, String pattern) {
+        this(redisClient, name, pattern, DEFAULT_RESULTS_PER_SCAN_ITERATORS);
     }
 
     /**
      * Iterator for zset entries (ordered set)
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the set
      * @param resultsPerScan results per call to redis
      */
-    public ZScanIterator(JedisPool jedisPool, String name, int resultsPerScan) {
-        this(jedisPool, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
+    public ZScanIterator(UnifiedJedis redisClient, String name, int resultsPerScan) {
+        this(redisClient, name, DEFAULT_PATTERN_ITERATORS, resultsPerScan);
     }
 
     /**
      * Iterator for zset entries (ordered set)
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the set
      * @param pattern Pattern to be matched on the responses
      * @param resultsPerScan results per call to redis
      */
-    public ZScanIterator(JedisPool jedisPool, String name, String pattern, int resultsPerScan) {
-        super(jedisPool, pattern, resultsPerScan);
+    public ZScanIterator(UnifiedJedis redisClient, String name, String pattern, int resultsPerScan) {
+        super(redisClient, pattern, resultsPerScan);
         this.name = name;
     }
 
@@ -73,13 +72,13 @@ public class ZScanIterator extends AbstractScanIterator<Tuple> implements Named 
 
 
     @Override
-    ScanResult<Tuple> doScan(Jedis jedis, String currentCursor, ScanParams scanParams) {
-        return jedis.zscan(name, currentCursor, scanParams);
+    ScanResult<Tuple> doScan(UnifiedJedis redisClient, String currentCursor, ScanParams scanParams) {
+        return redisClient.zscan(name, currentCursor, scanParams);
     }
 
     @Override
-    void doRemove(Jedis jedis, Tuple next) {
-        jedis.zrem(name, next.getElement());
+    void doRemove(UnifiedJedis redisClient, Tuple next) {
+        redisClient.zrem(name, next.getElement());
     }
 
 

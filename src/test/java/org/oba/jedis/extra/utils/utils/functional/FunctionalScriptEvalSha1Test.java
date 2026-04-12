@@ -8,7 +8,7 @@ import org.oba.jedis.extra.utils.utils.ScriptEvalSha1;
 import org.oba.jedis.extra.utils.utils.UniversalReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -24,7 +24,7 @@ public class FunctionalScriptEvalSha1Test {
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
 
     private UniversalReader luaScript;
 
@@ -32,7 +32,7 @@ public class FunctionalScriptEvalSha1Test {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        redisClient = jtfTest.createRedisClient();
         luaScript = new UniversalReader().
                 withResoruce("functionalScriptEvalSha1Test.lua").
                 withFile("./src/test/resources/functionalScriptEvalSha1Test.lua").
@@ -42,15 +42,15 @@ public class FunctionalScriptEvalSha1Test {
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.close();
         }
     }
 
 
     @Test
     public void integrationTest() throws InterruptedException {
-        ScriptEvalSha1 script = new ScriptEvalSha1(jedisPool, luaScript);
+        ScriptEvalSha1 script = new ScriptEvalSha1(redisClient, luaScript);
         boolean loaded = script.load();
         Object result1 = script.evalSha(EMPTY_LIST, EMPTY_LIST);
         Thread.sleep(100);

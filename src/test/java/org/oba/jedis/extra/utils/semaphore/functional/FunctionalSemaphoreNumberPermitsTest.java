@@ -5,21 +5,23 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.semaphore.JedisSemaphore;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalSemaphoreNumberPermitsTest {
 
+    private static final String COMMON_REDIS_TEST_NAME = "semaphore:" + FunctionalSemaphoreNumberPermitsTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
     private String semaphoreName;
 
 
@@ -27,16 +29,17 @@ public class FunctionalSemaphoreNumberPermitsTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
-        semaphoreName = "semaphore:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
+        semaphoreName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, semaphoreName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(semaphoreName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
@@ -44,7 +47,7 @@ public class FunctionalSemaphoreNumberPermitsTest {
 
     @Test
     public void testNumOfPermits(){
-        JedisSemaphore jedisSemaphore = new JedisSemaphore(jedisPool,   semaphoreName,3);
+        JedisSemaphore jedisSemaphore = new JedisSemaphore(redisClient,   semaphoreName,3);
         assertEquals(3, jedisSemaphore.availablePermits());
         assertFalse( jedisSemaphore.tryAcquire(5));
         assertEquals(3, jedisSemaphore.availablePermits());

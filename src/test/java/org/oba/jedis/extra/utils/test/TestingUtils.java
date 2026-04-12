@@ -20,8 +20,6 @@ public class TestingUtils {
         }
     }
 
-
-
     public static Long extractSetParamsExpireTimePX(SetParams setParams) {
         if (setParams != null) {
             Protocol.Keyword valueExpiration = extractPrivateValue("expiration", SetParams.class, setParams, Protocol.Keyword.class, true);

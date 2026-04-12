@@ -3,7 +3,7 @@ package org.oba.jedis.extra.utils.interruptinglocks;
 import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,30 +33,30 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
 
     /**
      * Base constructor
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the lock
      * @param leaseTime time to lease the lock and wait to interrupt the main thread
      * @param timeUnit  unit of the lease time
      */
-    AbstractInterruptingJedisLock(JedisPool jedisPool, String name, long leaseTime, TimeUnit timeUnit) {
-        this(jedisPool, name,leaseTime, timeUnit, false);
+    AbstractInterruptingJedisLock(UnifiedJedis redisClient, String name, long leaseTime, TimeUnit timeUnit) {
+        this(redisClient, name,leaseTime, timeUnit, false);
     }
 
     /**
      * Base constructor
-     * @param jedisPool Jedis connection pool
+     * @param redisClient Jedis connection pool
      * @param name Name of the lock
      * @param leaseTime time to lease the lock and wait to interrupt the main thread
      * @param forceTimeoutRedis If jedis lock should have a timeout or be released when the interrput occurs from java
      * @param timeUnit  unit of the lease time
      */
-    AbstractInterruptingJedisLock(JedisPool jedisPool, String name, long leaseTime, TimeUnit timeUnit, boolean forceTimeoutRedis) {
+    AbstractInterruptingJedisLock(UnifiedJedis redisClient, String name, long leaseTime, TimeUnit timeUnit, boolean forceTimeoutRedis) {
         if (forceTimeoutRedis){
-            jedisLock = new JedisLock(jedisPool, name, leaseTime, timeUnit);
+            jedisLock = new JedisLock(redisClient, name, leaseTime, timeUnit);
             this.leaseTimeDiscountMillis = 10L;
             this.recoverFromInterruptionMillis = 15L;
         } else {
-            jedisLock = new JedisLock(jedisPool, name);
+            jedisLock = new JedisLock(redisClient, name);
             this.leaseTimeDiscountMillis = 0L;
             this.recoverFromInterruptionMillis = 10L;
         }
@@ -68,11 +68,6 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
     @Override
     public String getName() {
         return jedisLock.getName();
-    }
-
-    @Override
-    public JedisPool getJedisPool() {
-        return jedisLock.getJedisPool();
     }
 
     public boolean isLocked() {
@@ -202,7 +197,7 @@ public abstract class AbstractInterruptingJedisLock implements IJedisLock {
             if (realTimeToSleep > 0) {
                 Thread.sleep(realTimeToSleep);
             } else {
-                LOGGER.error("runInterruptThread realTimeToSleep ERROR, sleepring 50");
+                LOGGER.error("runInterruptThread realTimeToSleep ERROR, sleeping 50 ms");
                 Thread.sleep(50);
             }
             interruptAndUnlock();

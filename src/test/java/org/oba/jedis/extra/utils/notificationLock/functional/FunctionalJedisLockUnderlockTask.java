@@ -6,50 +6,50 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.oba.jedis.extra.utils.notificationLock.NotificationLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Transaction;
-
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
-@PrepareForTest({Transaction.class })
+
 public class FunctionalJedisLockUnderlockTask {
+
+    private static final String COMMON_REDIS_TEST_NAME = "flock:" + FunctionalJedisLockUnderlockTask.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
     private String lockName;
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        lockName = "flock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
     @Test
     public void underLockTask() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock.underLockTask(jedisPool, lockName,() ->
+        NotificationLock.underLockTask(redisClient, lockName,() ->
                 result1.set(true)
         );
-        boolean result2 = NotificationLock.underLockTask(jedisPool, lockName,() -> true);
+        boolean result2 = NotificationLock.underLockTask(redisClient, lockName,() -> true);
         assertTrue(result1.get());
         assertTrue(result2);
     }
@@ -57,9 +57,9 @@ public class FunctionalJedisLockUnderlockTask {
     @Test
     public void underLock() {
         AtomicBoolean result1 = new AtomicBoolean(false);
-        NotificationLock jedisLock1 = new NotificationLock(jedisPool, lockName);
+        NotificationLock jedisLock1 = new NotificationLock(redisClient, lockName);
         jedisLock1.underLock(() -> result1.set(true));
-        NotificationLock jedisLock2 = new NotificationLock(jedisPool, lockName);
+        NotificationLock jedisLock2 = new NotificationLock(redisClient, lockName);
         boolean result2 = jedisLock2.underLock(() -> true);
         assertTrue(result1.get());
         assertTrue(result2);

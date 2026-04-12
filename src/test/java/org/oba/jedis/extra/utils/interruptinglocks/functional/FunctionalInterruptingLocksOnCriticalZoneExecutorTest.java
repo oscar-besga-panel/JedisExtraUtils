@@ -2,13 +2,13 @@ package org.oba.jedis.extra.utils.interruptinglocks.functional;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockExecutor;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,12 +20,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 
 public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptingLocksOnCriticalZoneExecutorTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "flock:" + FunctionalInterruptingLocksOnCriticalZoneExecutorTest.class.getName() + ":";
 
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
@@ -34,7 +37,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
     private final AtomicBoolean otherError = new AtomicBoolean(false);
     private String lockName;
     private final List<InterruptingJedisJedisLockExecutor> interruptingLockBaseList = new ArrayList<>();
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
     private ExecutorService executorService;
 
 
@@ -43,9 +46,9 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
+        redisClient = jtfTest.createRedisClient();
         executorService = Executors.newFixedThreadPool(4);
-        lockName = "flock:" + this.getClass().getName() + ":lockT" + System.currentTimeMillis();
+        lockName = COMMON_REDIS_TEST_NAME + "lockT" + System.currentTimeMillis();
     }
 
     @After
@@ -60,13 +63,14 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
                     }
                     il.unlock();
         });
-        if (jedisPool!= null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
-    @Test
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
             errorInCriticalZone.set(false);
@@ -76,10 +80,13 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
             LOGGER.info("FUNCTIONAL_TEST_CYCLES " + i);
             Thread t1 = new Thread(() -> accessLockOfCriticalZone(1));
             t1.setName("T1_1s_i"+i);
+            t1.setDaemon(true);
             Thread t2 = new Thread(() -> accessLockOfCriticalZone(7));
             t2.setName("T2_7s_i"+i);
+            t2.setDaemon(true);
             Thread t3 = new Thread(() -> accessLockOfCriticalZone(3));
             t3.setName("T3_3s_i"+i);
+            t3.setDaemon(true);
             List<Thread> threadList = Arrays.asList(t1,t2,t3);
             Collections.shuffle(threadList);
             threadList.forEach(Thread::start);
@@ -94,7 +101,7 @@ public class FunctionalInterruptingLocksOnCriticalZoneExecutorTest {
 
     private void accessLockOfCriticalZone(int sleepTime){
         try {
-            InterruptingJedisJedisLockExecutor interruptingJedisJedisLockExecutor = new InterruptingJedisJedisLockExecutor(jedisPool, lockName, 5, TimeUnit.SECONDS, executorService);
+            InterruptingJedisJedisLockExecutor interruptingJedisJedisLockExecutor = new InterruptingJedisJedisLockExecutor(redisClient, lockName, 5, TimeUnit.SECONDS, executorService);
             interruptingJedisJedisLockExecutor.lock();
             interruptingLockBaseList.add(interruptingJedisJedisLockExecutor);
             boolean c = JedisTestFactoryLocks.checkLock(interruptingJedisJedisLockExecutor);

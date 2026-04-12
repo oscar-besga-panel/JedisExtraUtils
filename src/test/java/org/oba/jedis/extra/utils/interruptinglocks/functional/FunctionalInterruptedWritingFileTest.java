@@ -2,16 +2,16 @@ package org.oba.jedis.extra.utils.interruptinglocks.functional;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.oba.jedis.extra.utils.interruptinglocks.InterruptingJedisJedisLockBase;
 import org.oba.jedis.extra.utils.lock.IJedisLock;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,14 +25,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalInterruptedWritingFileTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalInterruptedWritingFileTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "lock:" + FunctionalInterruptedWritingFileTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
     private String lockName;
     private final List<IJedisLock> lockList = new ArrayList<>();
     private final AtomicBoolean otherError = new AtomicBoolean(false);
@@ -46,23 +49,22 @@ public class FunctionalInterruptedWritingFileTest {
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
-        lockName = "lock:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
+        lockName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
 
     }
 
     @After
     public void after() {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, lockName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(lockName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
-
-    //@Ignore
-    @Test
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException, IOException {
         for (int i = 0; i < jtfTest.getFunctionalTestCycles(); i ++) {
             line = 0;
@@ -73,10 +75,13 @@ public class FunctionalInterruptedWritingFileTest {
             LOGGER.info("FUNCTIONAL_TEST_CYCLES " + i);
             Thread t1 = new Thread(new WriteTest(250, tempFile));
             t1.setName("T1_i"+i);
+            t1.setDaemon(true);
             Thread t2 = new Thread(new WriteTest(150, tempFile));
             t2.setName("T2_i"+i);
+            t2.setDaemon(true);
             Thread t3 = new Thread(new WriteTest(300, tempFile));
             t3.setName("T3_i"+i);
+            t3.setDaemon(true);
             List<Thread> threadList = Arrays.asList(t1,t2,t3);
             Collections.shuffle(threadList);
             threadList.forEach(Thread::start);
@@ -110,7 +115,7 @@ public class FunctionalInterruptedWritingFileTest {
         @Override
         public void run() {
             try {
-                jedisLock = new InterruptingJedisJedisLockBase(jedisPool, lockName, milis, TimeUnit.MILLISECONDS);
+                jedisLock = new InterruptingJedisJedisLockBase(redisClient, lockName, milis, TimeUnit.MILLISECONDS);
                 lockList.add(jedisLock);
                 jedisLock.lock();
                 JedisTestFactoryLocks.checkLock(jedisLock);

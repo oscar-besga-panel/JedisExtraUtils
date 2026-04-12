@@ -5,22 +5,29 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.iterators.HScanIterable;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.RedisClient;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalHscanIterableTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalHscanIterableTest.class);
 
-
+    private static final String COMMON_REDIS_TEST_NAME = "scanIterable:" + FunctionalHscanIterableTest.class.getName() + ":";
 
     private static AtomicInteger count = new AtomicInteger(0);
 
@@ -28,7 +35,7 @@ public class FunctionalHscanIterableTest {
 
     private String hscanitName;
     private List<String> letters;
-    private JedisPool jedisPool;
+    private RedisClient redisClient;
 
 
 
@@ -36,33 +43,32 @@ public class FunctionalHscanIterableTest {
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        hscanitName = "scanIterable:" + this.getClass().getName() + ":" + System.currentTimeMillis() + ":" + count.incrementAndGet();
-        jedisPool = jtfTest.createJedisPool();
+        hscanitName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis() + ":" + count.incrementAndGet();
+        redisClient = jtfTest.createRedisClient();
         letters = jtfTest.randomSizedListOfChars();
         LOGGER.debug("before count {} for name {} with letters {}", count.get(), hscanitName, letters );
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, hscanitName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(hscanitName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
 
     void createABCData() {
-        try(Jedis jedis = jedisPool.getResource()) {
-            letters.forEach( letter -> {
-                jedis.hset(hscanitName, letter, letter);
-            });
-        }
+        letters.forEach( letter -> {
+            redisClient.hset(hscanitName, letter, letter);
+        });
     }
 
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
-        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName , "*");
+        HScanIterable hscanIterable = new HScanIterable(redisClient, hscanitName , "*");
         Iterator<Map.Entry<String,String>> iterator =  hscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -73,27 +79,26 @@ public class FunctionalHscanIterableTest {
         assertNotNull(iterator);
         assertTrue(sb.length() == 0);
         assertTrue(num == 0);
-        assertNotNull(hscanIterable.getJedisPool());
         assertEquals(hscanitName, hscanIterable.getName());
     }
 
     @Test
     public void iteratorEmpty2Test() {
-        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName , 20);
+        HScanIterable hscanIterable = new HScanIterable(redisClient, hscanitName , 20);
         List<Map.Entry<String,String>> data = hscanIterable.asList();
         assertTrue(data.isEmpty());
     }
 
     @Test
     public void iteratorEmpty3Test() {
-        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName);
+        HScanIterable hscanIterable = new HScanIterable(redisClient, hscanitName);
         List<Map.Entry<String,String>> data = hscanIterable.asList();
         assertTrue(data.isEmpty());
     }
 
     @Test
     public void iteratorEmpty4Test() {
-        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName);
+        HScanIterable hscanIterable = new HScanIterable(redisClient, hscanitName);
         Map<String, String> data = hscanIterable.asMap();
         assertTrue(data.isEmpty());
     }
@@ -102,7 +107,7 @@ public class FunctionalHscanIterableTest {
     public void iteratorWithResultsTest() {
         createABCData();
         int num = 0;
-        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName , "*");
+        HScanIterable hscanIterable = new HScanIterable(redisClient, hscanitName , "*");
         Iterator<Map.Entry<String,String>> iterator =  hscanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -121,14 +126,12 @@ public class FunctionalHscanIterableTest {
     @Test
     public void iteratorWithResultKeysTest() {
         createABCData();
-        HScanIterable hscanIterable = new HScanIterable(jedisPool,hscanitName, "*");
+        HScanIterable hscanIterable = new HScanIterable(redisClient,hscanitName, "*");
         Iterator<Map.Entry<String,String>> iterator =  hscanIterable.iterator();
         while(iterator.hasNext()) {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertTrue( jedis.exists(hscanitName));
-                Map.Entry<String,String> entry = iterator.next();
-                assertEquals( entry.getValue(), jedis.hget(hscanitName, entry.getKey()));
-            }
+            assertTrue( redisClient.exists(hscanitName));
+            Map.Entry<String,String> entry = iterator.next();
+            assertEquals( entry.getValue(), redisClient.hget(hscanitName, entry.getKey()));
         }
     }
 
@@ -137,7 +140,7 @@ public class FunctionalHscanIterableTest {
         AtomicInteger num = new AtomicInteger(0);
         StringBuilder sb = new StringBuilder();
         createABCData();
-        HScanIterable hscanIterable = new HScanIterable(jedisPool,hscanitName,"*");
+        HScanIterable hscanIterable = new HScanIterable(redisClient,hscanitName,"*");
         hscanIterable.forEach( entry -> {
             num.incrementAndGet();
             sb.append(entry.getKey() + ":" + entry.getValue());
@@ -152,12 +155,10 @@ public class FunctionalHscanIterableTest {
     @Test
     public void iteratorWithResultKeysForEachTest() {
         createABCData();
-        HScanIterable scanIterable = new HScanIterable(jedisPool,hscanitName, "*");
+        HScanIterable scanIterable = new HScanIterable(redisClient,hscanitName, "*");
         scanIterable.forEach( entry -> {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertTrue( jedis.exists(hscanitName));
-                assertEquals( entry.getValue(), jedis.hget(hscanitName, entry.getKey()));
-            }
+            assertTrue( redisClient.exists(hscanitName));
+            assertEquals( entry.getValue(), redisClient.hget(hscanitName, entry.getKey()));
         });
     }
 
@@ -165,20 +166,16 @@ public class FunctionalHscanIterableTest {
     @Test
     public void iteratorRemoveForEach1Test() {
         createABCData();
-        try(Jedis jedis = jedisPool.getResource()) {
-            jedis.hset(hscanitName, "extra", "extra");
-        }
+        redisClient.hset(hscanitName, "extra", "extra");
         List<String> deletedKeys = new ArrayList<>();
-        HScanIterable hscanIterable = new HScanIterable(jedisPool,hscanitName, "*");
+        HScanIterable hscanIterable = new HScanIterable(redisClient,hscanitName, "*");
         Iterator<Map.Entry<String,String>> iterator = hscanIterable.iterator();
         while (iterator.hasNext()) {
             deletedKeys.add(iterator.next().getKey());
             iterator.remove();
         }
         deletedKeys.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertNull( jedis.hget(hscanitName, key));
-            }
+            assertNull( redisClient.hget(hscanitName, key));
         });
     }
 
@@ -186,23 +183,21 @@ public class FunctionalHscanIterableTest {
     public void iteratorRemoveForEach2Test() {
         createABCData();
         List<String> deletedKeys = new ArrayList<>();
-        HScanIterable hscanIterable = new HScanIterable(jedisPool,hscanitName, "*");
+        HScanIterable hscanIterable = new HScanIterable(redisClient,hscanitName, "*");
         Iterator<Map.Entry<String,String>> iterator = hscanIterable.iterator();
         while (iterator.hasNext()) {
             deletedKeys.add(iterator.next().getKey());
             iterator.remove();
         }
         deletedKeys.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertNull( jedis.hget(hscanitName, key));
-            }
+            assertNull( redisClient.hget(hscanitName, key));
         });
     }
 
     @Test
     public void asListTest() {
         createABCData();
-        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName, "*");
+        HScanIterable hscanIterable = new HScanIterable(redisClient, hscanitName, "*");
         List<Map.Entry<String,String>> data = hscanIterable.asList();
         Map<String, String> dataMap = new HashMap<>();
         data.forEach( e -> dataMap.put(e.getKey(), e.getValue()));
@@ -216,7 +211,7 @@ public class FunctionalHscanIterableTest {
     @Test
     public void asMapTest() {
         createABCData();
-        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName, "*");
+        HScanIterable hscanIterable = new HScanIterable(redisClient, hscanitName, "*");
         Map<String, String> data = hscanIterable.asMap();
         letters.forEach( letter -> {
             assertTrue(data.containsKey(letter));
@@ -227,7 +222,7 @@ public class FunctionalHscanIterableTest {
 
     @Test(expected = IllegalStateException.class)
     public void errorInDeleteTest() {
-        HScanIterable hscanIterable = new HScanIterable(jedisPool, hscanitName, 50);
+        HScanIterable hscanIterable = new HScanIterable(redisClient, hscanitName, 50);
         Iterator<Map.Entry<String,String>> iterator = hscanIterable.iterator();
         iterator.remove();
     }

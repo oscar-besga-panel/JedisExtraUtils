@@ -8,15 +8,10 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.UnifiedJedis;
 
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +49,7 @@ public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
     @After
     public void after() {
         if (mockOfJedis!= null) {
-            mockOfJedis.getJedisPool().close();
+            mockOfJedis.getRedisClient().close();
             mockOfJedis.clearData();
         }
         interruptingLockBaseList.stream().
@@ -71,7 +66,7 @@ public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
     }
 
 
-    @Test
+    @Test(timeout = 35000)
     public void testIfInterruptedFor5SecondsLock() throws InterruptedException {
         for (int i = 0; i < MockOfJedis.UNIT_TEST_CYCLES; i ++) {
             errorInCriticalZone.set(false);
@@ -97,8 +92,8 @@ public class InterruptingLocksWithExecutorOnCriticalZoneBaseTest {
     }
 
     private void accesLockOfCriticalZone(int sleepTime){
-        JedisPool jedisPool = mockOfJedis.getJedisPool();
-        InterruptingJedisJedisLockExecutor interruptingJedisJedisLockExecutor = new InterruptingJedisJedisLockExecutor(jedisPool, lockName, 5, TimeUnit.SECONDS, executorService);
+        UnifiedJedis redisClient = mockOfJedis.getRedisClient();
+        InterruptingJedisJedisLockExecutor interruptingJedisJedisLockExecutor = new InterruptingJedisJedisLockExecutor(redisClient, lockName, 5, TimeUnit.SECONDS, executorService);
         interruptingLockBaseList.add(interruptingJedisJedisLockExecutor);
         interruptingJedisJedisLockExecutor.lock();
         boolean c = MockOfJedis.checkLock(interruptingJedisJedisLockExecutor);

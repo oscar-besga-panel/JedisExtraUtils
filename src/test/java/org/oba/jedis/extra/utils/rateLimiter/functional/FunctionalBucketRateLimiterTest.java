@@ -4,11 +4,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.rateLimiter.BucketRateLimiter;
+import org.oba.jedis.extra.utils.test.DaemonThreadPoolThreadFactory;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,36 +24,40 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalBucketRateLimiterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalBucketRateLimiterTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "bucketName:" + FunctionalBucketRateLimiterTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
     private String bucketName;
 
     @Before
     public void before() throws IOException {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        jedisPool = jtfTest.createJedisPool();
-        bucketName = "bucketName:" + this.getClass().getName() + ":" + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
+        bucketName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
     }
 
     @After
     public void after() throws IOException {
         if (!jtfTest.functionalTestEnabled()) return;
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, bucketName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(bucketName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
     @Test
     public void create0Test() {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(10, BucketRateLimiter.Mode.INTERVAL, 1 , TimeUnit.SECONDS);
         assertTrue(bucketRateLimiter.exists());
         bucketRateLimiter.delete();
@@ -64,12 +68,12 @@ public class FunctionalBucketRateLimiterTest {
         bucketRateLimiter.
                 createIfNotExists(20, BucketRateLimiter.Mode.INTERVAL, 2 , TimeUnit.SECONDS);
         assertTrue(bucketRateLimiter.exists());
-        assertEquals("10", jedisPool.getResource().hget(bucketName, "capacity"));
+        assertEquals("10", redisClient.hget(bucketName, "capacity"));
     }
 
     @Test
     public void bucketBasic01Test() throws InterruptedException {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(1, BucketRateLimiter.Mode.INTERVAL, 500, TimeUnit.MILLISECONDS);
         boolean result1 = bucketRateLimiter.acquire();
         Thread.sleep(200);
@@ -84,7 +88,7 @@ public class FunctionalBucketRateLimiterTest {
 
     @Test
     public void bucketBasic03Test() throws InterruptedException {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(1, BucketRateLimiter.Mode.GREEDY, 500, TimeUnit.MILLISECONDS);
         boolean result1 = bucketRateLimiter.acquire();
         Thread.sleep(200);
@@ -99,10 +103,10 @@ public class FunctionalBucketRateLimiterTest {
 
     @Test
     public void bucketAdvanced01Test() {
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(1, BucketRateLimiter.Mode.INTERVAL, 1000, TimeUnit.MILLISECONDS);
 
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(105);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(105, new DaemonThreadPoolThreadFactory());
         List<ScheduledFuture<Boolean>> scheduledFutureList = new ArrayList<>();
         for(int i= 0; i < 100; i++) {
             long wait = 500L + (i % 3)*1000 + ThreadLocalRandom.current().nextLong(5L,75L);
@@ -119,7 +123,7 @@ public class FunctionalBucketRateLimiterTest {
     @Test
     public void bucketAdvanced02Test() {
         
-        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(jedisPool, bucketName).
+        BucketRateLimiter bucketRateLimiter = new BucketRateLimiter(redisClient, bucketName).
                 create(1, BucketRateLimiter.Mode.GREEDY, 1000, TimeUnit.MILLISECONDS);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(205);
         List<ScheduledFuture<Boolean>> scheduledFutureList = new ArrayList<>();

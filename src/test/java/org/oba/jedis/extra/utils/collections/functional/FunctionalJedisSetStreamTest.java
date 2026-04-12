@@ -5,10 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisSet;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,36 +15,40 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisSetStreamTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisSetStreamTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "set:" + FunctionalJedisSetStreamTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String setName;
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
         setName = "set:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, setName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(setName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
     private static final List<String> initialData = Collections.unmodifiableList(Arrays.asList("a", "b", "c", "d", "e", "f", "g"));
 
     JedisSet createABCDEFGSet() {
-        JedisSet jedisSet = new JedisSet(jedisPool, setName);
+        JedisSet jedisSet = new JedisSet(redisClient, setName);
         jedisSet.addAll(initialData);
         return jedisSet;
     }

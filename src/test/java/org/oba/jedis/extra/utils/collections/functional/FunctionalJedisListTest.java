@@ -5,11 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.collections.JedisList;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,47 +17,51 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalJedisListTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalJedisListTest.class);
 
+    private static final String COMMON_REDIS_TEST_NAME = "list:" + FunctionalJedisListTest.class.getName() + ":";
+
     private final JedisTestFactory jtfTest = JedisTestFactory.get();
 
     private String listName;
-    private JedisPool jedisPool;
+    private UnifiedJedis redisClient;
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        listName = "list:" + this.getClass().getName() + ":" + System.currentTimeMillis();
-        jedisPool = jtfTest.createJedisPool();
+        listName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis();
+        redisClient = jtfTest.createRedisClient();
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, listName);
-            jedisPool.close();
+        if (redisClient != null) {
+            redisClient.del(listName);
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
     private JedisList createABCList(){
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c"));
         return jedisList;
     }
 
     @Test
     public void getNameTest() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         assertEquals(listName, jedisList.getName());
     }
 
     @Test(expected = IllegalStateException.class)
     public void basicTestWithErrorExists() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.checkExists();
     }
 
@@ -79,7 +81,7 @@ public class FunctionalJedisListTest {
 
         @Test
     public void basicTest() {
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         assertFalse(jedisList.exists());
         assertTrue(jedisList.isEmpty());
         assertEquals(0L, jedisList.size());
@@ -154,7 +156,7 @@ public class FunctionalJedisListTest {
 
     @Test
     public void containsIndexOf(){
-        JedisList jedisList = new JedisList(jedisPool, listName);
+        JedisList jedisList = new JedisList(redisClient, listName);
         jedisList.addAll(Arrays.asList("a", "b", "c", "a", "d"));
         assertTrue(jedisList.contains("a"));
         assertEquals(0, jedisList.indexOf("a"));
@@ -218,14 +220,12 @@ public class FunctionalJedisListTest {
         assertEquals(2, jedisList3.size());
         assertEquals("b", jedisList3.get(0));
         assertEquals("c", jedisList3.get(1));
-        JedisList jedisList4 = new JedisList(jedisPool, listName2);
+        JedisList jedisList4 = new JedisList(redisClient, listName2);
         assertTrue(jedisList4.exists());
         assertEquals(2, jedisList4.size());
         assertEquals("b", jedisList4.get(0));
         assertEquals("c", jedisList4.get(1));
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.del(listName2);
-        }
+        redisClient.del(listName2);
     }
 
 }

@@ -5,22 +5,26 @@ import org.junit.Before;
 import org.junit.Test;
 import org.oba.jedis.extra.utils.iterators.ScanIterable;
 import org.oba.jedis.extra.utils.test.JedisTestFactory;
-import org.oba.jedis.extra.utils.test.WithJedisPoolDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.RedisClient;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.oba.jedis.extra.utils.iterators.ScanUtil.deleteListOfKeysStartsWith;
 
 public class FunctionalScanIterableTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalScanIterableTest.class);
+
+    private static final String COMMON_REDIS_TEST_NAME = "scanIterable:" + FunctionalScanIterableTest.class.getName() + ":";
 
     private static AtomicInteger count = new AtomicInteger(0);
 
@@ -28,39 +32,36 @@ public class FunctionalScanIterableTest {
 
     private String scanitName;
     private List<String> letters;
-    private JedisPool jedisPool;
+    private RedisClient redisClient;
 
 
     @Before
     public void before() {
         org.junit.Assume.assumeTrue(jtfTest.functionalTestEnabled());
         if (!jtfTest.functionalTestEnabled()) return;
-        scanitName = "scanIterable:" + this.getClass().getName() + ":" + System.currentTimeMillis() + ":" + count.incrementAndGet();
-        jedisPool = jtfTest.createJedisPool();
+        scanitName = COMMON_REDIS_TEST_NAME + System.currentTimeMillis() + ":" + count.incrementAndGet();
+        redisClient = jtfTest.createRedisClient();
         letters = jtfTest.randomSizedListOfChars();
         LOGGER.debug("before count {} for name {} with letters {}", count.get(), scanitName, letters );
     }
 
     @After
     public void after() {
-        if (jedisPool != null) {
-            WithJedisPoolDelete.doDelete(jedisPool, letters);
-            jedisPool.close();
+        if (redisClient != null) {
+            letters.forEach( l -> redisClient.del(l));
+            deleteListOfKeysStartsWith(redisClient, COMMON_REDIS_TEST_NAME);
+            redisClient.close();
         }
     }
 
     void createABCData() {
-        try(Jedis jedis = jedisPool.getResource()) {
-            letters.forEach( letter -> {
-                jedis.set(scanitName + ":" + letter, letter);
-            });
-        }
+        letters.forEach( letter -> redisClient.set(scanitName + ":" + letter, letter));
     }
 
     @Test
     public void iteratorEmptyTest() {
         int num = 0;
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(redisClient,scanitName + ":*");
         Iterator<String> iterator =  scanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -70,12 +71,11 @@ public class FunctionalScanIterableTest {
         assertNotNull(iterator);
         assertTrue(sb.length() == 0);
         assertTrue(num == 0);
-        assertNotNull(scanIterable.getJedisPool());
     }
 
     @Test
     public void iteratorEmpty2Test() {
-        ScanIterable scanIterable = new ScanIterable(jedisPool, scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(redisClient, scanitName + ":*");
         List<String> data = scanIterable.asList();
         assertTrue(data.isEmpty());
     }
@@ -84,7 +84,7 @@ public class FunctionalScanIterableTest {
     public void iteratorWithResultsTest() {
         int num = 0;
         createABCData();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(redisClient,scanitName + ":*");
         Iterator<String> iterator =  scanIterable.iterator();
         StringBuilder sb = new StringBuilder();
         while(iterator.hasNext()) {
@@ -102,12 +102,10 @@ public class FunctionalScanIterableTest {
     @Test
     public void iteratorWithResultKeysTest() {
         createABCData();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(redisClient,scanitName + ":*");
         Iterator<String> iterator =  scanIterable.iterator();
         while(iterator.hasNext()) {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertTrue( jedis.exists(iterator.next()));
-            }
+            assertTrue( redisClient.exists(iterator.next()));
         }
     }
 
@@ -116,7 +114,7 @@ public class FunctionalScanIterableTest {
         AtomicInteger num = new AtomicInteger(0);
         StringBuilder sb = new StringBuilder();
         createABCData();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(redisClient,scanitName + ":*");
         scanIterable.forEach( key -> {
             num.incrementAndGet();
             sb.append(key);
@@ -131,11 +129,9 @@ public class FunctionalScanIterableTest {
     @Test
     public void iteratorWithResultKeysForEachTest() {
         createABCData();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(redisClient,scanitName + ":*");
         scanIterable.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertTrue( jedis.exists(key));
-            }
+            assertTrue( redisClient.exists(key));
         });
     }
 
@@ -145,16 +141,14 @@ public class FunctionalScanIterableTest {
         createABCData();
         int originalSize = letters.size();
         List<String> deleted = new ArrayList<>();
-        ScanIterable scanIterable = new ScanIterable(jedisPool,scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(redisClient,scanitName + ":*");
         Iterator<String> iterator = scanIterable.iterator();
         while (iterator.hasNext()) {
             deleted.add( iterator.next());
             iterator.remove();
         }
         deleted.forEach( key -> {
-            try(Jedis jedis = jedisPool.getResource()) {
-                assertFalse( jedis.exists(key));
-            }
+            assertFalse( redisClient.exists(key));
         });
         assertEquals(originalSize, deleted.size());
     }
@@ -162,24 +156,18 @@ public class FunctionalScanIterableTest {
     @Test
     public void asListTest() {
         createABCData();
-        ScanIterable scanIterable = new ScanIterable(jedisPool, scanitName + ":*");
+        ScanIterable scanIterable = new ScanIterable(redisClient, scanitName + ":*");
         List<String> data = scanIterable.asList();
         data.forEach( key -> {
-            String value = get(key);
+            String value = redisClient.get(key);
             assertTrue(letters.contains(value));
         });
         assertEquals(letters.size(), data.size());
     }
 
-    private String get(String key) {
-        try(Jedis jedis = jedisPool.getResource()){
-            return jedis.get(key);
-        }
-    }
-
     @Test(expected = IllegalStateException.class)
     public void errorInDeleteTest() {
-        ScanIterable scanIterable = new ScanIterable(jedisPool);
+        ScanIterable scanIterable = new ScanIterable(redisClient);
         Iterator<String> iterator = scanIterable.iterator();
         iterator.remove();
     }
